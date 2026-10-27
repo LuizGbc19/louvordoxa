@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#05070e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="DOXA" />
+  <link rel="manifest" href="manifest.json" />
+  <title>DOXA — Equipe de Louvor e Adoração</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Montserrat:wght@700;800;900&display=swap');
+    html, body { font-family: 'Inter', sans-serif; background-color: #05070e; color: #f8fafc; min-height: 100%; -webkit-tap-highlight-color: transparent; }
+    .font-doxa { font-family: 'Montserrat', 'Inter', sans-serif; }
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #0f172a; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+    @keyframes pulseGlow { 0%, 100% { opacity: 0.35; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.04); } }
+    .logo-glow { animation: pulseGlow 5s ease-in-out infinite; }
+    input[type="range"] { accent-color: #8b5cf6; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col relative">
+
+  <!-- TELA INICIAL -->
+  <div id="landing-screen" class="fixed inset-0 z-50 bg-black flex flex-col items-center justify-between p-6 select-none transition-opacity duration-500">
+    <div class="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
+      <div class="w-80 h-80 sm:w-[420px] sm:h-[420px] rounded-full bg-white/5 blur-3xl logo-glow"></div>
+    </div>
+    <div class="w-full flex items-center justify-between z-10">
+      <span id="network-mode-pill" class="text-[11px] px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-emerald-400 font-semibold">
+        <i class="fa-solid fa-wifi mr-1"></i>Online
+      </span>
+      <span id="landing-status-pill" class="text-[11px] px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 font-medium">
+        <i class="fa-solid fa-spinner fa-spin mr-1"></i>Sincronizando...
+      </span>
+    </div>
+    <div class="flex flex-col items-center justify-center text-center z-10 max-w-md w-full my-auto space-y-8">
+      <div class="relative w-60 h-60 sm:w-72 sm:h-72 flex items-center justify-center">
+        <svg viewBox="0 0 500 500" class="w-full h-full drop-shadow-[0_0_25px_rgba(255,255,255,0.15)]" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <g stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M 145 360 C 85 290, 80 175, 145 110 C 210 45, 310 50, 365 115 C 420 180, 415 295, 355 360" stroke-width="14" />
+            <path d="M 120 325 C 70 240, 95 130, 180 85 C 265 40, 360 75, 395 160 C 425 235, 395 320, 340 365" stroke-width="11" />
+            <path d="M 165 375 C 95 325, 65 220, 115 135 C 165 55, 280 35, 355 95 C 420 148, 430 255, 375 340" stroke-width="9" />
+            <path d="M 110 315 L 65 335 L 102 295 Z" fill="#FFFFFF" /><path d="M 88 255 L 35 262 L 85 238 Z" fill="#FFFFFF" />
+            <path d="M 88 195 L 40 185 L 92 178 Z" fill="#FFFFFF" /><path d="M 110 140 L 68 112 L 122 125 Z" fill="#FFFFFF" />
+            <path d="M 152 95 L 125 48 L 168 85 Z" fill="#FFFFFF" /><path d="M 205 68 L 195 18 L 222 62 Z" fill="#FFFFFF" />
+            <path d="M 265 62 L 278 15 L 282 65 Z" fill="#FFFFFF" /><path d="M 325 78 L 358 35 L 342 88 Z" fill="#FFFFFF" />
+            <path d="M 372 115 L 418 85 L 385 130 Z" fill="#FFFFFF" /><path d="M 402 170 L 455 155 L 408 188 Z" fill="#FFFFFF" />
+            <path d="M 412 232 L 465 235 L 410 250 Z" fill="#FFFFFF" /><path d="M 398 295 L 448 315 L 390 312 Z" fill="#FFFFFF" />
+            <path d="M 368 345 L 408 380 L 355 358 Z" fill="#FFFFFF" /><path d="M 135 352 L 95 385 L 148 365 Z" fill="#FFFFFF" />
+            <path d="M 162 435 L 145 468 L 175 438 Z" fill="#FFFFFF" /><path d="M 244 440 L 250 495 L 256 440 Z" fill="#FFFFFF" />
+            <path d="M 338 435 L 355 468 L 325 438 Z" fill="#FFFFFF" />
+          </g>
+          <path d="M 236 142 H 264 V 205 H 318 V 231 H 264 V 342 H 236 V 231 H 182 V 205 H 236 Z" fill="#FFFFFF" />
+          <rect x="115" y="348" width="270" height="86" rx="6" fill="#000000" />
+          <text x="250" y="408" text-anchor="middle" fill="#FFFFFF" class="font-doxa" font-size="72" font-weight="900" letter-spacing="4">DOXA</text>
+          <text x="250" y="432" text-anchor="middle" fill="#FFFFFF" class="font-doxa" font-size="13.5" font-weight="800" letter-spacing="1.8">EQUIPE DE LOUVOR E ADORAÇÃO</text>
+        </svg>
+      </div>
+      <div class="w-full max-w-xs space-y-3">
+        <button onclick="enterApplication()" class="w-full py-3.5 px-6 rounded-2xl bg-white hover:bg-zinc-200 text-black font-extrabold text-sm sm:text-base tracking-wide shadow-[0_0_30px_rgba(255,255,255,0.2)] transition-all flex items-center justify-center gap-3">
+          <span>Acessar Aplicativo</span><i class="fa-solid fa-arrow-right text-xs"></i>
+        </button>
+        <div class="flex flex-wrap items-center justify-center gap-2.5 text-[11px] text-zinc-500 pt-1">
+          <button onclick="enterApplication('repertorios')" class="hover:text-zinc-300">Próximo Culto</button><span>•</span>
+          <button onclick="enterApplication('palco')" class="hover:text-zinc-300">Modo Palco</button><span>•</span>
+          <button onclick="enterApplication('vs')" class="text-purple-400 hover:text-purple-300 font-semibold">VS / Estudo</button><span>•</span>
+          <button onclick="enterApplication('pedidos')" class="text-emerald-400 hover:text-emerald-300 font-semibold">Pedidos</button>
+        </div>
+      </div>
+    </div>
+    <div class="text-[11px] text-zinc-600 tracking-wider uppercase font-semibold z-10">DOXA • Louvor e Adoração • v2.6 Pro</div>
+  </div>
+
+  <!-- MENU LATERAL (☰) -->
+  <div id="drawer-backdrop" onclick="closeSideDrawer()" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-40 hidden"></div>
+  <aside id="side-drawer" class="fixed top-0 left-0 bottom-0 w-72 max-w-[85vw] bg-slate-900 border-r border-slate-800 z-50 transform -translate-x-full transition-transform duration-300 flex flex-col justify-between p-4 shadow-2xl">
+    <div class="space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-black border border-zinc-700 flex items-center justify-center text-white font-black">DX</div>
+          <div>
+            <span class="text-lg font-black tracking-wider text-white font-doxa block leading-none">DOXA</span>
+            <span class="text-[10px] text-indigo-400 font-semibold">Menu de Abas</span>
+          </div>
+        </div>
+        <button onclick="closeSideDrawer()" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="space-y-1.5">
+        <button onclick="switchTabFromDrawer('musicas')" id="drawer-tab-musicas" class="w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-bold transition flex items-center justify-between bg-indigo-600 text-white shadow">
+          <span class="flex items-center gap-3"><i class="fa-solid fa-music w-5 text-center"></i><span>Banco de Músicas</span></span>
+          <span id="drawer-badge-musicas" class="text-xs px-2 py-0.5 rounded-full bg-indigo-800 text-indigo-100">0</span>
+        </button>
+        <button onclick="switchTabFromDrawer('repertorios')" id="drawer-tab-repertorios" class="w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition flex items-center justify-between text-slate-300 hover:bg-slate-800">
+          <span class="flex items-center gap-3"><i class="fa-solid fa-calendar-days w-5 text-center text-amber-400"></i><span>Repertórios / Cultos</span></span>
+          <span id="drawer-badge-repertorios" class="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">0</span>
+        </button>
+        <button onclick="switchTabFromDrawer('palco')" id="drawer-tab-palco" class="w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition flex items-center justify-between text-slate-300 hover:bg-slate-800">
+          <span class="flex items-center gap-3"><i class="fa-solid fa-guitar w-5 text-center text-emerald-400"></i><span>Modo Palco & Cifras</span></span>
+        </button>
+        <button onclick="switchTabFromDrawer('vs')" id="drawer-tab-vs" class="w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition flex items-center justify-between text-slate-300 hover:bg-slate-800">
+          <span class="flex items-center gap-3"><i class="fa-solid fa-sliders w-5 text-center text-purple-400"></i><span>VS / Estudo L/R</span></span>
+          <span id="drawer-badge-vs" class="text-[11px] px-2 py-0.5 rounded-full bg-purple-900/60 text-purple-200 font-bold">2.6</span>
+        </button>
+        <button onclick="switchTabFromDrawer('pedidos')" id="drawer-tab-pedidos" class="w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition flex items-center justify-between text-slate-300 hover:bg-slate-800">
+          <span class="flex items-center gap-3"><i class="fa-solid fa-inbox w-5 text-center text-pink-400"></i><span>Pedidos (Formulário)</span></span>
+        </button>
+        <button onclick="switchTabFromDrawer('relatorios')" id="drawer-tab-relatorios" class="w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition flex items-center justify-between text-slate-300 hover:bg-slate-800">
+          <span class="flex items-center gap-3"><i class="fa-solid fa-chart-pie w-5 text-center text-cyan-400"></i><span>Relatórios</span></span>
+        </button>
+        <div class="pt-2 border-t border-slate-800 space-y-1">
+          <button onclick="closeSideDrawer(); openOfflineManagerModal();" class="w-full px-3.5 py-2 rounded-xl text-left text-xs font-bold text-teal-300 hover:bg-slate-800 flex items-center justify-between">
+            <span class="flex items-center gap-3"><i class="fa-solid fa-cloud-arrow-down w-5 text-center"></i><span>Memória Offline</span></span>
+            <span id="drawer-offline-count" class="text-[10px] px-2 py-0.5 rounded-full bg-teal-900/60 text-teal-200">Ativo</span>
+          </button>
+          <button onclick="closeSideDrawer(); showLandingScreen();" class="w-full px-3.5 py-2 rounded-xl text-left text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-3">
+            <i class="fa-solid fa-house w-5 text-center"></i><span>Tela Inicial (Logo)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="space-y-2 border-t border-slate-800 pt-3">
+      <button onclick="closeSideDrawer(); handleAdminButtonClick();" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-slate-200 flex items-center justify-between">
+        <span class="flex items-center gap-2"><i class="fa-solid fa-lock text-amber-400" id="drawer-admin-icon"></i><span id="drawer-admin-label">Modo Administrador</span></span>
+        <i class="fa-solid fa-chevron-right text-[10px] text-slate-500"></i>
+      </button>
+      <button onclick="closeSideDrawer(); syncFromGoogleSheet(true);" class="w-full px-3.5 py-2 rounded-xl bg-emerald-600/15 border border-emerald-500/30 text-xs font-bold text-emerald-300 flex items-center justify-center gap-2">
+        <i class="fa-solid fa-arrows-rotate"></i><span>Sincronizar Planilha</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- CABEÇALHO FIXO NO TOPO -->
+  <header class="bg-slate-900/95 border-b border-slate-800 sticky top-0 z-30 backdrop-blur">
+    <div class="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2 min-w-0">
+        <button onclick="openSideDrawer()" class="w-10 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center transition shrink-0 shadow" title="Abrir Menu">
+          <i class="fa-solid fa-bars text-base"></i>
+        </button>
+        <button onclick="openSideDrawer()" class="flex items-center gap-2 text-left min-w-0">
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-base sm:text-xl font-black tracking-wider text-white font-doxa leading-none">DOXA</span>
+              <span id="active-tab-pill" class="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700 text-indigo-300 font-bold uppercase">Músicas</span>
+            </div>
+            <span id="status-badge" class="text-[10px] text-emerald-400 font-medium block truncate">Conectando...</span>
+          </div>
+        </button>
+      </div>
+
+      <nav class="hidden xl:flex items-center gap-1 bg-slate-800/90 p-1 rounded-xl border border-slate-700/70">
+        <button onclick="switchTab('musicas')" id="tab-musicas" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 bg-indigo-600 text-white shadow"><i class="fa-solid fa-music"></i><span>Músicas</span><span id="badge-total-musicas" class="text-xs px-1.5 py-0.5 rounded-full bg-indigo-800 text-indigo-100">0</span></button>
+        <button onclick="switchTab('repertorios')" id="tab-repertorios" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-calendar-days"></i><span>Repertórios</span><span id="badge-total-repertorios" class="text-xs px-1.5 py-0.5 rounded-full bg-slate-700 text-slate-300">0</span></button>
+        <button onclick="switchTab('palco')" id="tab-palco" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-guitar"></i><span>Modo Palco</span></button>
+        <button onclick="switchTab('vs')" id="tab-vs" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-sliders"></i><span>VS / Estudo</span><span id="badge-total-vs" class="text-xs px-1.5 py-0.5 rounded-full bg-purple-900/60 text-purple-200">2.6</span></button>
+        <button onclick="switchTab('pedidos')" id="tab-pedidos" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-inbox"></i><span>Pedidos</span></button>
+        <button onclick="switchTab('relatorios')" id="tab-relatorios" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-chart-pie"></i><span>Relatórios</span></button>
+      </nav>
+
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button onclick="openOfflineManagerModal()" class="px-2.5 py-2 rounded-xl bg-teal-500/15 hover:bg-teal-500/25 border border-teal-500/30 text-teal-300 text-xs font-bold flex items-center gap-1.5" title="Memória Offline"><i class="fa-solid fa-cloud-arrow-down"></i><span class="hidden sm:inline">Offline</span></button>
+        <button onclick="handleAdminButtonClick()" id="btn-admin-lock" class="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5"><i class="fa-solid fa-lock text-amber-400" id="admin-lock-icon"></i><span id="admin-lock-label" class="hidden sm:inline">Admin</span></button>
+        <button onclick="syncFromGoogleSheet(true)" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-emerald-400 flex items-center justify-center"><i class="fa-solid fa-arrows-rotate text-xs" id="sync-icon"></i></button>
+        <button onclick="openSongModal()" id="btn-new-song" class="hidden px-2.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold items-center gap-1.5"><i class="fa-solid fa-plus"></i><span class="hidden sm:inline">Nova Música</span></button>
+        <button onclick="openRepertorioModal()" id="btn-new-rep" class="hidden px-2.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold items-center gap-1.5"><i class="fa-solid fa-calendar-plus"></i><span class="hidden sm:inline">Novo Repertório</span></button>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTEÚDO PRINCIPAL -->
+  <main id="main-scroll-container" class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-4 py-3 space-y-4 pb-12">
+
+    <!-- ABA 1: MÚSICAS -->
+    <section id="view-musicas" class="space-y-3">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 space-y-2.5 shadow-lg">
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="relative flex-1 min-w-[180px]">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+            <input type="text" id="search-input" oninput="resetPageAndRenderSongs()" placeholder="Buscar música, autor, referência ou tag..." class="w-full pl-8 pr-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500" />
+          </div>
+          <button onclick="toggleMobileFilters()" class="md:hidden px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5"><i class="fa-solid fa-sliders text-indigo-400"></i><span>Filtros</span></button>
+        </div>
+        <div id="filters-panel" class="hidden md:block space-y-2.5">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <select id="filter-tag" onchange="resetPageAndRenderSongs()" class="w-full px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white"><option value="">Todas as Categorias (Tags)</option></select>
+            <select id="filter-tom" onchange="resetPageAndRenderSongs()" class="w-full px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white"><option value="">Todos os Tons</option></select>
+            <select id="filter-dificuldade" onchange="resetPageAndRenderSongs()" class="w-full px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white">
+              <option value="">Dificuldade (Todas)</option><option value="Baixa">Baixa</option><option value="Média">Média</option><option value="Alta">Alta</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-2 pt-1 border-t border-slate-800/80">
+            <div id="tag-cloud" class="flex-1 flex items-center gap-1.5 overflow-x-auto pb-1 custom-scroll"></div>
+            <button onclick="clearFilters()" class="shrink-0 text-[11px] text-indigo-400 font-semibold">Limpar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900/90 border border-slate-800 px-3.5 py-2 rounded-xl text-xs">
+        <span id="pagination-info" class="text-slate-400 font-medium">Mostrando músicas</span>
+        <div class="flex items-center gap-1.5">
+          <button onclick="changePage(-1)" id="btn-prev-page" class="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 font-bold disabled:opacity-40">&larr; Ant</button>
+          <span id="pagination-current" class="px-2.5 py-1 rounded-lg bg-indigo-600/20 text-indigo-300 font-bold">1/1</span>
+          <button onclick="changePage(1)" id="btn-next-page" class="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 font-bold disabled:opacity-40">Próx &rarr;</button>
+          <select id="page-size-select" onchange="changePageSize()" class="ml-1 px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-xs">
+            <option value="40">40 / pág</option><option value="80">80 / pág</option><option value="500">Todas</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="songs-mobile-cards" class="md:hidden space-y-2.5"></div>
+      <div class="hidden md:block bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-800/70 text-slate-400 text-xs uppercase border-b border-slate-800">
+                <th class="py-3 px-4">Música / Autor</th><th class="py-3 px-3 text-center">Tom</th><th class="py-3 px-3 text-center">Tempo</th>
+                <th class="py-3 px-4">Categorias (Tags)</th><th class="py-3 px-3 text-center">Dificuldade</th><th class="py-3 px-4">Referência Bíblica</th>
+                <th class="py-3 px-3 text-center">Vezes</th><th class="py-3 px-4 text-right">Cifras & Ações</th>
+              </tr>
+            </thead>
+            <tbody id="songs-tbody" class="divide-y divide-slate-800/70 text-sm"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABA 2: REPERTÓRIOS -->
+    <section id="view-repertorios" class="hidden space-y-4">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-lg">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-extrabold text-white flex items-center gap-2"><i class="fa-solid fa-calendar-day text-amber-400"></i><span>Calendário de Cultos</span></h3>
+            <button onclick="resetCalendarFilter()" class="text-xs text-indigo-400 font-semibold">Próximo Culto</button>
+          </div>
+          <div class="flex items-center justify-between bg-slate-800/80 px-3 py-2 rounded-xl border border-slate-700">
+            <button onclick="changeCalendarMonth(-1)" class="w-7 h-7 rounded-lg hover:bg-slate-700 text-slate-300 flex items-center justify-center"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+            <span id="calendar-month-label" class="text-xs sm:text-sm font-bold text-white capitalize"></span>
+            <button onclick="changeCalendarMonth(1)" class="w-7 h-7 rounded-lg hover:bg-slate-700 text-slate-300 flex items-center justify-center"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+          </div>
+          <div class="grid grid-cols-7 text-center text-[10px] font-bold uppercase text-slate-400"><div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div></div>
+          <div id="calendar-days-grid" class="grid grid-cols-7 gap-1 text-center text-xs"></div>
+          <div class="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+            <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span>Dia com Culto</span>
+            <span>Total: <strong id="cal-total-reps" class="text-white">0</strong></span>
+          </div>
+        </div>
+        <div class="lg:col-span-8 bg-slate-900 border border-indigo-500/40 rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+            <div class="flex items-center gap-2">
+              <span id="featured-rep-badge" class="text-xs font-extrabold uppercase px-2.5 py-1 rounded-full bg-indigo-600 text-white">Próximo Repertório</span>
+              <span id="featured-rep-date" class="text-xs font-bold text-amber-400"></span>
+            </div>
+            <div id="featured-rep-actions" class="flex flex-wrap items-center gap-1.5"></div>
+          </div>
+          <div id="featured-rep-body" class="space-y-3"></div>
+        </div>
+      </div>
+      <div class="space-y-2.5">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Histórico de Repertórios</h3>
+          <button onclick="openRepertorioModal()" id="btn-new-rep-inline" class="hidden px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold items-center gap-1.5"><i class="fa-solid fa-plus"></i><span>Criar Repertório</span></button>
+        </div>
+        <div id="repertorios-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
+      </div>
+    </section>
+
+    <!-- ABA 3: MODO PALCO -->
+    <section id="view-palco" class="hidden space-y-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div>
+          <h2 class="text-base sm:text-lg font-bold text-white">Modo Palco & Cifras (Online / Offline)</h2>
+          <p class="text-xs text-slate-400">Baixe o culto para abrir as cifras instantaneamente no palco mesmo sem internet</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <select id="palco-select-repertorio" onchange="renderPalco()" class="flex-1 sm:flex-initial px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm text-white font-semibold"></select>
+          <button onclick="salvarCultoAtualOfflinePalco()" class="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold flex items-center gap-1.5 shadow">
+            <i class="fa-solid fa-cloud-arrow-down"></i><span>Baixar Culto Offline</span>
+          </button>
+          <button onclick="toggleAllStageChords()" class="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-indigo-300 text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-eye"></i><span>Cifras</span></button>
+          <button onclick="gerarPdfRepertorioAtualPalco()" class="px-3.5 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-file-pdf"></i><span>PDF</span></button>
+          <button onclick="compartilharWhatsAppPalco()" class="px-3.5 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5"><i class="fa-brands fa-whatsapp"></i><span>WhatsApp</span></button>
+        </div>
+      </div>
+      <div id="palco-content" class="space-y-5"></div>
+    </section>
+
+    <!-- ABA 4: VS / ESTUDO MULTITRACK (COM CHAVE L / R) -->
+    <section id="view-vs" class="hidden space-y-4">
+      <div class="bg-slate-900 border border-purple-500/30 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-300 text-lg"><i class="fa-solid fa-sliders"></i></div>
+          <div>
+            <h2 class="text-base sm:text-lg font-extrabold text-white">Estúdio VS & Multitracks (L / R Pan Mode)</h2>
+            <p class="text-xs text-slate-400">Defina a saída de som (Esquerdo L ou Direito R) para o seu fone/mesa de som</p>
+          </div>
+        </div>
+        <button onclick="loadVsFolders(true)" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-purple-300 text-xs font-bold flex items-center gap-1.5">
+          <i class="fa-solid fa-arrows-rotate" id="vs-refresh-icon"></i><span>Atualizar Pastas VS</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-lg flex flex-col max-h-[65vh]">
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-purple-300"><i class="fa-solid fa-folder-open mr-1.5"></i>Pastas VS (<span id="vs-folders-count">0</span>)</h3>
+          <div class="relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+            <input type="text" id="vs-search-input" oninput="renderVsFoldersList()" placeholder="Buscar música na pasta VS..." class="w-full pl-8 pr-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500" />
+          </div>
+          <div id="vs-folders-list" class="flex-1 overflow-y-auto custom-scroll space-y-1.5 pr-1"></div>
+        </div>
+
+        <div class="lg:col-span-8 bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg">
+          <div id="vs-mixer-empty" class="text-center py-12 space-y-3 text-slate-400">
+            <div class="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 mx-auto flex items-center justify-center text-2xl text-purple-400"><i class="fa-solid fa-headphones-simple"></i></div>
+            <h4 class="text-sm font-bold text-white">Selecione uma música ao lado para abrir a Mesa de VS</h4>
+          </div>
+
+          <div id="vs-mixer-container" class="hidden space-y-4">
+            <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 space-y-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <span class="text-[10px] font-extrabold uppercase tracking-wider text-purple-400 block">Mesa Multitrack</span>
+                  <h3 id="vs-active-song-title" class="text-lg font-black text-white">-</h3>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <button onclick="loadAllVsTracksParallel(true, false)" id="btn-load-all-vs" class="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-1.5 shadow">
+                    <i class="fa-solid fa-bolt"></i><span>Carregar Todas (Turbo)</span>
+                  </button>
+                  <button onclick="loadAllVsTracksParallel(false, true)" class="px-3 py-2 rounded-xl bg-teal-600/25 hover:bg-teal-600 text-teal-300 hover:text-white border border-teal-500/40 text-xs font-bold flex items-center gap-1.5" title="Salvar faixas no aparelho para estudo sem internet">
+                    <i class="fa-solid fa-cloud-arrow-down"></i><span>Salvar VS Offline</span>
+                  </button>
+                  <button onclick="resetVsSoloMute()" class="px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 text-xs font-semibold">Limpar M/S</button>
+                </div>
+              </div>
+
+              <!-- SELETOR DE SAÍDA L / R / ESTÉREO -->
+              <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900/90 px-3.5 py-2 rounded-xl border border-purple-500/30 text-xs">
+                <span class="font-bold text-purple-300 flex items-center gap-1.5"><i class="fa-solid fa-headphones"></i><span>Saída do Som (Pan Mode):</span></span>
+                <div class="flex items-center gap-1 bg-slate-800 p-1 rounded-lg border border-slate-700">
+                  <button type="button" onclick="setVsPanMode('L')" id="btn-pan-l" class="px-2.5 py-1 rounded text-xs font-bold transition text-slate-300 hover:text-white">L (Esquerdo)</button>
+                  <button type="button" onclick="setVsPanMode('CENTER')" id="btn-pan-center" class="px-2.5 py-1 rounded text-xs font-bold transition bg-purple-600 text-white shadow">Normal (Estéreo)</button>
+                  <button type="button" onclick="setVsPanMode('R')" id="btn-pan-r" class="px-2.5 py-1 rounded text-xs font-bold transition text-slate-300 hover:text-white">R (Direito)</button>
+                </div>
+              </div>
+
+              <div id="vs-loading-bar-wrap" class="hidden space-y-1 bg-slate-900/90 p-2.5 rounded-xl border border-purple-500/30">
+                <div class="flex items-center justify-between text-[11px] font-semibold text-purple-300">
+                  <span id="vs-loading-text">Sincronizando faixas...</span><span id="vs-loading-percent">0%</span>
+                </div>
+                <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden"><div id="vs-loading-bar" class="h-full bg-purple-500 transition-all" style="width:0%"></div></div>
+              </div>
+
+              <div class="pt-2 border-t border-slate-700/80 flex flex-col sm:flex-row sm:items-center gap-3">
+                <div class="flex items-center gap-2">
+                  <button onclick="toggleMasterVsPlay()" id="btn-vs-master-play" class="w-11 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center text-base font-bold shadow">
+                    <i class="fa-solid fa-play" id="icon-vs-master-play"></i>
+                  </button>
+                  <button onclick="stopMasterVs()" class="w-10 h-11 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 flex items-center justify-center text-sm"><i class="fa-solid fa-stop"></i></button>
+                </div>
+                <div class="flex-1 space-y-1">
+                  <div class="flex items-center justify-between text-[11px] font-mono text-slate-300">
+                    <span id="vs-current-time">00:00</span>
+                    <span id="vs-loaded-status" class="text-purple-300 font-sans font-semibold">Toque em Play ou + Mixer</span>
+                    <span id="vs-total-duration">00:00</span>
+                  </div>
+                  <input type="range" id="vs-master-seek" min="0" max="100" value="0" step="0.1" oninput="seekMasterVs(this.value)" class="w-full h-2 bg-slate-900 rounded-lg cursor-pointer" />
+                </div>
+                <div class="flex items-center gap-1 bg-slate-900 px-2.5 py-1.5 rounded-xl border border-slate-700 shrink-0">
+                  <span class="text-[10px] font-bold text-slate-400 uppercase mr-1">Vel:</span>
+                  <button onclick="setVsPlaybackRate(0.75)" id="rate-075" class="px-2 py-0.5 rounded text-[11px] font-bold text-slate-400">0.75x</button>
+                  <button onclick="setVsPlaybackRate(0.9)" id="rate-090" class="px-2 py-0.5 rounded text-[11px] font-bold text-slate-400">0.9x</button>
+                  <button onclick="setVsPlaybackRate(1)" id="rate-100" class="px-2 py-0.5 rounded text-[11px] font-bold bg-purple-600 text-white">1.0x</button>
+                </div>
+              </div>
+            </div>
+            <div id="vs-tracks-list" class="space-y-2"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABA 5: PEDIDOS (FORMULÁRIO + PLANILHA) -->
+    <section id="view-pedidos" class="hidden space-y-4">
+      <div class="bg-slate-900 border border-pink-500/30 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-pink-600/20 border border-pink-500/40 flex items-center justify-center text-pink-300 text-lg"><i class="fa-solid fa-inbox"></i></div>
+          <div>
+            <h2 class="text-base sm:text-lg font-extrabold text-white">Pedidos de Músicas — Formulário da Igreja</h2>
+            <p class="text-xs text-slate-400">Acompanhe a planilha de respostas ou abra o formulário de pedidos</p>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <a href="https://forms.gle/kAAm3QzmJBsVMM2G6" target="_blank" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow">
+            <i class="fa-solid fa-pen-to-square"></i><span>Abrir Formulário de Pedido</span>
+          </a>
+          <button onclick="switchPedidosSubView('planilha')" id="btn-pedidos-sub-planilha" class="px-3 py-2 rounded-xl bg-pink-600 text-white text-xs font-bold flex items-center gap-1.5 shadow"><i class="fa-solid fa-table"></i><span>Planilha</span></button>
+          <button onclick="switchPedidosSubView('lista')" id="btn-pedidos-sub-lista" class="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-list-check"></i><span>Lista</span></button>
+        </div>
+      </div>
+
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-wrap items-center gap-2">
+        <span class="text-xs font-bold text-slate-400"><i class="fa-solid fa-link mr-1 text-pink-400"></i>Link da Planilha de Respostas:</span>
+        <input type="text" id="input-form-sheet-url" placeholder="Cole aqui o link da planilha de respostas do Google Forms..." class="flex-1 min-w-[220px] px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-pink-500" />
+        <button onclick="applyFormSheetUrl()" class="px-3.5 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold">Carregar Planilha</button>
+      </div>
+
+      <div id="pedidos-iframe-wrap" class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+        <iframe id="pedidos-sheet-iframe" src="" class="w-full h-[68vh] bg-white border-0"></iframe>
+      </div>
+
+      <div id="pedidos-lista-wrap" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-lg">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase text-pink-400">Respostas Recebidas pelo Formulário</span>
+          <button onclick="loadFormResponsesFromScript()" class="px-3 py-1.5 rounded-lg bg-slate-800 text-xs text-slate-300 hover:text-white font-semibold"><i class="fa-solid fa-arrows-rotate mr-1"></i>Atualizar</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead id="pedidos-thead" class="bg-slate-800 text-slate-400 uppercase border-b border-slate-700"></thead>
+            <tbody id="pedidos-tbody" class="divide-y divide-slate-800 text-slate-200"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABA 6: RELATÓRIOS -->
+    <section id="view-relatorios" class="hidden space-y-4">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5"><p class="text-[11px] text-slate-400">Total de Músicas</p><p id="rep-stat-musicas" class="text-xl font-extrabold text-white mt-0.5">0</p></div>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5"><p class="text-[11px] text-slate-400">Tags / Categorias</p><p id="rep-stat-tags" class="text-xl font-extrabold text-emerald-400 mt-0.5">0</p></div>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5"><p class="text-[11px] text-slate-400">Cantores</p><p id="rep-stat-autores" class="text-xl font-extrabold text-indigo-400 mt-0.5">0</p></div>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5"><p class="text-[11px] text-slate-400">Execuções</p><p id="rep-stat-vezes" class="text-xl font-extrabold text-amber-400 mt-0.5">0</p></div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3"><h3 class="text-xs font-bold uppercase text-indigo-400">Músicas por Cantor</h3><div id="report-autores" class="space-y-2 max-h-80 overflow-y-auto pr-1 custom-scroll"></div></div>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3"><h3 class="text-xs font-bold uppercase text-amber-400">Mais Cantadas</h3><div id="report-mais-cantadas" class="space-y-2 max-h-80 overflow-y-auto pr-1 custom-scroll"></div></div>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3"><h3 class="text-xs font-bold uppercase text-emerald-400">Por Categoria</h3><div id="report-tags" class="space-y-2 max-h-80 overflow-y-auto pr-1 custom-scroll"></div></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL GERENCIADOR OFFLINE -->
+  <div id="offline-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-5 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-cloud-arrow-down text-teal-400 text-lg"></i>
+          <h3 class="text-base font-bold text-white">Modo Offline para Músicos</h3>
+        </div>
+        <button onclick="closeOfflineManagerModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="offline-stats-box" class="bg-slate-800/80 border border-slate-700 rounded-xl p-4 space-y-2 text-xs text-slate-300"></div>
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800">
+        <button onclick="clearAllOfflineData()" class="px-3.5 py-2 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white text-xs font-bold transition">
+          <i class="fa-solid fa-trash mr-1"></i>Limpar Cifras/VS Antigos
+        </button>
+        <button onclick="closeOfflineManagerModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL ADMIN -->
+  <div id="admin-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-sm w-full p-5 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-white"><i class="fa-solid fa-shield-halved text-amber-400 mr-2"></i>Acesso Admin DOXA</h3>
+        <button onclick="closeAdminModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="submitAdminPin(event)" class="space-y-3">
+        <input type="password" id="admin-pin-input" placeholder="Senha de administrador..." class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white" />
+        <div id="admin-pin-error" class="hidden text-xs font-bold text-rose-400">Senha incorreta.</div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeAdminModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Cancelar</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-amber-600 text-white text-xs font-bold">Desbloquear</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL WHATSAPP COM 2 OPÇÕES -->
+  <div id="whatsapp-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-5 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-white"><i class="fa-brands fa-whatsapp text-emerald-400 mr-2"></i>Compartilhar no WhatsApp</h3>
+        <button onclick="closeWhatsAppModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="grid grid-cols-2 gap-2 bg-slate-800/90 p-1.5 rounded-xl border border-slate-700">
+        <button type="button" onclick="switchWhatsAppMode('equipe')" id="btn-wa-equipe" class="py-2 px-3 rounded-lg text-xs font-bold transition bg-indigo-600 text-white shadow flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-guitar"></i><span>1. Equipe (Cifras)</span>
+        </button>
+        <button type="button" onclick="switchWhatsAppMode('igreja')" id="btn-wa-igreja" class="py-2 px-3 rounded-lg text-xs font-bold transition text-slate-300 hover:text-white flex items-center justify-center gap-1.5">
+          <i class="fa-brands fa-youtube text-rose-400"></i><span>2. Igreja (YouTube + Letras)</span>
+        </button>
+      </div>
+      <textarea id="whatsapp-text-preview" rows="10" class="w-full p-3 bg-slate-800 border border-slate-700 rounded-xl text-xs text-slate-200 font-mono"></textarea>
+      <div id="whatsapp-copy-feedback" class="hidden text-xs font-bold text-emerald-400 text-center">Texto copiado automaticamente!</div>
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+        <button onclick="copyWhatsAppTextNow()" class="px-4 py-2 rounded-xl bg-slate-800 border border-slate-600 text-white text-xs font-bold">Copiar Texto</button>
+        <a id="whatsapp-direct-link" href="#" target="_blank" class="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold">Abrir no WhatsApp</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PDF MESCLADO -->
+  <div id="pdf-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-xl w-full p-5 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 id="pdf-modal-title" class="text-base font-bold text-white"><i class="fa-solid fa-file-pdf text-rose-400 mr-2"></i>Gerador de PDF & Offline</h3>
+        <button onclick="closePdfModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="pdf-merge-status" class="space-y-3 text-xs text-slate-300 py-2 max-h-80 overflow-y-auto custom-scroll"></div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+        <a id="btn-download-merged-pdf" href="#" download="Repertorio_DOXA.pdf" class="hidden px-4 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold items-center gap-1.5"><i class="fa-solid fa-download"></i><span>Baixar PDF</span></a>
+        <button onclick="closePdfModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL NOVA / EDITAR MÚSICA -->
+  <div id="song-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-5 space-y-4 max-h-[92vh] overflow-y-auto custom-scroll">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 id="song-modal-title" class="text-base font-bold text-white">Nova Música</h3>
+        <button onclick="closeSongModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="song-form" onsubmit="saveSong(event)" class="space-y-3.5">
+        <input type="hidden" id="song-id" />
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div><label class="block text-xs font-semibold text-slate-300 mb-1">Nome da Música *</label><input type="text" id="song-musica" required class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white" /></div>
+          <div class="relative">
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Autor / Cantor (Busca)</label>
+            <input type="text" id="song-autor" autocomplete="off" onfocus="filterAutorConstants()" oninput="filterAutorConstants()" placeholder="Buscar cantor..." class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white" />
+            <div id="dropdown-autor-constants" class="hidden absolute left-0 right-0 mt-1 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl max-h-40 overflow-y-auto z-40 custom-scroll divide-y divide-slate-700/60"></div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div class="relative">
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Tom</label>
+            <input type="text" id="song-tom" autocomplete="off" onfocus="filterTomConstants()" oninput="filterTomConstants()" placeholder="A, G, Dm..." class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white" />
+            <div id="dropdown-tom-constants" class="hidden absolute left-0 right-0 mt-1 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl max-h-40 overflow-y-auto z-40 custom-scroll divide-y divide-slate-700/60"></div>
+          </div>
+          <div><label class="block text-xs font-semibold text-slate-300 mb-1">Tempo (BPM)</label><input type="text" id="song-tempo" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white" /></div>
+          <div class="relative">
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Dificuldade</label>
+            <input type="text" id="song-dificuldade" autocomplete="off" onfocus="filterDifConstants()" oninput="filterDifConstants()" placeholder="Baixa, Média..." class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white" />
+            <div id="dropdown-dif-constants" class="hidden absolute left-0 right-0 mt-1 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl max-h-36 overflow-y-auto z-40 custom-scroll divide-y divide-slate-700/60"></div>
+          </div>
+          <div><label class="block text-xs font-semibold text-slate-300 mb-1">Vezes</label><input type="number" id="song-vezes" value="0" min="0" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white" /></div>
+        </div>
+        <div class="bg-slate-800/50 border border-slate-700/80 rounded-xl p-3 space-y-2">
+          <label class="block text-xs font-semibold text-indigo-300">Categorias / Tags (Separe por vírgula ou clique abaixo)</label>
+          <input type="text" id="song-categoria" oninput="updateTagPreview()" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white" />
+          <div id="song-tag-preview" class="flex flex-wrap gap-1.5"></div>
+          <input type="text" id="search-cat-constant" oninput="renderCategoryConstantPills()" placeholder="Filtrar constantes de categoria..." class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 mt-1" />
+          <div id="category-constant-pills" class="flex flex-wrap gap-1 max-h-24 overflow-y-auto custom-scroll pt-1"></div>
+        </div>
+        <div><label class="block text-xs font-semibold text-slate-300 mb-1">Referência Bíblica</label><input type="text" id="song-ref" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white" /></div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div><label class="block text-xs font-semibold text-slate-300 mb-1">Link YouTube</label><input type="url" id="song-audio" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white" /></div>
+          <div><label class="block text-xs font-semibold text-slate-300 mb-1">Link Cifra Club</label><input type="url" id="song-cifra" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white" /></div>
+          <div><label class="block text-xs font-semibold text-emerald-400 mb-1">Link Cifra Doxa</label><input type="text" id="song-cifra-doxa" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white" /></div>
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+          <button type="button" onclick="closeSongModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Cancelar</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL NOVO REPERTÓRIO -->
+  <div id="repertorio-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full p-5 space-y-4 max-h-[92vh] overflow-y-auto custom-scroll">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-white">Novo Repertório de Culto</h3>
+        <button onclick="closeRepertorioModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="repertorio-form" onsubmit="saveRepertorio(event)" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div><label class="block text-xs font-semibold text-slate-300 mb-1">Data do Culto *</label><input type="text" id="rep-dia" required placeholder="Ex: 01/11/2026" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white" /></div>
+          <div class="relative">
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Culto * (Com Busca)</label>
+            <input type="text" id="rep-culto" required autocomplete="off" value="Domingo" onfocus="filterCultoConstants()" oninput="filterCultoConstants()" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white" />
+            <div id="dropdown-culto-constants" class="hidden absolute left-0 right-0 mt-1 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl max-h-40 overflow-y-auto z-40 custom-scroll divide-y divide-slate-700/60"></div>
+          </div>
+          <div><label class="block text-xs font-semibold text-slate-300 mb-1">Tema do Culto *</label><input type="text" id="rep-tema" required class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white" /></div>
+        </div>
+        <div class="bg-slate-800/60 border border-slate-700/80 rounded-xl p-3.5 space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+            <div class="sm:col-span-4 relative">
+              <label class="block text-[11px] font-semibold text-slate-400 mb-1">1. Momento Litúrgico</label>
+              <input type="text" id="rep-item-momento" value="Adoração" autocomplete="off" onfocus="filterMomentoConstants()" oninput="filterMomentoConstants()" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white" />
+              <div id="dropdown-momento-constants" class="hidden absolute left-0 right-0 mt-1 bg-slate-900 border border-slate-600 rounded-xl shadow-2xl max-h-44 overflow-y-auto z-40 custom-scroll divide-y divide-slate-800"></div>
+            </div>
+            <div class="sm:col-span-6 relative">
+              <label class="block text-[11px] font-semibold text-slate-400 mb-1">2. Buscar Música (Nome, Autor ou Tom)</label>
+              <div class="relative">
+                <input type="text" id="rep-item-song-search" autocomplete="off" onfocus="filterRepSongsDropdown()" oninput="filterRepSongsDropdown()" placeholder="Digite para buscar música..." class="w-full pl-3 pr-7 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white" />
+                <button type="button" onclick="clearRepSongSearch()" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+              <input type="hidden" id="rep-item-song-id" />
+              <div id="dropdown-rep-songs" class="hidden absolute left-0 right-0 mt-1 bg-slate-900 border border-amber-500/50 rounded-xl shadow-2xl max-h-56 overflow-y-auto z-40 custom-scroll divide-y divide-slate-800"></div>
+            </div>
+            <div class="sm:col-span-2 flex items-end">
+              <button type="button" onclick="addSongToDraftRepertorio()" class="w-full py-2 px-3 bg-amber-600 text-white rounded-xl text-xs font-bold">+ Incluir</button>
+            </div>
+          </div>
+          <div id="rep-draft-items" class="space-y-2 pt-2"></div>
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+          <button type="button" onclick="closeRepertorioModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Cancelar</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-amber-600 text-white text-xs font-semibold">Salvar Repertório</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL PREVIEW INDIVIDUAL VS -->
+  <div id="vs-preview-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-5 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 id="vs-preview-title" class="text-base font-bold text-white">-</h3>
+        <button onclick="closeVsPreviewModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <iframe id="vs-preview-iframe" src="" class="w-full h-28 rounded-xl border border-slate-700 bg-black" allow="autoplay"></iframe>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================================
+    // CONFIGURAÇÕES FIXAS DO APLICATIVO:
+    // =========================================================================================
+    const URL_FIXA_DO_SCRIPT = "https://script.google.com/macros/s/AKfycbxHqR0nh7ngy0NhlKdqNq6lCrOCjV06mlQeXBoI5qXA1hwR4D8JBX1rj1NFQaBaVyyKzA/exec";
+    const URL_PLANILHA_FORMULARIO = "https://docs.google.com/spreadsheets/d/1DiyYzGgMiCDM5b191tFreFjP_vAo0ROHEqxbiBGdNlQ/edit?usp=sharing";
+    const LINK_FORMULARIO_PEDIDOS = "https://forms.gle/kAAm3QzmJBsVMM2G6";
+    const URL_FIXA_DA_LOGO = "";
+    const ADMIN_PIN = "doxa";
+
+    if (window.pdfjsLib) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    }
+
+    let scriptUrl = (URL_FIXA_DO_SCRIPT && URL_FIXA_DO_SCRIPT.startsWith("http")) ? URL_FIXA_DO_SCRIPT.trim() : "";
+    let formSheetUrl = (URL_PLANILHA_FORMULARIO && URL_PLANILHA_FORMULARIO.startsWith("http")) ? URL_PLANILHA_FORMULARIO.trim() : "";
+    let fixedFolderUrl = "";
+    let songs = [];
+    let repertorios = [];
+    let sheetConstants = {
+      categorias: [],
+      dificuldades: ["Baixa", "Média", "Alta"],
+      momentos: ["Prelúdio", "Adoração", "Iluminação", "Confissão", "Ceia", "Ofertório", "Participação Especial", "Pós Oração", "Envio"],
+      cantores: [],
+      cultos: ["Domingo", "Culto Vespertino", "Culto Musical Doxa", "Santa Ceia", "Jovens", "Especial"]
+    };
+
+    let isAdmin = false;
+    let draftRepertorioItems = [];
+    let calendarCurrentDate = new Date();
+    let selectedRepertorioId = null;
+    let currentWhatsAppRepId = null;
+    let currentWhatsAppMode = "equipe";
+    let allStageChordsVisible = true;
+    let currentPage = 1;
+    let pageSize = 40;
+    let offlineSavedChordKeys = new Set();
+    let offlineSavedVsRefs = new Set();
+
+    // BANCO DE DADOS OFFLINE (INDEXEDDB)
+    const DB_NAME = "DoxaOfflineDB_v1";
+    let dbPromise = null;
+
+    function openDoxaDB() {
+      if (dbPromise) return dbPromise;
+      dbPromise = new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains("catalog")) db.createObjectStore("catalog");
+          if (!db.objectStoreNames.contains("chords")) db.createObjectStore("chords");
+          if (!db.objectStoreNames.contains("vsTracks")) db.createObjectStore("vsTracks");
+        };
+        req.onsuccess = (e) => resolve(e.target.result);
+        req.onerror = (e) => reject(e.target.error);
+      });
+      return dbPromise;
+    }
+
+    async function dbPut(storeName, key, val) {
+      try {
+        const db = await openDoxaDB();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(storeName, "readwrite");
+          tx.objectStore(storeName).put(val, key);
+          tx.oncomplete = () => resolve(true);
+          tx.onerror = () => reject(tx.error);
+        });
+      } catch (e) { return false; }
+    }
+
+    async function dbGet(storeName, key) {
+      try {
+        const db = await openDoxaDB();
+        return new Promise((resolve) => {
+          const tx = db.transaction(storeName, "readonly");
+          const req = tx.objectStore(storeName).get(key);
+          req.onsuccess = () => resolve(req.result || null);
+          req.onerror = () => resolve(null);
+        });
+      } catch (e) { return null; }
+    }
+
+    async function dbGetAllKeys(storeName) {
+      try {
+        const db = await openDoxaDB();
+        return new Promise((resolve) => {
+          const tx = db.transaction(storeName, "readonly");
+          const req = tx.objectStore(storeName).getAllKeys();
+          req.onsuccess = () => resolve(req.result || []);
+          req.onerror = () => resolve([]);
+        });
+      } catch (e) { return []; }
+    }
+
+    async function dbClearStore(storeName) {
+      try {
+        const db = await openDoxaDB();
+        return new Promise((resolve) => {
+          const tx = db.transaction(storeName, "readwrite");
+          tx.objectStore(storeName).clear();
+          tx.oncomplete = () => resolve(true);
+        });
+      } catch (e) { return false; }
+    }
+
+    async function refreshOfflineKeysCache() {
+      const chordKeys = await dbGetAllKeys("chords");
+      const vsKeys = await dbGetAllKeys("vsTracks");
+      offlineSavedChordKeys = new Set(chordKeys);
+      offlineSavedVsRefs = new Set(vsKeys);
+      const badgeEl = document.getElementById("drawer-offline-count");
+      if (badgeEl) badgeEl.textContent = `${chordKeys.length} cifras`;
+    }
+
+    async function loadCatalogFromOfflineCache() {
+      const cached = await dbGet("catalog", "mainData");
+      if (cached && Array.isArray(cached.songs) && cached.songs.length > 0) {
+        songs = cached.songs;
+        repertorios = cached.repertorios || [];
+        if (cached.constantes) sheetConstants = Object.assign(sheetConstants, cached.constantes);
+        if (cached.folderUrl) fixedFolderUrl = cached.folderUrl;
+        await refreshOfflineKeysCache();
+        renderSongs(); renderRepertorios(); renderRelatorios();
+        updateConnectionBadge(true, songs.length, !navigator.onLine);
+      }
+    }
+
+    async function openOfflineManagerModal() {
+      await refreshOfflineKeysCache();
+      document.getElementById("offline-stats-box").innerHTML = `
+        <div class="flex items-center justify-between py-1.5 border-b border-slate-700"><span>Catálogo Salvo:</span><strong class="text-emerald-400">${songs.length} músicas</strong></div>
+        <div class="flex items-center justify-between py-1.5 border-b border-slate-700"><span>Cifras PDF Salvas:</span><strong class="text-teal-300">${offlineSavedChordKeys.size} cifras</strong></div>
+        <div class="flex items-center justify-between py-1.5"><span>Faixas de Áudio VS Salvas:</span><strong class="text-purple-300">${offlineSavedVsRefs.size} faixas</strong></div>
+      `;
+      document.getElementById("offline-modal").classList.remove("hidden");
+      document.getElementById("offline-modal").classList.add("flex");
+    }
+    function closeOfflineManagerModal() { document.getElementById("offline-modal").classList.add("hidden"); document.getElementById("offline-modal").classList.remove("flex"); }
+    async function clearAllOfflineData() {
+      await dbClearStore("chords"); await dbClearStore("vsTracks");
+      await refreshOfflineKeysCache(); openOfflineManagerModal(); renderPalco();
+    }
+
+    window.addEventListener("online", () => updateNetworkPill());
+    window.addEventListener("offline", () => updateNetworkPill());
+    function updateNetworkPill() {
+      const pill = document.getElementById("network-mode-pill");
+      if (!pill) return;
+      if (navigator.onLine) {
+        pill.className = "text-[11px] px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-emerald-400 font-semibold";
+        pill.innerHTML = `<i class="fa-solid fa-wifi mr-1"></i>Online`;
+      } else {
+        pill.className = "text-[11px] px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold";
+        pill.innerHTML = `<i class="fa-solid fa-plane mr-1"></i>Offline`;
+      }
+    }
+
+    // MENU LATERAL (☰)
+    function openSideDrawer() { document.getElementById("drawer-backdrop").classList.remove("hidden"); document.getElementById("side-drawer").classList.remove("-translate-x-full"); }
+    function closeSideDrawer() { document.getElementById("drawer-backdrop").classList.add("hidden"); document.getElementById("side-drawer").classList.add("-translate-x-full"); }
+    function switchTabFromDrawer(tab) { closeSideDrawer(); switchTab(tab); }
+
+    // ============================================================================
+    // 1. MIXER VS TURBO COM SUPORTE A PANORÂMICA (L / R PAN MODE)
+    // ============================================================================
+    let vsFolders = [];
+    let selectedVsFolderRef = "";
+    let activeVsTracks = [];
+    let vsTracksState = {};
+    let vsAudioCtx = null;
+    let vsPanMode = "CENTER"; // "L", "R", "CENTER"
+    let vsIsPlaying = false;
+    let vsMaxDuration = 0;
+    let vsPlaybackRate = 1;
+    let vsProgressTimer = null;
+    let vsBlobCache = {};
+
+    function ensureAudioContext() {
+      if (!vsAudioCtx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) vsAudioCtx = new AudioCtx();
+      }
+      if (vsAudioCtx && vsAudioCtx.state === "suspended") vsAudioCtx.resume();
+      return vsAudioCtx;
+    }
+
+    function setVsPanMode(mode) {
+      vsPanMode = mode;
+      ["L", "CENTER", "R"].forEach(m => {
+        const id = m === "CENTER" ? "btn-pan-center" : `btn-pan-${m.toLowerCase()}`;
+        const el = document.getElementById(id);
+        if (el) el.className = m === mode ? "px-2.5 py-1 rounded text-xs font-bold transition bg-purple-600 text-white shadow" : "px-2.5 py-1 rounded text-xs font-bold transition text-slate-300 hover:text-white";
+      });
+      applySoloMuteVolumes();
+    }
+
+    async function loadVsFolders(forceRefresh = false) {
+      if (vsFolders.length > 0 && !forceRefresh) { renderVsFoldersList(); return; }
+      const listEl = document.getElementById("vs-folders-list");
+      const icon = document.getElementById("vs-refresh-icon");
+      if (icon) icon.classList.add("fa-spin");
+
+      const cachedFolders = await dbGet("catalog", "vsFolders");
+      if (cachedFolders && cachedFolders.length > 0 && !forceRefresh) {
+        vsFolders = cachedFolders;
+        document.getElementById("vs-folders-count").textContent = vsFolders.length;
+        renderVsFoldersList();
+      } else {
+        listEl.innerHTML = `<div class="text-center py-8 text-xs text-slate-400"><i class="fa-solid fa-spinner fa-spin text-purple-400 text-lg mb-2"></i><p>Buscando pastas...</p></div>`;
+      }
+
+      if (!navigator.onLine) { if (icon) icon.classList.remove("fa-spin"); return; }
+      try {
+        const res = await fetch(`${scriptUrl}?action=listarPastasVs&t=${Date.now()}`);
+        const data = await res.json();
+        if (data && data.status === "ok" && Array.isArray(data.pastas)) {
+          vsFolders = data.pastas;
+          await dbPut("catalog", "vsFolders", vsFolders);
+          document.getElementById("vs-folders-count").textContent = vsFolders.length;
+          document.getElementById("badge-total-vs").textContent = vsFolders.length;
+          document.getElementById("drawer-badge-vs").textContent = vsFolders.length;
+          renderVsFoldersList();
+        }
+      } catch (e) {} finally { if (icon) icon.classList.remove("fa-spin"); }
+    }
+
+    function renderVsFoldersList() {
+      const q = (document.getElementById("vs-search-input").value || "").toLowerCase().trim();
+      const listEl = document.getElementById("vs-folders-list");
+      const filtered = vsFolders.filter(f => !q || f.nome.toLowerCase().includes(q));
+      if (filtered.length === 0) { listEl.innerHTML = `<div class="text-center py-6 text-xs text-slate-500">Nenhuma pasta encontrada.</div>`; return; }
+      listEl.innerHTML = filtered.map(f => {
+        const active = f.folderRef === selectedVsFolderRef;
+        return `<button onclick="selectVsSongFolder('${f.folderRef}', '${f.nome.replace(/'/g, "\\'")}')" class="w-full text-left px-3.5 py-2.5 rounded-xl border transition flex items-center justify-between gap-2 ${active ? "bg-purple-600/25 border-purple-500 text-white font-bold" : "bg-slate-800/60 border-slate-800 text-slate-300 hover:bg-slate-800"}"><span class="flex items-center gap-2.5 min-w-0"><i class="fa-solid fa-folder-open ${active ? 'text-purple-300' : 'text-slate-400'}"></i><span class="text-xs sm:text-sm truncate">${f.nome}</span></span><i class="fa-solid fa-chevron-right text-[10px] text-slate-500"></i></button>`;
+      }).join("");
+    }
+
+    async function selectVsSongFolder(folderRef, folderName) {
+      stopMasterVs(); clearVsAudioPlayers();
+      selectedVsFolderRef = folderRef; renderVsFoldersList();
+      document.getElementById("vs-mixer-empty").classList.add("hidden");
+      document.getElementById("vs-mixer-container").classList.remove("hidden");
+      document.getElementById("vs-active-song-title").textContent = folderName;
+
+      const tracksEl = document.getElementById("vs-tracks-list");
+      tracksEl.innerHTML = `<div class="text-center py-10 text-xs text-slate-400"><i class="fa-solid fa-spinner fa-spin text-purple-400 text-xl mb-2"></i><p>Lendo instrumentos de <strong>${folderName}</strong>...</p></div>`;
+
+      try {
+        let faixasData = await dbGet("catalog", "vsFolder_" + folderRef);
+        if (navigator.onLine) {
+          const res = await fetch(`${scriptUrl}?action=listarFaixasVs&folderRef=${encodeURIComponent(folderRef)}`);
+          const data = await res.json();
+          if (data && data.status === "ok" && Array.isArray(data.faixas)) {
+            faixasData = data; await dbPut("catalog", "vsFolder_" + folderRef, data);
+          }
+        }
+        if (faixasData && Array.isArray(faixasData.faixas)) {
+          activeVsTracks = faixasData.faixas;
+          await refreshOfflineKeysCache();
+          activeVsTracks.forEach(t => {
+            vsTracksState[t.audioRef] = { htmlAudio: null, panNode: null, gainNode: null, volume: 1, muted: false, solo: false, loaded: false, loading: false, error: "", savedOffline: offlineSavedVsRefs.has(t.audioRef) };
+          });
+          renderVsTracksChannels(); updateVsLoadedStatus();
+        } else {
+          tracksEl.innerHTML = `<div class="p-4 rounded-xl bg-rose-500/15 text-xs text-rose-300">Sem conexão e pasta não salva offline.</div>`;
+        }
+      } catch (err) {
+        tracksEl.innerHTML = `<div class="p-4 rounded-xl bg-rose-500/15 text-xs text-rose-300">Falha ao abrir pasta.</div>`;
+      }
+    }
+
+    function renderVsTracksChannels() {
+      const tracksEl = document.getElementById("vs-tracks-list");
+      if (activeVsTracks.length === 0) { tracksEl.innerHTML = `<div class="text-center py-8 text-xs text-slate-400">Nenhum áudio encontrado.</div>`; return; }
+      const anySolo = Object.values(vsTracksState).some(p => p.solo);
+      tracksEl.innerHTML = activeVsTracks.map(t => {
+        const st = vsTracksState[t.audioRef] || { volume: 1, muted: false, solo: false, loaded: false, loading: false, error: "", savedOffline: false };
+        const effectivelyMuted = st.muted || (anySolo && !st.solo);
+        return `
+          <div class="bg-slate-800/75 border ${st.loaded ? 'border-purple-500/50' : 'border-slate-800'} rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 transition ${effectivelyMuted ? 'opacity-55' : ''}">
+            <div class="flex items-center gap-3 min-w-[160px] flex-1">
+              <div class="w-9 h-9 rounded-xl ${st.loaded ? 'bg-purple-600/25 border-purple-500/40 text-purple-300' : 'bg-slate-900 border-slate-700 text-slate-400'} border flex items-center justify-center shrink-0"><i class="fa-solid ${t.icone}"></i></div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs sm:text-sm font-bold text-white truncate">${t.nomeFaixa}</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-slate-300 font-semibold">${t.categoria}</span>
+                  ${st.savedOffline ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-300 font-bold">Offline</span>` : ""}
+                </div>
+                <div class="text-[11px] text-slate-400 flex flex-wrap items-center gap-2">
+                  <span>${t.tamanhoMb ? `${t.tamanhoMb} MB` : ""}</span>
+                  ${st.loading ? `<span class="text-amber-300 font-semibold"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Baixando...</span>` : ""}
+                  ${st.loaded ? `<span class="text-emerald-400 font-semibold"><i class="fa-solid fa-check mr-1"></i>Pronta</span>` : ""}
+                  ${st.error ? `<span class="text-rose-400 font-semibold">${st.error}</span>` : ""}
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              ${!st.loaded ? `<button onclick="loadSingleVsTrackFast('${t.audioRef}', true, false)" ${st.loading ? "disabled" : ""} class="px-2.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-1 shadow"><i class="fa-solid fa-bolt text-[10px]"></i><span>+ Mixer</span></button>` : ""}
+              <button onclick="toggleVsTrackMute('${t.audioRef}')" class="w-8 h-8 rounded-lg font-black text-xs border transition ${st.muted ? "bg-rose-600 text-white border-rose-400" : "bg-slate-900 text-slate-300 border-slate-700"}">M</button>
+              <button onclick="toggleVsTrackSolo('${t.audioRef}')" class="w-8 h-8 rounded-lg font-black text-xs border transition ${st.solo ? "bg-amber-400 text-black border-amber-300" : "bg-slate-900 text-slate-300 border-slate-700"}">S</button>
+              <div class="flex items-center gap-1.5 bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-700">
+                <i class="fa-solid fa-volume-high text-slate-400 text-[10px]"></i>
+                <input type="range" min="0" max="1" step="0.02" value="${st.volume}" oninput="changeVsTrackVolume('${t.audioRef}', this.value)" class="w-20 sm:w-24 h-1.5 cursor-pointer" />
+              </div>
+            </div>
+          </div>`;
+      }).join("");
+    }
+
+    async function loadSingleVsTrackFast(audioRef, updateUiAfter = true, persistOffline = false) {
+      ensureAudioContext();
+      const st = vsTracksState[audioRef];
+      if (!st || st.loading) return;
+      if (st.loaded && !persistOffline) return;
+      st.loading = true; st.error = "";
+      if (updateUiAfter) renderVsTracksChannels();
+
+      try {
+        let blobUrl = vsBlobCache[audioRef];
+        if (!blobUrl) {
+          let cachedAudio = await dbGet("vsTracks", audioRef);
+          if (!cachedAudio) {
+            const res = await fetch(`${scriptUrl}?action=obterAudioVsBase64&audioRef=${encodeURIComponent(audioRef)}`);
+            const data = await res.json();
+            if (!data || data.status !== "ok" || !data.base64) {
+              st.loading = false; st.error = (data && data.message) ? data.message : "Erro";
+              if (updateUiAfter) renderVsTracksChannels();
+              return;
+            }
+            cachedAudio = { base64: data.base64, mimeType: data.mimeType || "audio/mpeg" };
+            if (persistOffline) { await dbPut("vsTracks", audioRef, cachedAudio); st.savedOffline = true; offlineSavedVsRefs.add(audioRef); }
+          } else { st.savedOffline = true; }
+
+          const bytes = base64ToUint8Array(cachedAudio.base64);
+          const blob = new Blob([bytes], { type: cachedAudio.mimeType });
+          blobUrl = URL.createObjectURL(blob);
+          vsBlobCache[audioRef] = blobUrl;
+        } else if (persistOffline && !st.savedOffline) {
+          const res = await fetch(`${scriptUrl}?action=obterAudioVsBase64&audioRef=${encodeURIComponent(audioRef)}`);
+          const data = await res.json();
+          if (data && data.base64) {
+            await dbPut("vsTracks", audioRef, { base64: data.base64, mimeType: data.mimeType || "audio/mpeg" });
+            st.savedOffline = true; offlineSavedVsRefs.add(audioRef);
+          }
+        }
+
+        if (!st.htmlAudio) {
+          const audio = new Audio(blobUrl);
+          audio.preload = "auto"; audio.playbackRate = vsPlaybackRate;
+          audio.onloadedmetadata = () => {
+            if (audio.duration && audio.duration > vsMaxDuration) {
+              vsMaxDuration = audio.duration;
+              document.getElementById("vs-total-duration").textContent = formatSeconds(vsMaxDuration);
+            }
+          };
+          st.htmlAudio = audio;
+
+          // Se tiver Web Audio API ativo, conecta o áudio através de um StereoPannerNode para L/R Pan Mode
+          if (vsAudioCtx && typeof vsAudioCtx.createMediaElementSource === "function") {
+            try {
+              const source = vsAudioCtx.createMediaElementSource(audio);
+              const panner = vsAudioCtx.createStereoPanner ? vsAudioCtx.createStereoPanner() : null;
+              const gain = vsAudioCtx.createGain();
+              source.connect(gain);
+              if (panner) { gain.connect(panner); panner.connect(vsAudioCtx.destination); st.panNode = panner; }
+              else { gain.connect(vsAudioCtx.destination); }
+              st.gainNode = gain;
+            } catch (eNode) {}
+          }
+        }
+
+        st.loaded = true; st.loading = false;
+        applySoloMuteVolumes();
+
+        if (vsIsPlaying) {
+          const leader = getLoadedHtmlAudios()[0];
+          st.htmlAudio.currentTime = leader ? leader.currentTime : 0;
+          st.htmlAudio.play().catch(() => {});
+        }
+
+        if (updateUiAfter) { updateVsLoadedStatus(); renderVsTracksChannels(); }
+      } catch (err) {
+        st.loading = false; st.error = "Erro";
+        if (updateUiAfter) renderVsTracksChannels();
+      }
+    }
+
+    async function loadAllVsTracksParallel(autoPlayWhenReady = false, persistOffline = false) {
+      const wrap = document.getElementById("vs-loading-bar-wrap");
+      const bar = document.getElementById("vs-loading-bar");
+      const txt = document.getElementById("vs-loading-text");
+      const pct = document.getElementById("vs-loading-percent");
+
+      wrap.classList.remove("hidden");
+      const pending = activeVsTracks.filter(t => !vsTracksState[t.audioRef].loaded || (persistOffline && !vsTracksState[t.audioRef].savedOffline));
+      const total = pending.length; let done = 0;
+
+      if (total > 0) {
+        bar.style.width = "15%"; pct.textContent = `0/${total}`;
+        txt.innerHTML = `<i class="fa-solid fa-bolt text-amber-400 mr-1.5"></i>Baixando ${total} faixas em paralelo...`;
+        await Promise.all(pending.map(async (t) => {
+          await loadSingleVsTrackFast(t.audioRef, false, persistOffline);
+          done++;
+          const progress = Math.round((done / total) * 100);
+          bar.style.width = `${progress}%`; pct.textContent = `${done}/${total}`;
+          renderVsTracksChannels();
+        }));
+      }
+
+      updateVsLoadedStatus(); renderVsTracksChannels();
+      bar.style.width = "100%";
+      txt.innerHTML = `<i class="fa-solid fa-check text-emerald-400 mr-1.5"></i>Pronto!`;
+      setTimeout(() => wrap.classList.add("hidden"), 1000);
+
+      if (autoPlayWhenReady && !vsIsPlaying) toggleMasterVsPlay();
+    }
+
+    function getLoadedHtmlAudios() { return Object.values(vsTracksState).filter(s => s.loaded && s.htmlAudio).map(s => s.htmlAudio); }
+
+    async function toggleMasterVsPlay() {
+      ensureAudioContext();
+      let audios = getLoadedHtmlAudios();
+      if (audios.length === 0 && activeVsTracks.length > 0) { await loadAllVsTracksParallel(true, false); return; }
+      if (audios.length === 0) return;
+
+      const icon = document.getElementById("icon-vs-master-play");
+      if (vsIsPlaying) {
+        audios.forEach(a => a.pause());
+        vsIsPlaying = false; icon.className = "fa-solid fa-play";
+        if (vsProgressTimer) clearInterval(vsProgressTimer);
+      } else {
+        const refTime = audios[0].currentTime || 0;
+        audios.forEach(a => {
+          try { if (Math.abs(a.currentTime - refTime) > 0.04) a.currentTime = refTime; } catch (e) {}
+          a.playbackRate = vsPlaybackRate;
+        });
+        await Promise.all(audios.map(a => a.play().catch(() => {})));
+        vsIsPlaying = true; icon.className = "fa-solid fa-pause";
+        startVsProgressLoop();
+      }
+    }
+
+    function stopMasterVs() {
+      getLoadedHtmlAudios().forEach(a => { a.pause(); try { a.currentTime = 0; } catch (e) {} });
+      vsIsPlaying = false;
+      document.getElementById("icon-vs-master-play").className = "fa-solid fa-play";
+      document.getElementById("vs-current-time").textContent = "00:00";
+      document.getElementById("vs-master-seek").value = 0;
+      if (vsProgressTimer) clearInterval(vsProgressTimer);
+    }
+
+    function seekMasterVs(percentVal) {
+      const audios = getLoadedHtmlAudios();
+      if (audios.length === 0) return;
+      const dur = vsMaxDuration || audios[0].duration || 0;
+      if (!dur) return;
+      const newTime = (Number(percentVal) / 100) * dur;
+      audios.forEach(a => { try { a.currentTime = newTime; } catch (e) {} });
+      document.getElementById("vs-current-time").textContent = formatSeconds(newTime);
+    }
+
+    function applySoloMuteVolumes() {
+      const states = Object.values(vsTracksState);
+      const anySolo = states.some(s => s.solo);
+      states.forEach(st => {
+        if (!st.htmlAudio) return;
+        const silence = st.muted || (anySolo && !st.solo);
+        const targetGain = silence ? 0 : st.volume;
+        st.htmlAudio.volume = Math.min(1, Math.max(0, targetGain));
+
+        // Aplica o Panning (L, R ou Center) se suportado pelo navegador
+        if (st.panNode) {
+          if (vsPanMode === "L") st.panNode.pan.value = -1;
+          else if (vsPanMode === "R") st.panNode.pan.value = 1;
+          else st.panNode.pan.value = 0;
+        }
+      });
+    }
+
+    function toggleVsTrackMute(audioRef) { const st = vsTracksState[audioRef]; if (st) { st.muted = !st.muted; applySoloMuteVolumes(); renderVsTracksChannels(); } }
+    function toggleVsTrackSolo(audioRef) { const st = vsTracksState[audioRef]; if (st) { st.solo = !st.solo; applySoloMuteVolumes(); renderVsTracksChannels(); } }
+    function resetVsSoloMute() { Object.values(vsTracksState).forEach(p => { p.muted = false; p.solo = false; }); applySoloMuteVolumes(); renderVsTracksChannels(); }
+    function changeVsTrackVolume(audioRef, val) { const st = vsTracksState[audioRef]; if (st) { st.volume = Number(val); applySoloMuteVolumes(); } }
+    function setVsPlaybackRate(rate) {
+      vsPlaybackRate = rate;
+      getLoadedHtmlAudios().forEach(a => { a.playbackRate = rate; });
+      ["075", "090", "100"].forEach(id => { document.getElementById("rate-" + id).className = "px-2 py-0.5 rounded text-[11px] font-bold text-slate-400"; });
+      const activeId = rate === 0.75 ? "075" : rate === 0.9 ? "090" : "100";
+      document.getElementById("rate-" + activeId).className = "px-2 py-0.5 rounded text-[11px] font-bold bg-purple-600 text-white";
+    }
+    function updateVsLoadedStatus() {
+      const loadedCount = getLoadedHtmlAudios().length;
+      document.getElementById("vs-loaded-status").textContent = loadedCount > 0 ? `${loadedCount} de ${activeVsTracks.length} faixas prontas` : `Toque em Play ou + Mixer`;
+    }
+    function startVsProgressLoop() {
+      if (vsProgressTimer) clearInterval(vsProgressTimer);
+      vsProgressTimer = setInterval(() => {
+        const audios = getLoadedHtmlAudios();
+        if (!vsIsPlaying || audios.length === 0) return;
+        const leader = audios[0];
+        const cur = leader.currentTime || 0;
+        const dur = vsMaxDuration || leader.duration || 0;
+        document.getElementById("vs-current-time").textContent = formatSeconds(cur);
+        for (let i = 1; i < audios.length; i++) {
+          if (Math.abs(audios[i].currentTime - cur) > 0.06) { try { audios[i].currentTime = cur; } catch (e) {} }
+        }
+        if (dur > 0) {
+          document.getElementById("vs-master-seek").value = Math.min(100, (cur / dur) * 100);
+          if (leader.ended || cur >= dur) stopMasterVs();
+        }
+      }, 250);
+    }
+    function formatSeconds(sec) {
+      if (!sec || isNaN(sec)) return "00:00";
+      return `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(Math.floor(sec % 60)).padStart(2, "0")}`;
+    }
+    function clearVsAudioPlayers() {
+      Object.values(vsTracksState).forEach(st => { if (st.htmlAudio) { st.htmlAudio.pause(); st.htmlAudio.src = ""; } });
+      vsTracksState = {}; vsMaxDuration = 0;
+      document.getElementById("vs-total-duration").textContent = "00:00";
+    }
+    function openVsQuickPreview(title, previewUrl) {
+      if (vsIsPlaying) toggleMasterVsPlay();
+      document.getElementById("vs-preview-title").textContent = title;
+      document.getElementById("vs-preview-iframe").src = previewUrl;
+      document.getElementById("vs-preview-modal").classList.remove("hidden");
+      document.getElementById("vs-preview-modal").classList.add("flex");
+    }
+    function closeVsPreviewModal() {
+      document.getElementById("vs-preview-iframe").src = "";
+      document.getElementById("vs-preview-modal").classList.add("hidden");
+      document.getElementById("vs-preview-modal").classList.remove("flex");
+    }
+
+    // ============================================================================
+    // 2. WHATSAPP COM AS 2 OPÇÕES (HIPERLINKS LIMPOS)
+    // ============================================================================
+    function buildWhatsAppText(rep, mode) {
+      const dObj = parseRepDate(rep.dia);
+      const dateFormatted = dObj ? formatDatePtBr(dObj) : rep.dia;
+
+      if (mode === "igreja") {
+        let text = `Próximo culto está chegando e você pode se preparar com o DOXA!\n\n`;
+        text += `*REPERTÓRIO DOXA — ${dateFormatted} (${rep.culto})*\n`;
+        if (rep.tema) text += `*Tema:* ${rep.tema}\n`;
+        text += `\n`;
+        (rep.itens || []).forEach((it, i) => {
+          const info = getResolvedSongDetails(it);
+          const cleanAutor = (info.autor && info.autor !== "Autor não informado") ? info.autor : "";
+          const ytLink = info.audio || `https://www.youtube.com/results?search_query=${encodeURIComponent(info.musica + " " + cleanAutor)}`;
+          const letraLink = `https://www.letras.mus.br/?q=${encodeURIComponent(info.musica + " " + cleanAutor)}`;
+          text += `${i + 1}. *${info.musica}*${cleanAutor ? ` (${cleanAutor})` : ""}\n`;
+          text += `   ▶️ [Assistir no YouTube](${ytLink})\n`;
+          text += `   📝 [Ver Letra da Música](${letraLink})\n`;
+        });
+        text += `\n🙌 *Tem algum louvor que você gostaria de cantar conosco?*\nEnvie seu pedido de música aqui: ${LINK_FORMULARIO_PEDIDOS}`;
+        return text;
+      }
+
+      let text = `*REPERTÓRIO DOXA — ${dateFormatted} (${rep.culto})*\n*Tema:* ${rep.tema}\n\n`;
+      (rep.itens || []).forEach((it, i) => {
+        const info = getResolvedSongDetails(it);
+        text += `${i + 1}. *${it.momento}:* ${info.musica} (${info.autor}) — *Tom: ${info.tom}*${info.tempo ? ` • ${info.tempo} BPM` : ""}\n`;
+        if (info.hasFile) text += `   📄 [Abrir Cifra no Drive](${info.viewUrl})\n`;
+        if (info.audio) text += `   ▶️ [Ouvir no YouTube](${info.audio})\n`;
+      });
+      return text;
+    }
+
+    function openWhatsAppModal(repId, initialMode = "equipe") {
+      currentWhatsAppRepId = Number(repId);
+      currentWhatsAppMode = initialMode;
+      const modal = document.getElementById("whatsapp-modal");
+      modal.classList.remove("hidden"); modal.classList.add("flex");
+      switchWhatsAppMode(initialMode);
+    }
+
+    function switchWhatsAppMode(mode) {
+      currentWhatsAppMode = mode;
+      const rep = repertorios.find(r => r.id === Number(currentWhatsAppRepId));
+      if (!rep) return;
+      document.getElementById("btn-wa-equipe").className = mode === "equipe" ? "py-2 px-3 rounded-lg text-xs font-bold transition bg-indigo-600 text-white shadow flex items-center justify-center gap-1.5" : "py-2 px-3 rounded-lg text-xs font-bold transition text-slate-300 hover:text-white flex items-center justify-center gap-1.5";
+      document.getElementById("btn-wa-igreja").className = mode === "igreja" ? "py-2 px-3 rounded-lg text-xs font-bold transition bg-emerald-600 text-white shadow flex items-center justify-center gap-1.5" : "py-2 px-3 rounded-lg text-xs font-bold transition text-slate-300 hover:text-white flex items-center justify-center gap-1.5";
+
+      const text = buildWhatsAppText(rep, mode);
+      document.getElementById("whatsapp-text-preview").value = text;
+      document.getElementById("whatsapp-direct-link").href = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+      copyWhatsAppTextNow();
+    }
+
+    function closeWhatsAppModal() { document.getElementById("whatsapp-modal").classList.add("hidden"); document.getElementById("whatsapp-modal").classList.remove("flex"); }
+    function copyWhatsAppTextNow() {
+      const textarea = document.getElementById("whatsapp-text-preview");
+      textarea.select(); textarea.setSelectionRange(0, 99999);
+      try { document.execCommand("copy"); } catch (e) {}
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(textarea.value).catch(() => {});
+      document.getElementById("whatsapp-copy-feedback").classList.remove("hidden");
+    }
+    function compartilharWhatsAppPalco() { const sel = document.getElementById("palco-select-repertorio"); if (sel && sel.value) openWhatsAppModal(Number(sel.value), "equipe"); }
+
+    // OFFLINE E RELATÓRIOS
+    async function salvarCultoOffline(repId) {
+      const rep = repertorios.find(r => r.id === Number(repId));
+      if (!rep) return;
+      const modal = document.getElementById("pdf-modal");
+      const statusEl = document.getElementById("pdf-merge-status");
+      const btnDownload = document.getElementById("btn-download-merged-pdf");
+      document.getElementById("pdf-modal-title").innerHTML = `<i class="fa-solid fa-cloud-arrow-down text-teal-400 mr-2"></i>Salvando Cifras Offline`;
+      btnDownload.classList.add("hidden"); modal.classList.remove("hidden"); modal.classList.add("flex");
+      statusEl.innerHTML = `<div class="p-4 bg-slate-800 rounded-xl"><i class="fa-solid fa-spinner fa-spin mr-2 text-teal-400"></i>Baixando cifras para o celular...</div>`;
+
+      try {
+        const itensPayload = (rep.itens || []).map(it => {
+          const info = getResolvedSongDetails(it);
+          return { musica: info.musica, autor: info.autor, fileId: info.fileId, cifraDoxa: info.viewUrl };
+        });
+        const res = await fetch(`${scriptUrl}?action=obterPdfsRepertorio&itens=${encodeURIComponent(JSON.stringify(itensPayload))}`);
+        const data = await res.json();
+        const arquivos = (data && Array.isArray(data.arquivos)) ? data.arquivos : [];
+        let salvosCount = 0; let detalhesHtml = "";
+
+        for (let i = 0; i < arquivos.length; i++) {
+          const arq = arquivos[i];
+          if (arq && arq.encontrado && arq.pdfBase64) {
+            const key = normalizeSongKey(arq.musica);
+            await dbPut("chords", key, arq.pdfBase64);
+            offlineSavedChordKeys.add(key); salvosCount++;
+            detalhesHtml += `<div class="text-teal-300">✓ <strong>${arq.musica}</strong> salva offline</div>`;
+          } else {
+            detalhesHtml += `<div class="text-rose-400">✗ <strong>${arq ? arq.musica : ""}</strong> não encontrada</div>`;
+          }
+        }
+        await refreshOfflineKeysCache();
+        statusEl.innerHTML = `<div class="p-4 bg-slate-800 rounded-xl space-y-2"><p class="font-bold text-white">${salvosCount} cifras salvas offline!</p>${detalhesHtml}</div>`;
+        renderPalco(); renderFeaturedRepertorio();
+      } catch (e) {
+        statusEl.innerHTML = `<div class="p-4 bg-rose-500/20 text-rose-300 rounded-xl">Erro ao baixar cifras offline.</div>`;
+      }
+    }
+    function salvarCultoAtualOfflinePalco() { const sel = document.getElementById("palco-select-repertorio"); if (sel && sel.value) salvarCultoOffline(Number(sel.value)); }
+
+    async function renderOfflinePdfInCanvasContainer(musicaName, containerId) {
+      const container = document.getElementById(containerId);
+      if (!container || !window.pdfjsLib) return;
+      const key = normalizeSongKey(musicaName);
+      const base64 = await dbGet("chords", key);
+      if (!base64) return;
+      container.innerHTML = `<div class="text-xs text-teal-300 py-4 text-center"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Abrindo cifra offline...</div>`;
+      try {
+        const pdfBytes = base64ToUint8Array(base64);
+        const pdfDoc = await window.pdfjsLib.getDocument({ data: pdfBytes }).promise;
+        container.innerHTML = "";
+        for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+          const page = await pdfDoc.getPage(pageNum);
+          const viewport = page.getViewport({ scale: 1.6 });
+          const canvas = document.createElement("canvas");
+          canvas.className = "w-full rounded-xl bg-white shadow mb-3";
+          canvas.height = viewport.height; canvas.width = viewport.width;
+          container.appendChild(canvas);
+          await page.render({ canvasContext: canvas.getContext("2d"), viewport: viewport }).promise;
+        }
+      } catch (e) { container.innerHTML = `<div class="text-xs text-rose-400 p-3">Erro ao renderizar cifra offline.</div>`; }
+    }
+
+    function initPedidosTab() {
+      const savedUrl = formSheetUrl || localStorage.getItem("doxa_form_sheet_url") || "";
+      const inputEl = document.getElementById("input-form-sheet-url");
+      if (savedUrl && inputEl) { inputEl.value = savedUrl; embedFormSheet(savedUrl); }
+      loadFormResponsesFromScript();
+    }
+    function applyFormSheetUrl() {
+      const val = document.getElementById("input-form-sheet-url").value.trim();
+      if (!val) return;
+      formSheetUrl = val;
+      try { localStorage.setItem("doxa_form_sheet_url", val); } catch (e) {}
+      embedFormSheet(val);
+    }
+    function embedFormSheet(url) {
+      const iframe = document.getElementById("pedidos-sheet-iframe");
+      if (iframe && url.startsWith("http")) iframe.src = url.includes("/edit") ? url.replace(/\/edit.*$/, "/preview") : url;
+    }
+    function switchPedidosSubView(sub) {
+      const isPlanilha = sub === "planilha";
+      document.getElementById("pedidos-iframe-wrap").classList.toggle("hidden", !isPlanilha);
+      document.getElementById("pedidos-lista-wrap").classList.toggle("hidden", isPlanilha);
+    }
+    async function loadFormResponsesFromScript() {
+      if (!scriptUrl || !navigator.onLine) return;
+      try {
+        const res = await fetch(`${scriptUrl}?action=listarPedidosFormulario&t=${Date.now()}`);
+        const data = await res.json();
+        if (data && data.status === "ok") {
+          if (data.sheetUrl && !formSheetUrl) { formSheetUrl = data.sheetUrl; document.getElementById("input-form-sheet-url").value = formSheetUrl; embedFormSheet(formSheetUrl); }
+          const headers = data.headers || []; const pedidos = data.pedidos || [];
+          document.getElementById("drawer-badge-pedidos").textContent = pedidos.length;
+          document.getElementById("pedidos-thead").innerHTML = `<tr>${headers.map(h => `<th class="py-2.5 px-3">${h}</th>`).join("")}<th class="py-2.5 px-3 text-right">Ação</th></tr>`;
+          document.getElementById("pedidos-tbody").innerHTML = pedidos.map(p => {
+            const vals = p.valores || [];
+            const possibleSong = vals[1] || vals[2] || ""; const possibleAuthor = vals[2] || vals[3] || "";
+            return `<tr class="hover:bg-slate-800/50">${vals.map(v => `<td class="py-2.5 px-3">${v}</td>`).join("")}<td class="py-2.5 px-3 text-right"><button onclick="cadastrarPedidoNoBanco('${String(possibleSong).replace(/'/g, "\\'")}', '${String(possibleAuthor).replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded-lg bg-indigo-600/20 text-indigo-300 font-bold text-[11px]">+ Cadastrar</button></td></tr>`;
+          }).join("");
+        }
+      } catch (e) {}
+    }
+    function cadastrarPedidoNoBanco(musicaNome, autorNome) {
+      if (!isAdmin) { handleAdminButtonClick(); return; }
+      openSongModal();
+      document.getElementById("song-musica").value = musicaNome || "";
+      document.getElementById("song-autor").value = autorNome || "";
+    }
+
+    document.addEventListener("click", function(e) {
+      [["song-autor", "dropdown-autor-constants"], ["song-tom", "dropdown-tom-constants"], ["song-dificuldade", "dropdown-dif-constants"], ["rep-culto", "dropdown-culto-constants"], ["rep-item-momento", "dropdown-momento-constants"], ["rep-item-song-search", "dropdown-rep-songs"]].forEach(([inputId, dropId]) => {
+        const inp = document.getElementById(inputId); const drop = document.getElementById(dropId);
+        if (inp && drop && !inp.contains(e.target) && !drop.contains(e.target)) drop.classList.add("hidden");
+      });
+    });
+
+    function getAllAutorConstants() { const set = new Set(sheetConstants.cantores || []); songs.forEach(s => { if (s.autor && s.autor.trim()) set.add(s.autor.trim()); }); return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR")); }
+    function getAllTomConstants() { const set = new Set(["C", "C#", "Cm", "C#m", "D", "Db", "Dm", "D#m", "E", "Eb", "Em", "F", "F#", "Fm", "F#m", "G", "G#", "Gm", "G#m", "A", "Ab", "Am", "A#m", "B", "Bb", "Bm"]); songs.forEach(s => { if (s.tom && s.tom.trim()) set.add(s.tom.trim()); }); return Array.from(set).sort(); }
+    function getAllCategoryConstants() { const set = new Set(sheetConstants.categorias || []); songs.forEach(s => parseTags(s.categoria).forEach(t => set.add(t))); return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR")); }
+    function getAllMomentoConstants() { const set = new Set(sheetConstants.momentos || []); repertorios.forEach(r => (r.itens || []).forEach(it => { if (it.momento && it.momento.trim()) set.add(it.momento.trim()); })); return Array.from(set); }
+    function getAllCultoConstants() { const set = new Set(sheetConstants.cultos || []); repertorios.forEach(r => { if (r.culto && r.culto.trim()) set.add(r.culto.trim()); }); return Array.from(set); }
+
+    function renderSearchDropdown(dropId, items, cbName) {
+      const drop = document.getElementById(dropId);
+      if (!drop) return;
+      if (items.length === 0) { drop.classList.add("hidden"); return; }
+      drop.innerHTML = items.map(item => `<button type="button" onclick="${cbName}('${String(item).replace(/'/g, "\\'")}')" class="w-full text-left px-3 py-2 text-xs text-slate-200 hover:bg-indigo-600 hover:text-white block">${item}</button>`).join("");
+      drop.classList.remove("hidden");
+    }
+    function filterAutorConstants() { const q = document.getElementById("song-autor").value.toLowerCase().trim(); renderSearchDropdown("dropdown-autor-constants", getAllAutorConstants().filter(a => !q || a.toLowerCase().includes(q)), "selectAutorConstant"); }
+    function selectAutorConstant(val) { document.getElementById("song-autor").value = val; document.getElementById("dropdown-autor-constants").classList.add("hidden"); }
+    function filterTomConstants() { const q = document.getElementById("song-tom").value.toLowerCase().trim(); renderSearchDropdown("dropdown-tom-constants", getAllTomConstants().filter(t => !q || t.toLowerCase().includes(q)), "selectTomConstant"); }
+    function selectTomConstant(val) { document.getElementById("song-tom").value = val; document.getElementById("dropdown-tom-constants").classList.add("hidden"); }
+    function filterDifConstants() { const q = document.getElementById("song-dificuldade").value.toLowerCase().trim(); renderSearchDropdown("dropdown-dif-constants", (sheetConstants.dificuldades || ["Baixa", "Média", "Alta"]).filter(d => !q || d.toLowerCase().includes(q)), "selectDifConstant"); }
+    function selectDifConstant(val) { document.getElementById("song-dificuldade").value = val; document.getElementById("dropdown-dif-constants").classList.add("hidden"); }
+
+    function renderCategoryConstantPills() {
+      const q = (document.getElementById("search-cat-constant").value || "").toLowerCase().trim();
+      const currentTags = parseTags(document.getElementById("song-categoria").value);
+      document.getElementById("category-constant-pills").innerHTML = getAllCategoryConstants().filter(c => !q || c.toLowerCase().includes(q)).map(cat => {
+        const active = currentTags.includes(cat);
+        return `<button type="button" onclick="toggleCategoryConstantOnSong('${cat.replace(/'/g, "\\'")}')" class="text-[11px] px-2.5 py-0.5 rounded-full border transition font-medium ${active ? "bg-indigo-600 text-white border-indigo-400" : "bg-slate-900 text-slate-300 border-slate-700"}">${active ? '✓ ' : '+ '}${cat}</button>`;
+      }).join("");
+    }
+    function toggleCategoryConstantOnSong(cat) {
+      const inp = document.getElementById("song-categoria");
+      let tags = parseTags(inp.value);
+      tags = tags.includes(cat) ? tags.filter(t => t !== cat) : [...tags, cat];
+      inp.value = tags.join(", "); updateTagPreview(); renderCategoryConstantPills();
+    }
+
+    function filterCultoConstants() { const q = document.getElementById("rep-culto").value.toLowerCase().trim(); renderSearchDropdown("dropdown-culto-constants", getAllCultoConstants().filter(c => !q || c.toLowerCase().includes(q)), "selectCultoConstant"); }
+    function selectCultoConstant(val) { document.getElementById("rep-culto").value = val; document.getElementById("dropdown-culto-constants").classList.add("hidden"); }
+    function filterMomentoConstants() { const q = document.getElementById("rep-item-momento").value.toLowerCase().trim(); renderSearchDropdown("dropdown-momento-constants", getAllMomentoConstants().filter(m => !q || m.toLowerCase().includes(q)), "selectMomentoConstant"); }
+    function selectMomentoConstant(val) { document.getElementById("rep-item-momento").value = val; document.getElementById("dropdown-momento-constants").classList.add("hidden"); }
+
+    function filterRepSongsDropdown() {
+      const q = document.getElementById("rep-item-song-search").value.toLowerCase().trim();
+      const drop = document.getElementById("dropdown-rep-songs");
+      const matched = songs.filter(s => !q || (s.musica && s.musica.toLowerCase().includes(q)) || (s.autor && s.autor.toLowerCase().includes(q)) || (s.tom && s.tom.toLowerCase().includes(q))).slice(0, 60);
+      if (matched.length === 0) { drop.innerHTML = `<div class="px-3 py-2 text-xs text-slate-400">Nenhuma música encontrada</div>`; drop.classList.remove("hidden"); return; }
+      drop.innerHTML = matched.map(s => `<button type="button" onclick="selectSongForRepertorio(${s.id})" class="w-full text-left px-3 py-2 hover:bg-amber-600/25 flex items-center justify-between gap-2"><div class="min-w-0"><div class="text-xs font-bold text-white truncate">${s.musica}</div><div class="text-[11px] text-slate-400 truncate">${s.autor || "DOXA"}</div></div><span class="shrink-0 px-2 py-0.5 rounded bg-slate-800 text-amber-400 font-bold text-[11px]">${s.tom || "-"}</span></button>`).join("");
+      drop.classList.remove("hidden");
+    }
+    function selectSongForRepertorio(songId) {
+      const s = songs.find(item => item.id === Number(songId));
+      if (!s) return;
+      document.getElementById("rep-item-song-id").value = s.id;
+      document.getElementById("rep-item-song-search").value = `${s.musica} (${s.autor || "DOXA"}) - Tom: ${s.tom || "-"}`;
+      document.getElementById("dropdown-rep-songs").classList.add("hidden");
+    }
+    function clearRepSongSearch() { document.getElementById("rep-item-song-id").value = ""; document.getElementById("rep-item-song-search").value = ""; filterRepSongsDropdown(); }
+
+    function enterApplication(targetTab = null) {
+      const landing = document.getElementById("landing-screen");
+      landing.classList.add("opacity-0", "pointer-events-none");
+      setTimeout(() => landing.classList.add("hidden"), 400);
+      if (targetTab) switchTab(targetTab);
+    }
+    function showLandingScreen() {
+      const landing = document.getElementById("landing-screen");
+      landing.classList.remove("hidden");
+      setTimeout(() => landing.classList.remove("opacity-0", "pointer-events-none"), 10);
+    }
+    function applyCustomLogoIfAvailable(logoUrl) {
+      const urlToUse = URL_FIXA_DA_LOGO || logoUrl || "";
+      if (!urlToUse || !urlToUse.startsWith("http")) return;
+      const imgEl = document.getElementById("landing-custom-logo");
+      const svgEl = document.getElementById("landing-vector-logo");
+      imgEl.onload = function() { svgEl.classList.add("hidden"); imgEl.classList.remove("hidden"); };
+      imgEl.src = urlToUse;
+    }
+
+    function handleAdminButtonClick() {
+      if (isAdmin) { isAdmin = false; updateAdminUI(); renderSongs(); renderRepertorios(); return; }
+      document.getElementById("admin-pin-input").value = "";
+      document.getElementById("admin-pin-error").classList.add("hidden");
+      document.getElementById("admin-modal").classList.remove("hidden");
+      document.getElementById("admin-modal").classList.add("flex");
+    }
+    function closeAdminModal() { document.getElementById("admin-modal").classList.add("hidden"); document.getElementById("admin-modal").classList.remove("flex"); }
+    function submitAdminPin(e) {
+      e.preventDefault();
+      if (document.getElementById("admin-pin-input").value.trim().toLowerCase() === ADMIN_PIN.toLowerCase()) {
+        isAdmin = true; closeAdminModal(); updateAdminUI(); renderSongs(); renderRepertorios();
+      } else document.getElementById("admin-pin-error").classList.remove("hidden");
+    }
+
+    function updateAdminUI() {
+      const icon = document.getElementById("admin-lock-icon");
+      const label = document.getElementById("admin-lock-label");
+      const btnNewSong = document.getElementById("btn-new-song");
+      const btnNewRep = document.getElementById("btn-new-rep");
+      const btnNewRepInline = document.getElementById("btn-new-rep-inline");
+      const dIcon = document.getElementById("drawer-admin-icon");
+      const dLabel = document.getElementById("drawer-admin-label");
+
+      if (isAdmin) {
+        icon.className = "fa-solid fa-lock-open text-emerald-400"; label.textContent = "Admin Ativo";
+        btnNewSong.classList.remove("hidden"); btnNewSong.classList.add("flex");
+        btnNewRep.classList.remove("hidden"); btnNewRep.classList.add("flex");
+        if (btnNewRepInline) { btnNewRepInline.classList.remove("hidden"); btnNewRepInline.classList.add("inline-flex"); }
+        if (dIcon) dIcon.className = "fa-solid fa-lock-open text-emerald-400";
+        if (dLabel) dLabel.textContent = "Admin Ativo (Sair)";
+      } else {
+        icon.className = "fa-solid fa-lock text-amber-400"; label.textContent = "Admin";
+        btnNewSong.classList.add("hidden"); btnNewSong.classList.remove("flex");
+        btnNewRep.classList.add("hidden"); btnNewRep.classList.remove("flex");
+        if (btnNewRepInline) { btnNewRepInline.classList.add("hidden"); btnNewRepInline.classList.remove("inline-flex"); }
+        if (dIcon) dIcon.className = "fa-solid fa-lock text-amber-400";
+        if (dLabel) dLabel.textContent = "Desbloquear Admin";
+      }
+    }
+
+    function toggleMobileFilters() { document.getElementById("filters-panel").classList.toggle("hidden"); }
+    function parseTags(str) { return str ? String(str).split(/[,;/]+/).map(t => t.trim()).filter(Boolean) : []; }
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => {}); });
+    }
+
+    updateNetworkPill();
+    applyCustomLogoIfAvailable("");
+    updateAdminUI();
+    syncFromGoogleSheet();
+  </script>
+</body>
+</html>

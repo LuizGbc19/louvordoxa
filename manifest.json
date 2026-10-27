@@ -1,0 +1,17 @@
+{
+  "name": "DOXA — Equipe de Louvor e Adoração",
+  "short_name": "DOXA",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#05070e",
+  "theme_color": "#05070e",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "Logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
