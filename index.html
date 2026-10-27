@@ -27,6 +27,12 @@
 </head>
 <body class="min-h-screen flex flex-col relative">
 
+  <!-- AVISO FLUTUANTE DE DOWNLOAD DE CIFRA INDIVIDUAL -->
+  <div id="single-download-toast" class="fixed bottom-5 right-5 z-50 hidden bg-slate-900 border border-emerald-500/50 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-xs font-bold">
+    <i class="fa-solid fa-spinner fa-spin text-emerald-400 text-base" id="single-download-icon"></i>
+    <span id="single-download-text">Preparando download da cifra em PDF...</span>
+  </div>
+
   <!-- TELA INICIAL -->
   <div id="landing-screen" class="fixed inset-0 z-50 bg-black flex flex-col items-center justify-between p-6 select-none transition-opacity duration-500">
     <div class="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
@@ -36,13 +42,14 @@
       <span id="network-mode-pill" class="text-[11px] px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-emerald-400 font-semibold">
         <i class="fa-solid fa-wifi mr-1"></i>Online
       </span>
-      <span id="landing-status-pill" class="text-[11px] px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 font-medium">
+      <button onclick="openConnectionModal()" id="landing-status-pill" class="text-[11px] px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 font-medium hover:border-zinc-600">
         <i class="fa-solid fa-spinner fa-spin mr-1"></i>Sincronizando...
-      </span>
+      </button>
     </div>
     <div class="flex flex-col items-center justify-center text-center z-10 max-w-md w-full my-auto space-y-8">
       <div class="relative w-60 h-60 sm:w-72 sm:h-72 flex items-center justify-center">
-        <svg viewBox="0 0 500 500" class="w-full h-full drop-shadow-[0_0_25px_rgba(255,255,255,0.15)]" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <img id="landing-custom-logo" src="" alt="DOXA Logo" class="hidden w-full h-full object-contain drop-shadow-[0_0_25px_rgba(255,255,255,0.15)]" />
+        <svg id="landing-vector-logo" viewBox="0 0 500 500" class="w-full h-full drop-shadow-[0_0_25px_rgba(255,255,255,0.15)]" fill="none" xmlns="http://www.w3.org/2000/svg">
           <g stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round">
             <path d="M 145 360 C 85 290, 80 175, 145 110 C 210 45, 310 50, 365 115 C 420 180, 415 295, 355 360" stroke-width="14" />
             <path d="M 120 325 C 70 240, 95 130, 180 85 C 265 40, 360 75, 395 160 C 425 235, 395 320, 340 365" stroke-width="11" />
@@ -75,7 +82,7 @@
         </div>
       </div>
     </div>
-    <div class="text-[11px] text-zinc-600 tracking-wider uppercase font-semibold z-10">DOXA • Louvor e Adoração • v2.6 Pro</div>
+    <div class="text-[11px] text-zinc-600 tracking-wider uppercase font-semibold z-10">DOXA • Louvor e Adoração • v2.7 Pro</div>
   </div>
 
   <!-- MENU LATERAL (☰) -->
@@ -106,10 +113,11 @@
         </button>
         <button onclick="switchTabFromDrawer('vs')" id="drawer-tab-vs" class="w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition flex items-center justify-between text-slate-300 hover:bg-slate-800">
           <span class="flex items-center gap-3"><i class="fa-solid fa-sliders w-5 text-center text-purple-400"></i><span>VS / Estudo L/R</span></span>
-          <span id="drawer-badge-vs" class="text-[11px] px-2 py-0.5 rounded-full bg-purple-900/60 text-purple-200 font-bold">2.6</span>
+          <span id="drawer-badge-vs" class="text-[11px] px-2 py-0.5 rounded-full bg-purple-900/60 text-purple-200 font-bold">2.7</span>
         </button>
         <button onclick="switchTabFromDrawer('pedidos')" id="drawer-tab-pedidos" class="w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition flex items-center justify-between text-slate-300 hover:bg-slate-800">
           <span class="flex items-center gap-3"><i class="fa-solid fa-inbox w-5 text-center text-pink-400"></i><span>Pedidos (Formulário)</span></span>
+          <span id="drawer-badge-pedidos" class="text-[11px] px-2 py-0.5 rounded-full bg-pink-900/60 text-pink-200 font-bold">Form</span>
         </button>
         <button onclick="switchTabFromDrawer('relatorios')" id="drawer-tab-relatorios" class="w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition flex items-center justify-between text-slate-300 hover:bg-slate-800">
           <span class="flex items-center gap-3"><i class="fa-solid fa-chart-pie w-5 text-center text-cyan-400"></i><span>Relatórios</span></span>
@@ -118,6 +126,9 @@
           <button onclick="closeSideDrawer(); openOfflineManagerModal();" class="w-full px-3.5 py-2 rounded-xl text-left text-xs font-bold text-teal-300 hover:bg-slate-800 flex items-center justify-between">
             <span class="flex items-center gap-3"><i class="fa-solid fa-cloud-arrow-down w-5 text-center"></i><span>Memória Offline</span></span>
             <span id="drawer-offline-count" class="text-[10px] px-2 py-0.5 rounded-full bg-teal-900/60 text-teal-200">Ativo</span>
+          </button>
+          <button onclick="closeSideDrawer(); openConnectionModal();" class="w-full px-3.5 py-2 rounded-xl text-left text-xs font-semibold text-amber-300 hover:bg-slate-800 flex items-center gap-3">
+            <i class="fa-solid fa-plug w-5 text-center"></i><span>Configurar Link da Planilha</span>
           </button>
           <button onclick="closeSideDrawer(); showLandingScreen();" class="w-full px-3.5 py-2 rounded-xl text-left text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-3">
             <i class="fa-solid fa-house w-5 text-center"></i><span>Tela Inicial (Logo)</span>
@@ -143,22 +154,22 @@
         <button onclick="openSideDrawer()" class="w-10 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center transition shrink-0 shadow" title="Abrir Menu">
           <i class="fa-solid fa-bars text-base"></i>
         </button>
-        <button onclick="openSideDrawer()" class="flex items-center gap-2 text-left min-w-0">
-          <div>
-            <div class="flex items-center gap-1.5">
-              <span class="text-base sm:text-xl font-black tracking-wider text-white font-doxa leading-none">DOXA</span>
-              <span id="active-tab-pill" class="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700 text-indigo-300 font-bold uppercase">Músicas</span>
-            </div>
-            <span id="status-badge" class="text-[10px] text-emerald-400 font-medium block truncate">Conectando...</span>
+        <div class="min-w-0">
+          <div class="flex items-center gap-1.5">
+            <button onclick="openSideDrawer()" class="text-base sm:text-xl font-black tracking-wider text-white font-doxa leading-none">DOXA</button>
+            <span id="active-tab-pill" class="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700 text-indigo-300 font-bold uppercase">Músicas</span>
           </div>
-        </button>
+          <button onclick="openConnectionModal()" id="status-badge" class="text-[10px] text-emerald-400 font-medium block truncate text-left hover:underline" title="Clique para verificar ou configurar o link da planilha">
+            Conectando...
+          </button>
+        </div>
       </div>
 
       <nav class="hidden xl:flex items-center gap-1 bg-slate-800/90 p-1 rounded-xl border border-slate-700/70">
         <button onclick="switchTab('musicas')" id="tab-musicas" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 bg-indigo-600 text-white shadow"><i class="fa-solid fa-music"></i><span>Músicas</span><span id="badge-total-musicas" class="text-xs px-1.5 py-0.5 rounded-full bg-indigo-800 text-indigo-100">0</span></button>
         <button onclick="switchTab('repertorios')" id="tab-repertorios" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-calendar-days"></i><span>Repertórios</span><span id="badge-total-repertorios" class="text-xs px-1.5 py-0.5 rounded-full bg-slate-700 text-slate-300">0</span></button>
         <button onclick="switchTab('palco')" id="tab-palco" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-guitar"></i><span>Modo Palco</span></button>
-        <button onclick="switchTab('vs')" id="tab-vs" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-sliders"></i><span>VS / Estudo</span><span id="badge-total-vs" class="text-xs px-1.5 py-0.5 rounded-full bg-purple-900/60 text-purple-200">2.6</span></button>
+        <button onclick="switchTab('vs')" id="tab-vs" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-sliders"></i><span>VS / Estudo</span><span id="badge-total-vs" class="text-xs px-1.5 py-0.5 rounded-full bg-purple-900/60 text-purple-200">2.7</span></button>
         <button onclick="switchTab('pedidos')" id="tab-pedidos" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-inbox"></i><span>Pedidos</span></button>
         <button onclick="switchTab('relatorios')" id="tab-relatorios" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-chart-pie"></i><span>Relatórios</span></button>
       </nav>
@@ -166,7 +177,7 @@
       <div class="flex items-center gap-1.5 shrink-0">
         <button onclick="openOfflineManagerModal()" class="px-2.5 py-2 rounded-xl bg-teal-500/15 hover:bg-teal-500/25 border border-teal-500/30 text-teal-300 text-xs font-bold flex items-center gap-1.5" title="Memória Offline"><i class="fa-solid fa-cloud-arrow-down"></i><span class="hidden sm:inline">Offline</span></button>
         <button onclick="handleAdminButtonClick()" id="btn-admin-lock" class="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5"><i class="fa-solid fa-lock text-amber-400" id="admin-lock-icon"></i><span id="admin-lock-label" class="hidden sm:inline">Admin</span></button>
-        <button onclick="syncFromGoogleSheet(true)" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-emerald-400 flex items-center justify-center"><i class="fa-solid fa-arrows-rotate text-xs" id="sync-icon"></i></button>
+        <button onclick="syncFromGoogleSheet(true)" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-emerald-400 flex items-center justify-center" title="Sincronizar Agora"><i class="fa-solid fa-arrows-rotate text-xs" id="sync-icon"></i></button>
         <button onclick="openSongModal()" id="btn-new-song" class="hidden px-2.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold items-center gap-1.5"><i class="fa-solid fa-plus"></i><span class="hidden sm:inline">Nova Música</span></button>
         <button onclick="openRepertorioModal()" id="btn-new-rep" class="hidden px-2.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold items-center gap-1.5"><i class="fa-solid fa-calendar-plus"></i><span class="hidden sm:inline">Novo Repertório</span></button>
       </div>
@@ -221,7 +232,7 @@
               <tr class="bg-slate-800/70 text-slate-400 text-xs uppercase border-b border-slate-800">
                 <th class="py-3 px-4">Música / Autor</th><th class="py-3 px-3 text-center">Tom</th><th class="py-3 px-3 text-center">Tempo</th>
                 <th class="py-3 px-4">Categorias (Tags)</th><th class="py-3 px-3 text-center">Dificuldade</th><th class="py-3 px-4">Referência Bíblica</th>
-                <th class="py-3 px-3 text-center">Vezes</th><th class="py-3 px-4 text-right">Cifras & Ações</th>
+                <th class="py-3 px-3 text-center">Vezes</th><th class="py-3 px-4 text-right">Cifras, Download & Ações</th>
               </tr>
             </thead>
             <tbody id="songs-tbody" class="divide-y divide-slate-800/70 text-sm"></tbody>
@@ -275,7 +286,7 @@
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div>
           <h2 class="text-base sm:text-lg font-bold text-white">Modo Palco & Cifras (Online / Offline)</h2>
-          <p class="text-xs text-slate-400">Baixe o culto para abrir as cifras instantaneamente no palco mesmo sem internet</p>
+          <p class="text-xs text-slate-400">Baixe cada cifra individualmente ou o culto inteiro para ler mesmo sem internet</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <select id="palco-select-repertorio" onchange="renderPalco()" class="flex-1 sm:flex-initial px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm text-white font-semibold"></select>
@@ -283,7 +294,7 @@
             <i class="fa-solid fa-cloud-arrow-down"></i><span>Baixar Culto Offline</span>
           </button>
           <button onclick="toggleAllStageChords()" class="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-indigo-300 text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-eye"></i><span>Cifras</span></button>
-          <button onclick="gerarPdfRepertorioAtualPalco()" class="px-3.5 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-file-pdf"></i><span>PDF</span></button>
+          <button onclick="gerarPdfRepertorioAtualPalco()" class="px-3.5 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-file-pdf"></i><span>PDF Mesclado</span></button>
           <button onclick="compartilharWhatsAppPalco()" class="px-3.5 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5"><i class="fa-brands fa-whatsapp"></i><span>WhatsApp</span></button>
         </div>
       </div>
@@ -297,7 +308,7 @@
           <div class="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-300 text-lg"><i class="fa-solid fa-sliders"></i></div>
           <div>
             <h2 class="text-base sm:text-lg font-extrabold text-white">Estúdio VS & Multitracks (L / R Pan Mode)</h2>
-            <p class="text-xs text-slate-400">Defina a saída de som (Esquerdo L ou Direito R) para o seu fone/mesa de som</p>
+            <p class="text-xs text-slate-400">Defina a saída de som (Esquerdo L ou Direito R) e controle cada canal</p>
           </div>
         </div>
         <button onclick="loadVsFolders(true)" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-purple-300 text-xs font-bold flex items-center gap-1.5">
@@ -444,6 +455,27 @@
     </section>
 
   </main>
+
+  <!-- MODAL CONEXÃO COM A PLANILHA (CASO PRECISE CONFIGURAR A URL /EXEC NA TELA) -->
+  <div id="connection-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-xl w-full p-5 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-white"><i class="fa-solid fa-plug text-emerald-400 mr-2"></i>Conexão com a Planilha DOXA</h3>
+        <button onclick="closeConnectionModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div class="space-y-3 text-xs text-slate-300">
+        <div>
+          <label class="block font-bold text-emerald-400 uppercase mb-1">URL do App da Web (Apps Script /exec)</label>
+          <input type="url" id="input-script-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500" />
+        </div>
+        <div id="sync-feedback" class="hidden p-3 rounded-xl text-xs font-semibold"></div>
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+        <button onclick="closeConnectionModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Fechar</button>
+        <button onclick="saveConnectionSettings()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">Salvar e Sincronizar</button>
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL GERENCIADOR OFFLINE -->
   <div id="offline-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
@@ -621,20 +653,9 @@
     </div>
   </div>
 
-  <!-- MODAL PREVIEW INDIVIDUAL VS -->
-  <div id="vs-preview-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-5 space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h3 id="vs-preview-title" class="text-base font-bold text-white">-</h3>
-        <button onclick="closeVsPreviewModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <iframe id="vs-preview-iframe" src="" class="w-full h-28 rounded-xl border border-slate-700 bg-black" allow="autoplay"></iframe>
-    </div>
-  </div>
-
   <script>
     // =========================================================================================
-    // CONFIGURAÇÕES FIXAS DO APLICATIVO:
+    // CONFIGURAÇÕES FIXAS DO APLICATIVO (COLE SUA URL /EXEC ABAIXO):
     // =========================================================================================
     const URL_FIXA_DO_SCRIPT = "https://script.google.com/macros/s/AKfycbxHqR0nh7ngy0NhlKdqNq6lCrOCjV06mlQeXBoI5qXA1hwR4D8JBX1rj1NFQaBaVyyKzA/exec";
     const URL_PLANILHA_FORMULARIO = "https://docs.google.com/spreadsheets/d/1DiyYzGgMiCDM5b191tFreFjP_vAo0ROHEqxbiBGdNlQ/edit?usp=sharing";
@@ -646,7 +667,12 @@
       window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
     }
 
-    let scriptUrl = (URL_FIXA_DO_SCRIPT && URL_FIXA_DO_SCRIPT.startsWith("http")) ? URL_FIXA_DO_SCRIPT.trim() : "";
+    function getInitialScriptUrl() {
+      if (URL_FIXA_DO_SCRIPT && URL_FIXA_DO_SCRIPT.startsWith("http")) return URL_FIXA_DO_SCRIPT.trim();
+      try { return localStorage.getItem("doxa_script_url") || ""; } catch (e) { return ""; }
+    }
+
+    let scriptUrl = getInitialScriptUrl();
     let formSheetUrl = (URL_PLANILHA_FORMULARIO && URL_PLANILHA_FORMULARIO.startsWith("http")) ? URL_PLANILHA_FORMULARIO.trim() : "";
     let fixedFolderUrl = "";
     let songs = [];
@@ -671,7 +697,9 @@
     let offlineSavedChordKeys = new Set();
     let offlineSavedVsRefs = new Set();
 
+    // ============================================================================
     // BANCO DE DADOS OFFLINE (INDEXEDDB)
+    // ============================================================================
     const DB_NAME = "DoxaOfflineDB_v1";
     let dbPromise = null;
 
@@ -790,6 +818,63 @@
       }
     }
 
+    // ============================================================================
+    // DOWNLOAD INDIVIDUAL DE CADA CIFRA EM PDF (CONVERTE DOCX/PDF E BAIXA NA HORA)
+    // ============================================================================
+    async function baixarCifraIndividual(musica, autor, fileId, viewUrl) {
+      const toast = document.getElementById("single-download-toast");
+      const icon = document.getElementById("single-download-icon");
+      const text = document.getElementById("single-download-text");
+
+      toast.classList.remove("hidden");
+      icon.className = "fa-solid fa-spinner fa-spin text-emerald-400 text-base";
+      text.textContent = `Baixando PDF: ${musica}...`;
+
+      try {
+        const key = normalizeSongKey(musica);
+        let pdfBase64 = await dbGet("chords", key);
+
+        if (!pdfBase64 && navigator.onLine && scriptUrl) {
+          const itemPayload = [{ musica: musica, autor: autor || "", fileId: fileId || "", cifraDoxa: viewUrl || "" }];
+          const res = await fetch(`${scriptUrl}?action=obterPdfsRepertorio&itens=${encodeURIComponent(JSON.stringify(itemPayload))}`);
+          const data = await res.json();
+          if (data && Array.isArray(data.arquivos) && data.arquivos[0] && data.arquivos[0].encontrado && data.arquivos[0].pdfBase64) {
+            pdfBase64 = data.arquivos[0].pdfBase64;
+            await dbPut("chords", key, pdfBase64);
+            offlineSavedChordKeys.add(key);
+            await refreshOfflineKeysCache();
+          }
+        }
+
+        if (pdfBase64) {
+          const bytes = base64ToUint8Array(pdfBase64);
+          const blob = new Blob([bytes], { type: "application/pdf" });
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(blob);
+          link.download = `Cifra - ${musica.replace(/[\\/:*?"<>|]/g, "")}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          icon.className = "fa-solid fa-circle-check text-emerald-400 text-base";
+          text.textContent = `Download concluído: ${musica}.pdf`;
+          setTimeout(() => toast.classList.add("hidden"), 2500);
+          return;
+        }
+
+        // Caso não consiga converter via API, abre o link direto de download do Drive
+        if (fileId) {
+          window.open(`https://drive.google.com/uc?export=download&id=${fileId}`, "_blank");
+        } else if (viewUrl && viewUrl.startsWith("http")) {
+          window.open(viewUrl, "_blank");
+        }
+        toast.classList.add("hidden");
+      } catch (err) {
+        if (fileId) window.open(`https://drive.google.com/uc?export=download&id=${fileId}`, "_blank");
+        toast.classList.add("hidden");
+      }
+    }
+
     // MENU LATERAL (☰)
     function openSideDrawer() { document.getElementById("drawer-backdrop").classList.remove("hidden"); document.getElementById("side-drawer").classList.remove("-translate-x-full"); }
     function closeSideDrawer() { document.getElementById("drawer-backdrop").classList.add("hidden"); document.getElementById("side-drawer").classList.add("-translate-x-full"); }
@@ -803,7 +888,7 @@
     let activeVsTracks = [];
     let vsTracksState = {};
     let vsAudioCtx = null;
-    let vsPanMode = "CENTER"; // "L", "R", "CENTER"
+    let vsPanMode = "CENTER";
     let vsIsPlaying = false;
     let vsMaxDuration = 0;
     let vsPlaybackRate = 1;
@@ -844,7 +929,7 @@
         listEl.innerHTML = `<div class="text-center py-8 text-xs text-slate-400"><i class="fa-solid fa-spinner fa-spin text-purple-400 text-lg mb-2"></i><p>Buscando pastas...</p></div>`;
       }
 
-      if (!navigator.onLine) { if (icon) icon.classList.remove("fa-spin"); return; }
+      if (!navigator.onLine || !scriptUrl) { if (icon) icon.classList.remove("fa-spin"); return; }
       try {
         const res = await fetch(`${scriptUrl}?action=listarPastasVs&t=${Date.now()}`);
         const data = await res.json();
@@ -882,7 +967,7 @@
 
       try {
         let faixasData = await dbGet("catalog", "vsFolder_" + folderRef);
-        if (navigator.onLine) {
+        if (navigator.onLine && scriptUrl) {
           const res = await fetch(`${scriptUrl}?action=listarFaixasVs&folderRef=${encodeURIComponent(folderRef)}`);
           const data = await res.json();
           if (data && data.status === "ok" && Array.isArray(data.faixas)) {
@@ -980,8 +1065,11 @@
         }
 
         if (!st.htmlAudio) {
-          const audio = new Audio(blobUrl);
-          audio.preload = "auto"; audio.playbackRate = vsPlaybackRate;
+          const audio = new Audio();
+          audio.preload = "auto";
+          audio.playsInline = true;
+          audio.src = blobUrl;
+          audio.playbackRate = vsPlaybackRate;
           audio.onloadedmetadata = () => {
             if (audio.duration && audio.duration > vsMaxDuration) {
               vsMaxDuration = audio.duration;
@@ -990,7 +1078,6 @@
           };
           st.htmlAudio = audio;
 
-          // Se tiver Web Audio API ativo, conecta o áudio através de um StereoPannerNode para L/R Pan Mode
           if (vsAudioCtx && typeof vsAudioCtx.createMediaElementSource === "function") {
             try {
               const source = vsAudioCtx.createMediaElementSource(audio);
@@ -1021,6 +1108,7 @@
     }
 
     async function loadAllVsTracksParallel(autoPlayWhenReady = false, persistOffline = false) {
+      ensureAudioContext();
       const wrap = document.getElementById("vs-loading-bar-wrap");
       const bar = document.getElementById("vs-loading-bar");
       const txt = document.getElementById("vs-loading-text");
@@ -1102,8 +1190,7 @@
         const silence = st.muted || (anySolo && !st.solo);
         const targetGain = silence ? 0 : st.volume;
         st.htmlAudio.volume = Math.min(1, Math.max(0, targetGain));
-
-        // Aplica o Panning (L, R ou Center) se suportado pelo navegador
+        if (st.gainNode && vsAudioCtx) st.gainNode.gain.setTargetAtTime(targetGain, vsAudioCtx.currentTime, 0.015);
         if (st.panNode) {
           if (vsPanMode === "L") st.panNode.pan.value = -1;
           else if (vsPanMode === "R") st.panNode.pan.value = 1;
@@ -1154,21 +1241,9 @@
       vsTracksState = {}; vsMaxDuration = 0;
       document.getElementById("vs-total-duration").textContent = "00:00";
     }
-    function openVsQuickPreview(title, previewUrl) {
-      if (vsIsPlaying) toggleMasterVsPlay();
-      document.getElementById("vs-preview-title").textContent = title;
-      document.getElementById("vs-preview-iframe").src = previewUrl;
-      document.getElementById("vs-preview-modal").classList.remove("hidden");
-      document.getElementById("vs-preview-modal").classList.add("flex");
-    }
-    function closeVsPreviewModal() {
-      document.getElementById("vs-preview-iframe").src = "";
-      document.getElementById("vs-preview-modal").classList.add("hidden");
-      document.getElementById("vs-preview-modal").classList.remove("flex");
-    }
 
     // ============================================================================
-    // 2. WHATSAPP COM AS 2 OPÇÕES (HIPERLINKS LIMPOS)
+    // 2. WHATSAPP COM AS 2 OPÇÕES
     // ============================================================================
     function buildWhatsAppText(rep, mode) {
       const dObj = parseRepDate(rep.dia);
@@ -1233,7 +1308,9 @@
     }
     function compartilharWhatsAppPalco() { const sel = document.getElementById("palco-select-repertorio"); if (sel && sel.value) openWhatsAppModal(Number(sel.value), "equipe"); }
 
-    // OFFLINE E RELATÓRIOS
+    // ============================================================================
+    // 3. SALVAR CULTO OFFLINE & RENDERIZAR CIFRA EM CANVAS NO MODO PALCO
+    // ============================================================================
     async function salvarCultoOffline(repId) {
       const rep = repertorios.find(r => r.id === Number(repId));
       if (!rep) return;
@@ -1297,6 +1374,9 @@
       } catch (e) { container.innerHTML = `<div class="text-xs text-rose-400 p-3">Erro ao renderizar cifra offline.</div>`; }
     }
 
+    // ============================================================================
+    // 4. ABA DE PEDIDOS DE MÚSICAS
+    // ============================================================================
     function initPedidosTab() {
       const savedUrl = formSheetUrl || localStorage.getItem("doxa_form_sheet_url") || "";
       const inputEl = document.getElementById("input-form-sheet-url");
@@ -1344,6 +1424,9 @@
       document.getElementById("song-autor").value = autorNome || "";
     }
 
+    // ============================================================================
+    // 5. CATÁLOGO, BUSCA, REPERTÓRIOS, PALCO, CONEXÃO E SINCRONIZAÇÃO COMPLETA
+    // ============================================================================
     document.addEventListener("click", function(e) {
       [["song-autor", "dropdown-autor-constants"], ["song-tom", "dropdown-tom-constants"], ["song-dificuldade", "dropdown-dif-constants"], ["rep-culto", "dropdown-culto-constants"], ["rep-item-momento", "dropdown-momento-constants"], ["rep-item-song-search", "dropdown-rep-songs"]].forEach(([inputId, dropId]) => {
         const inp = document.getElementById(inputId); const drop = document.getElementById(dropId);
@@ -1424,8 +1507,31 @@
       if (!urlToUse || !urlToUse.startsWith("http")) return;
       const imgEl = document.getElementById("landing-custom-logo");
       const svgEl = document.getElementById("landing-vector-logo");
+      if (!imgEl || !svgEl) return;
       imgEl.onload = function() { svgEl.classList.add("hidden"); imgEl.classList.remove("hidden"); };
       imgEl.src = urlToUse;
+    }
+
+    function openConnectionModal() {
+      document.getElementById("input-script-url").value = scriptUrl;
+      document.getElementById("sync-feedback").classList.add("hidden");
+      document.getElementById("connection-modal").classList.remove("hidden");
+      document.getElementById("connection-modal").classList.add("flex");
+    }
+    function closeConnectionModal() {
+      document.getElementById("connection-modal").classList.add("hidden");
+      document.getElementById("connection-modal").classList.remove("flex");
+    }
+    async function saveConnectionSettings() {
+      const val = document.getElementById("input-script-url").value.trim();
+      if (!val) return;
+      scriptUrl = val;
+      try { localStorage.setItem("doxa_script_url", val); } catch (e) {}
+      const fb = document.getElementById("sync-feedback");
+      fb.classList.remove("hidden");
+      fb.className = "p-3 rounded-xl text-xs font-semibold bg-indigo-500/20 text-indigo-300";
+      fb.textContent = "Conectando e sincronizando com a planilha...";
+      await syncFromGoogleSheet(true);
     }
 
     function handleAdminButtonClick() {
@@ -1471,6 +1577,685 @@
 
     function toggleMobileFilters() { document.getElementById("filters-panel").classList.toggle("hidden"); }
     function parseTags(str) { return str ? String(str).split(/[,;/]+/).map(t => t.trim()).filter(Boolean) : []; }
+    function normalizeSongKey(str) { return str ? String(str).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "") : ""; }
+    function removeHymnPrefix(str) { return str ? String(str).replace(/^\s*\(\d+[a-z]?\)\s*[-–—]?\s*/i, "").replace(/^\s*\d{1,3}[a-z]?\s*[-–—]\s*/i, "") : ""; }
+    function extractHymnNumber(str) {
+      if (!str) return "";
+      const m1 = String(str).match(/^\s*\((\d+[a-z]?)\)/i);
+      if (m1 && m1[1]) return m1[1].toLowerCase();
+      const m2 = String(str).match(/^\s*(\d{1,3}[a-z]?)\s*[-–—]/i);
+      return (m2 && m2[1]) ? m2[1].toLowerCase() : "";
+    }
+
+    function findFullSongByName(musicaName) {
+      if (!musicaName || songs.length === 0) return null;
+      const targetKey = normalizeSongKey(musicaName);
+      if (!targetKey) return null;
+      const exact = songs.find(s => normalizeSongKey(s.musica) === targetKey);
+      if (exact) return exact;
+      const hymnNum = extractHymnNumber(musicaName);
+      if (hymnNum) {
+        const byHymn = songs.find(s => extractHymnNumber(s.musica) === hymnNum);
+        if (byHymn) return byHymn;
+      }
+      const targetNoHymn = normalizeSongKey(removeHymnPrefix(musicaName));
+      if (targetNoHymn) {
+        const exactNoHymn = songs.find(s => normalizeSongKey(removeHymnPrefix(s.musica)) === targetNoHymn);
+        if (exactNoHymn) return exactNoHymn;
+      }
+      const targetIsMedley = targetKey.startsWith("medley");
+      if (targetNoHymn.length >= 4) {
+        return songs.find(s => {
+          const sk = normalizeSongKey(removeHymnPrefix(s.musica));
+          if (targetIsMedley !== sk.startsWith("medley")) return false;
+          return sk.startsWith(targetNoHymn) || targetNoHymn.startsWith(sk);
+        }) || null;
+      }
+      return null;
+    }
+
+    function extractDirectFileId(url) {
+      if (!url) return "";
+      const u = String(url).trim();
+      if (u.includes("/spreadsheets/") || u.includes("/folders/") || u.includes("#gid=")) return "";
+      const m = u.match(/\/(?:file|document)\/d\/([a-zA-Z0-9_-]{20,})/);
+      return (m && m[1]) ? m[1] : "";
+    }
+
+    function getResolvedSongDetails(itemOrSong) {
+      const musicaName = itemOrSong ? itemOrSong.musica : "";
+      const catalogSong = findFullSongByName(musicaName) || {};
+      const fileId = catalogSong.fileId || (itemOrSong && itemOrSong.fileId) || extractDirectFileId(catalogSong.cifraDoxa || "") || extractDirectFileId(itemOrSong ? itemOrSong.cifraDoxa : "");
+      return {
+        musica: catalogSong.musica || musicaName || "Música sem título",
+        autor: catalogSong.autor || (itemOrSong && itemOrSong.autor) || "Autor não informado",
+        tom: catalogSong.tom || (itemOrSong && itemOrSong.tom) || "-",
+        tempo: catalogSong.tempo || (itemOrSong && itemOrSong.tempo) || "",
+        dificuldade: catalogSong.dificuldade || (itemOrSong && itemOrSong.dificuldade) || "",
+        vezes: catalogSong.vezes != null ? catalogSong.vezes : ((itemOrSong && itemOrSong.vezes) || 0),
+        categoria: catalogSong.categoria || (itemOrSong && itemOrSong.categoria) || "",
+        ref: catalogSong.ref || (itemOrSong && itemOrSong.ref) || "",
+        audio: catalogSong.audio || (itemOrSong && itemOrSong.audio) || "",
+        cifra: catalogSong.cifra || (itemOrSong && itemOrSong.cifra) || "",
+        hasFile: !!fileId,
+        fileId: fileId,
+        viewUrl: fileId ? `https://drive.google.com/file/d/${fileId}/view` : (fixedFolderUrl || "#"),
+        previewUrl: fileId ? `https://drive.google.com/file/d/${fileId}/preview` : ""
+      };
+    }
+
+    async function syncFromGoogleSheet(showModalFeedback = false) {
+      const icon = document.getElementById("sync-icon");
+      if (icon) icon.classList.add("fa-spin");
+      try {
+        await loadCatalogFromOfflineCache();
+        if (!scriptUrl || !scriptUrl.startsWith("http")) {
+          updateConnectionBadge(false, songs.length, false);
+          if (showModalFeedback) openConnectionModal();
+          return;
+        }
+        if (!navigator.onLine) {
+          updateConnectionBadge(songs.length > 0, songs.length, true);
+          return;
+        }
+        const res = await fetch(scriptUrl + "?t=" + Date.now());
+        const data = await res.json();
+        if (data && Array.isArray(data.songs)) {
+          songs = data.songs;
+          if (data.folderUrl) fixedFolderUrl = data.folderUrl;
+          if (data.logoUrl) applyCustomLogoIfAvailable(data.logoUrl);
+          if (data.constantes) sheetConstants = Object.assign(sheetConstants, data.constantes);
+          if (Array.isArray(data.repertorios)) repertorios = data.repertorios;
+          await dbPut("catalog", "mainData", {
+            songs: songs,
+            repertorios: repertorios,
+            constantes: sheetConstants,
+            folderUrl: fixedFolderUrl,
+            updatedAt: Date.now()
+          });
+          await refreshOfflineKeysCache();
+          renderSongs();
+          renderRepertorios();
+          renderRelatorios();
+          updateConnectionBadge(true, songs.length, false);
+          const fb = document.getElementById("sync-feedback");
+          if (fb && showModalFeedback) {
+            fb.classList.remove("hidden");
+            fb.className = "p-3 rounded-xl text-xs font-semibold bg-emerald-500/20 text-emerald-300";
+            fb.textContent = `Sincronizado com sucesso! ${songs.length} músicas carregadas.`;
+            setTimeout(() => closeConnectionModal(), 1000);
+          }
+        }
+      } catch (err) {
+        updateConnectionBadge(songs.length > 0, songs.length, true);
+        const fb = document.getElementById("sync-feedback");
+        if (fb && showModalFeedback) {
+          fb.classList.remove("hidden");
+          fb.className = "p-3 rounded-xl text-xs font-semibold bg-rose-500/20 text-rose-300";
+          fb.textContent = "Erro ao conectar. Verifique se a URL /exec está correta.";
+        }
+      } finally {
+        if (icon) icon.classList.remove("fa-spin");
+      }
+    }
+
+    async function pushToGoogleSheet(payload) {
+      if (!scriptUrl) return;
+      try {
+        await fetch(scriptUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
+      } catch (e) {}
+    }
+
+    function updateConnectionBadge(connected, count, isOfflineCache = false) {
+      const badge = document.getElementById("status-badge");
+      const landingPill = document.getElementById("landing-status-pill");
+      if (connected && count > 0) {
+        badge.className = `text-[10px] ${isOfflineCache ? 'text-amber-300' : 'text-emerald-400'} font-semibold block truncate text-left hover:underline`;
+        badge.innerHTML = `<i class="fa-solid ${isOfflineCache ? 'fa-bolt' : 'fa-circle-check'} mr-1"></i>${count} músicas (${isOfflineCache ? 'Memória Offline' : 'Sincronizadas'})`;
+        if (landingPill) {
+          landingPill.className = "text-[11px] px-3 py-1 rounded-full bg-zinc-900 border border-emerald-500/30 text-emerald-400 font-semibold";
+          landingPill.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i>${count} músicas prontas`;
+        }
+      } else {
+        badge.className = "text-[10px] text-amber-300 font-bold block truncate text-left underline";
+        badge.innerHTML = `<i class="fa-solid fa-plug mr-1"></i>Clique aqui p/ colar a URL /exec`;
+        if (landingPill) {
+          landingPill.className = "text-[11px] px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-semibold";
+          landingPill.innerHTML = `<i class="fa-solid fa-plug mr-1"></i>Configurar Planilha`;
+        }
+      }
+    }
+
+    function populateFilterOptions() {
+      const tagSelect = document.getElementById("filter-tag");
+      const currentTag = tagSelect.value;
+      const tags = getAllCategoryConstants();
+      tagSelect.innerHTML = `<option value="">Todas as Categorias (${tags.length} Tags)</option>` + tags.map(t => `<option value="${t}">${t}</option>`).join("");
+      tagSelect.value = currentTag;
+
+      const tomSelect = document.getElementById("filter-tom");
+      const currentTom = tomSelect.value;
+      tomSelect.innerHTML = `<option value="">Todos os Tons</option>` + getAllTomConstants().map(t => `<option value="${t}">Tom: ${t}</option>`).join("");
+      tomSelect.value = currentTom;
+
+      document.getElementById("tag-cloud").innerHTML = tags.map(t => {
+        const active = currentTag === t;
+        return `<button onclick="selectTagFilter('${t.replace(/'/g, "\\'")}')" class="shrink-0 text-xs px-2.5 py-0.5 rounded-full border transition font-medium ${active ? "bg-indigo-600 text-white border-indigo-400" : "bg-slate-800 text-slate-300 border-slate-700"}">${t}</button>`;
+      }).join("");
+    }
+
+    function selectTagFilter(tag) { const tagSelect = document.getElementById("filter-tag"); tagSelect.value = tagSelect.value === tag ? "" : tag; resetPageAndRenderSongs(); }
+    function clearFilters() { document.getElementById("search-input").value = ""; document.getElementById("filter-tag").value = ""; document.getElementById("filter-tom").value = ""; document.getElementById("filter-dificuldade").value = ""; resetPageAndRenderSongs(); }
+    function resetPageAndRenderSongs() { currentPage = 1; renderSongs(); }
+    function changePage(delta) { currentPage += delta; renderSongs(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+    function changePageSize() { pageSize = Number(document.getElementById("page-size-select").value) || 40; currentPage = 1; renderSongs(); }
+
+    function renderSongs() {
+      populateFilterOptions();
+      const query = document.getElementById("search-input").value.toLowerCase().trim();
+      const selectedTag = document.getElementById("filter-tag").value;
+      const selectedTom = document.getElementById("filter-tom").value;
+      const selectedDif = document.getElementById("filter-dificuldade").value;
+
+      const filtered = songs.filter(s => {
+        const tags = parseTags(s.categoria);
+        const matchesQuery = !query || (s.musica && s.musica.toLowerCase().includes(query)) || (s.autor && s.autor.toLowerCase().includes(query)) || (s.ref && s.ref.toLowerCase().includes(query)) || tags.some(t => t.toLowerCase().includes(query));
+        return matchesQuery && (!selectedTag || tags.includes(selectedTag)) && (!selectedTom || s.tom === selectedTom) && (!selectedDif || s.dificuldade === selectedDif);
+      });
+
+      const totalFiltered = filtered.length;
+      const totalPages = Math.max(1, Math.ceil(totalFiltered / pageSize));
+      if (currentPage > totalPages) currentPage = totalPages;
+      if (currentPage < 1) currentPage = 1;
+
+      const startIdx = (currentPage - 1) * pageSize;
+      const pageItems = filtered.slice(startIdx, startIdx + pageSize);
+
+      document.getElementById("pagination-info").textContent = totalFiltered > 0 ? `Exibindo ${startIdx + 1}–${Math.min(startIdx + pageSize, totalFiltered)} de ${totalFiltered}` : "Nenhuma música";
+      document.getElementById("pagination-current").textContent = `${currentPage}/${totalPages}`;
+      document.getElementById("btn-prev-page").disabled = currentPage <= 1;
+      document.getElementById("btn-next-page").disabled = currentPage >= totalPages;
+
+      const tbody = document.getElementById("songs-tbody");
+      const mobileCards = document.getElementById("songs-mobile-cards");
+
+      if (pageItems.length === 0) {
+        mobileCards.innerHTML = `<div class="bg-slate-900 border border-slate-800 rounded-2xl text-center py-8 px-4 text-slate-400 text-sm">Nenhuma música encontrada.</div>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-400">Nenhuma música encontrada.</td></tr>`;
+        updateBadges();
+        return;
+      }
+
+      mobileCards.innerHTML = pageItems.map(s => {
+        const tagsHtml = parseTags(s.categoria).map(tag => `<button onclick="selectTagFilter('${tag.replace(/'/g, "\\'")}')" class="text-[11px] px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">${tag}</button>`).join("");
+        const cifraInfo = getResolvedSongDetails(s);
+        const safeMusica = String(cifraInfo.musica).replace(/'/g, "\\'");
+        const safeAutor = String(cifraInfo.autor || "").replace(/'/g, "\\'");
+        return `
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 space-y-2.5 shadow">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0"><h3 class="font-bold text-white text-sm">${s.musica}</h3><p class="text-xs text-slate-400 truncate">${s.autor || "DOXA"} ${s.tempo ? `• ${s.tempo} BPM` : ""}</p></div>
+              <span class="shrink-0 px-2.5 py-1 rounded-xl bg-slate-800 border border-slate-700 font-extrabold text-amber-400 text-xs">${s.tom || "-"}</span>
+            </div>
+            ${tagsHtml ? `<div class="flex flex-wrap gap-1">${tagsHtml}</div>` : ""}
+            ${s.ref ? `<p class="text-[11px] text-slate-400"><i class="fa-solid fa-book-bible mr-1 text-slate-500"></i>${s.ref}</p>` : ""}
+            <div class="flex items-center justify-between pt-2 border-t border-slate-800/80">
+              <span class="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-xs font-bold text-slate-300">${s.vezes || 0}x</span>
+              <div class="flex flex-wrap items-center gap-1.5">
+                ${s.audio ? `<a href="${s.audio}" target="_blank" class="w-8 h-8 rounded-lg bg-rose-500/15 text-rose-400 flex items-center justify-center"><i class="fa-brands fa-youtube"></i></a>` : ""}
+                ${s.cifra ? `<a href="${s.cifra}" target="_blank" class="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center"><i class="fa-solid fa-guitar"></i></a>` : ""}
+                ${cifraInfo.hasFile ? `
+                  <a href="${cifraInfo.viewUrl}" target="_blank" class="px-2.5 h-8 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center justify-center gap-1 text-[11px] font-bold"><i class="fa-solid fa-file-pdf"></i><span>Ver</span></a>
+                  <button onclick="baixarCifraIndividual('${safeMusica}', '${safeAutor}', '${cifraInfo.fileId}', '${cifraInfo.viewUrl}')" class="px-2.5 h-8 rounded-lg bg-indigo-600/25 hover:bg-indigo-600 text-indigo-200 hover:text-white border border-indigo-500/40 flex items-center justify-center gap-1 text-[11px] font-bold" title="Baixar Cifra em PDF"><i class="fa-solid fa-download"></i><span>Baixar</span></button>
+                ` : ""}
+                ${isAdmin ? `<button onclick="openSongModal(${s.id})" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-300 flex items-center justify-center"><i class="fa-solid fa-pen text-xs"></i></button><button onclick="deleteSong(${s.id})" class="w-8 h-8 rounded-lg bg-slate-800 text-rose-400 flex items-center justify-center"><i class="fa-solid fa-trash text-xs"></i></button>` : ""}
+              </div>
+            </div>
+          </div>`;
+      }).join("");
+
+      tbody.innerHTML = pageItems.map(s => {
+        const tagsHtml = parseTags(s.categoria).map(tag => `<button onclick="selectTagFilter('${tag.replace(/'/g, "\\'")}')" class="inline-block text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 mr-1 mb-1">${tag}</button>`).join("");
+        const cifraInfo = getResolvedSongDetails(s);
+        const safeMusica = String(cifraInfo.musica).replace(/'/g, "\\'");
+        const safeAutor = String(cifraInfo.autor || "").replace(/'/g, "\\'");
+        return `
+          <tr class="hover:bg-slate-800/50 transition">
+            <td class="py-3 px-4"><div class="font-bold text-white">${s.musica}</div><div class="text-xs text-slate-400">${s.autor || "DOXA"}</div></td>
+            <td class="py-3 px-3 text-center"><span class="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 font-extrabold text-amber-400 text-xs">${s.tom || "-"}</span></td>
+            <td class="py-3 px-3 text-center text-xs text-slate-300">${s.tempo ? `${s.tempo} BPM` : "-"}</td>
+            <td class="py-3 px-4">${tagsHtml || '-'}</td>
+            <td class="py-3 px-3 text-center text-xs text-slate-300">${s.dificuldade || "-"}</td>
+            <td class="py-3 px-4 text-xs text-slate-300 max-w-xs">${s.ref || "-"}</td>
+            <td class="py-3 px-3 text-center"><button onclick="incrementVezes(${s.id})" class="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-xs font-bold text-slate-200">${s.vezes || 0}x</button></td>
+            <td class="py-3 px-4 text-right space-x-1 whitespace-nowrap">
+              ${s.audio ? `<a href="${s.audio}" target="_blank" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-rose-500/15 text-rose-400"><i class="fa-brands fa-youtube"></i></a>` : ""}
+              ${s.cifra ? `<a href="${s.cifra}" target="_blank" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-500/15 text-amber-400"><i class="fa-solid fa-guitar"></i></a>` : ""}
+              ${cifraInfo.hasFile ? `
+                <a href="${cifraInfo.viewUrl}" target="_blank" class="inline-flex items-center justify-center px-2.5 h-8 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold gap-1"><i class="fa-solid fa-file-pdf"></i><span>Abrir</span></a>
+                <button onclick="baixarCifraIndividual('${safeMusica}', '${safeAutor}', '${cifraInfo.fileId}', '${cifraInfo.viewUrl}')" class="inline-flex items-center justify-center px-2.5 h-8 rounded-lg bg-indigo-600/25 hover:bg-indigo-600 text-indigo-200 hover:text-white border border-indigo-500/40 text-xs font-bold gap-1" title="Baixar Cifra Individual em PDF"><i class="fa-solid fa-download"></i><span>Baixar</span></button>
+              ` : ""}
+              ${isAdmin ? `<button onclick="openSongModal(${s.id})" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800 text-slate-300"><i class="fa-solid fa-pen"></i></button><button onclick="deleteSong(${s.id})" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800 text-rose-400"><i class="fa-solid fa-trash"></i></button>` : ""}
+            </td>
+          </tr>`;
+      }).join("");
+
+      updateBadges();
+    }
+
+    function incrementVezes(id) {
+      if (!isAdmin) return;
+      const song = songs.find(s => s.id === id);
+      if (song) { song.vezes = (Number(song.vezes) || 0) + 1; renderSongs(); pushToGoogleSheet({ action: "saveSong", song }); }
+    }
+    function updateTagPreview() {
+      const tags = parseTags(document.getElementById("song-categoria").value);
+      document.getElementById("song-tag-preview").innerHTML = tags.map(t => `<span class="text-xs px-2.5 py-0.5 rounded-full bg-indigo-600/25 text-indigo-300 border border-indigo-500/40">${t}</span>`).join("");
+    }
+    function openSongModal(id = null) {
+      if (!isAdmin) { handleAdminButtonClick(); return; }
+      const modal = document.getElementById("song-modal");
+      document.getElementById("song-form").reset();
+      if (id) {
+        const s = songs.find(item => item.id === id);
+        if (s) {
+          document.getElementById("song-modal-title").textContent = "Editar Música";
+          document.getElementById("song-id").value = s.id;
+          document.getElementById("song-musica").value = s.musica;
+          document.getElementById("song-autor").value = s.autor || "";
+          document.getElementById("song-tom").value = s.tom || "";
+          document.getElementById("song-tempo").value = s.tempo || "";
+          document.getElementById("song-dificuldade").value = s.dificuldade || "";
+          document.getElementById("song-vezes").value = s.vezes || 0;
+          document.getElementById("song-categoria").value = s.categoria || "";
+          document.getElementById("song-ref").value = s.ref || "";
+          document.getElementById("song-audio").value = s.audio || "";
+          document.getElementById("song-cifra").value = s.cifra || "";
+          document.getElementById("song-cifra-doxa").value = s.cifraDoxa || "";
+        }
+      } else {
+        document.getElementById("song-modal-title").textContent = "Nova Música";
+        document.getElementById("song-id").value = "";
+      }
+      updateTagPreview(); renderCategoryConstantPills();
+      modal.classList.remove("hidden"); modal.classList.add("flex");
+    }
+    function closeSongModal() { document.getElementById("song-modal").classList.add("hidden"); document.getElementById("song-modal").classList.remove("flex"); }
+    function saveSong(e) {
+      e.preventDefault();
+      if (!isAdmin) return;
+      const id = document.getElementById("song-id").value;
+      const directFileId = extractDirectFileId(document.getElementById("song-cifra-doxa").value.trim());
+      const payload = {
+        id: id ? Number(id) : Date.now(),
+        musica: document.getElementById("song-musica").value.trim(),
+        autor: document.getElementById("song-autor").value.trim(),
+        tom: document.getElementById("song-tom").value.trim(),
+        tempo: document.getElementById("song-tempo").value.trim(),
+        dificuldade: document.getElementById("song-dificuldade").value.trim(),
+        vezes: Number(document.getElementById("song-vezes").value) || 0,
+        categoria: parseTags(document.getElementById("song-categoria").value).join(", "),
+        ref: document.getElementById("song-ref").value.trim(),
+        audio: document.getElementById("song-audio").value.trim(),
+        cifra: document.getElementById("song-cifra").value.trim(),
+        fileId: directFileId,
+        cifraDoxa: document.getElementById("song-cifra-doxa").value.trim(),
+        cifraPreview: directFileId ? `https://drive.google.com/file/d/${directFileId}/preview` : ""
+      };
+      if (id) { const idx = songs.findIndex(s => s.id === Number(id)); if (idx > -1) songs[idx] = payload; }
+      else songs.unshift(payload);
+      closeSongModal(); renderSongs(); renderRepertorios(); renderRelatorios();
+      pushToGoogleSheet({ action: "saveSong", song: payload });
+    }
+    function deleteSong(id) {
+      if (!isAdmin) return;
+      const s = songs.find(item => item.id === id);
+      if (!s) return;
+      songs = songs.filter(item => item.id !== id);
+      renderSongs(); renderRelatorios();
+      pushToGoogleSheet({ action: "deleteSong", musica: s.musica });
+    }
+
+    function parseRepDate(dateStr) {
+      if (!dateStr) return null;
+      const parts = String(dateStr).trim().split(/[\/\-]/);
+      if (parts.length !== 3) return null;
+      let p0 = parseInt(parts[0], 10); let p1 = parseInt(parts[1], 10); let year = parseInt(parts[2], 10);
+      if (year < 100) year += 2000;
+      let day = p0; let month = p1 - 1;
+      if (p1 > 12 && p0 <= 12) { month = p0 - 1; day = p1; }
+      const d = new Date(year, month, day);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    function formatDatePtBr(dateObj) { return dateObj ? `${String(dateObj.getDate()).padStart(2, "0")}/${String(dateObj.getMonth() + 1).padStart(2, "0")}/${dateObj.getFullYear()}` : ""; }
+    function findNextUpcomingRepertorio() {
+      if (repertorios.length === 0) return null;
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const withDates = repertorios.map(r => ({ rep: r, dateObj: parseRepDate(r.dia) })).filter(x => x.dateObj !== null);
+      const upcoming = withDates.filter(x => x.dateObj >= today).sort((a, b) => a.dateObj - b.dateObj);
+      if (upcoming.length > 0) return upcoming[0].rep;
+      const pastSorted = withDates.sort((a, b) => b.dateObj - a.dateObj);
+      return pastSorted.length > 0 ? pastSorted[0].rep : repertorios[0];
+    }
+    function changeCalendarMonth(delta) { calendarCurrentDate = new Date(calendarCurrentDate.getFullYear(), calendarCurrentDate.getMonth() + delta, 1); renderCalendar(); }
+    function resetCalendarFilter() {
+      const nextRep = findNextUpcomingRepertorio();
+      if (nextRep) {
+        selectedRepertorioId = nextRep.id;
+        const d = parseRepDate(nextRep.dia);
+        if (d) calendarCurrentDate = new Date(d.getFullYear(), d.getMonth(), 1);
+      }
+      renderCalendar(); renderFeaturedRepertorio(true);
+    }
+    function renderCalendar() {
+      const year = calendarCurrentDate.getFullYear(); const month = calendarCurrentDate.getMonth();
+      document.getElementById("calendar-month-label").textContent = new Date(year, month, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+      document.getElementById("cal-total-reps").textContent = repertorios.length;
+      const firstDayWeek = new Date(year, month, 1).getDay(); const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const repByDay = {};
+      repertorios.forEach(r => { const d = parseRepDate(r.dia); if (d && d.getFullYear() === year && d.getMonth() === month) repByDay[d.getDate()] = r; });
+      let html = "";
+      for (let i = 0; i < firstDayWeek; i++) html += `<div class="h-8"></div>`;
+      const activeRep = repertorios.find(r => r.id === selectedRepertorioId);
+      const activeDate = activeRep ? parseRepDate(activeRep.dia) : null;
+      for (let day = 1; day <= daysInMonth; day++) {
+        const rep = repByDay[day];
+        const isSelected = activeDate && activeDate.getFullYear() === year && activeDate.getMonth() === month && activeDate.getDate() === day;
+        if (rep) html += `<button onclick="selectRepertorioFromCalendar(${rep.id})" class="h-8 rounded-xl flex flex-col items-center justify-center font-bold ${isSelected ? "bg-indigo-600 text-white" : "bg-slate-800 text-amber-300 border border-amber-500/40"}"><span>${day}</span><span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span></button>`;
+        else html += `<div class="h-8 rounded-xl flex items-center justify-center text-slate-500">${day}</div>`;
+      }
+      document.getElementById("calendar-days-grid").innerHTML = html;
+    }
+    function selectRepertorioFromCalendar(repId) { selectedRepertorioId = repId; renderCalendar(); renderFeaturedRepertorio(false); }
+
+    function renderFeaturedRepertorio(isInitialNext = false) {
+      let rep = repertorios.find(r => r.id === selectedRepertorioId) || findNextUpcomingRepertorio();
+      if (rep) selectedRepertorioId = rep.id;
+      const bodyEl = document.getElementById("featured-rep-body");
+      if (!rep) { bodyEl.innerHTML = `<div class="text-slate-400 text-sm py-6 text-center">Nenhum repertório cadastrado.</div>`; return; }
+      const dObj = parseRepDate(rep.dia);
+      document.getElementById("featured-rep-badge").textContent = isInitialNext ? "Próximo Repertório" : "Repertório Selecionado";
+      document.getElementById("featured-rep-date").textContent = `${dObj ? formatDatePtBr(dObj) : rep.dia} • ${rep.culto}`;
+      document.getElementById("featured-rep-actions").innerHTML = `
+        <button onclick="openStageWithRepertorio(${rep.id})" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-guitar"></i><span>Palco</span></button>
+        <button onclick="salvarCultoOffline(${rep.id})" class="px-3 py-1.5 rounded-xl bg-teal-600 text-white text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-cloud-arrow-down"></i><span>Baixar Offline</span></button>
+        <button onclick="mesclarEBaixarPdfRepertorio(${rep.id})" class="px-3 py-1.5 rounded-xl bg-rose-600 text-white text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-file-pdf"></i><span>PDF Mesclado</span></button>
+        <button onclick="openWhatsAppModal(${rep.id}, 'equipe')" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5"><i class="fa-brands fa-whatsapp"></i><span>WhatsApp Equipe</span></button>
+        <button onclick="openWhatsAppModal(${rep.id}, 'igreja')" class="px-3 py-1.5 rounded-xl bg-emerald-800 border border-emerald-500/40 text-emerald-200 text-xs font-bold flex items-center gap-1.5"><i class="fa-brands fa-whatsapp"></i><span>WhatsApp Igreja</span></button>
+      `;
+      bodyEl.innerHTML = `
+        <h3 class="text-base sm:text-lg font-extrabold text-white">${rep.tema}</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          ${(rep.itens || []).map((item, idx) => {
+            const info = getResolvedSongDetails(item);
+            const isOfflineSaved = offlineSavedChordKeys.has(normalizeSongKey(info.musica));
+            const safeMusica = String(info.musica).replace(/'/g, "\\'");
+            const safeAutor = String(info.autor || "").replace(/'/g, "\\'");
+            return `
+              <div class="flex items-center justify-between gap-2 bg-slate-800/70 px-3.5 py-2.5 rounded-xl border ${isOfflineSaved ? 'border-teal-500/40' : 'border-slate-700/80'}">
+                <div class="min-w-0">
+                  <span class="text-[10px] font-extrabold uppercase text-indigo-400 block">${idx + 1}. ${item.momento} ${isOfflineSaved ? '• <span class="text-teal-300">Offline</span>' : ''}</span>
+                  <span class="text-xs sm:text-sm font-bold text-white truncate block">${info.musica}</span>
+                  <span class="text-[11px] text-slate-400 truncate block">${info.autor}</span>
+                </div>
+                <div class="flex items-center gap-1 shrink-0">
+                  ${info.hasFile ? `
+                    <a href="${info.viewUrl}" target="_blank" class="px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[11px] font-bold" title="Abrir Cifra"><i class="fa-solid fa-file-pdf"></i></a>
+                    <button onclick="baixarCifraIndividual('${safeMusica}', '${safeAutor}', '${info.fileId}', '${info.viewUrl}')" class="px-2 py-1 rounded-lg bg-indigo-600/25 hover:bg-indigo-600 text-indigo-200 hover:text-white border border-indigo-500/40 text-[11px] font-bold" title="Baixar esta Cifra em PDF"><i class="fa-solid fa-download"></i></button>
+                  ` : ""}
+                  <span class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-amber-400 font-extrabold text-xs">${info.tom}</span>
+                </div>
+              </div>`;
+          }).join("")}
+        </div>`;
+    }
+
+    function openStageWithRepertorio(repId) { switchTab("palco"); document.getElementById("palco-select-repertorio").value = repId; renderPalco(); }
+    function renderRepertorios() {
+      const nextRep = findNextUpcomingRepertorio();
+      if (!selectedRepertorioId && nextRep) {
+        selectedRepertorioId = nextRep.id;
+        const d = parseRepDate(nextRep.dia);
+        if (d) calendarCurrentDate = new Date(d.getFullYear(), d.getMonth(), 1);
+      }
+      renderCalendar(); renderFeaturedRepertorio(true);
+      const grid = document.getElementById("repertorios-grid");
+      grid.innerHTML = repertorios.map(rep => {
+        const dObj = parseRepDate(rep.dia);
+        const dateFormatted = dObj ? formatDatePtBr(dObj) : rep.dia;
+        return `
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-lg">
+            <div class="flex items-start justify-between gap-2 border-b border-slate-800 pb-3">
+              <div><span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300">${dateFormatted} • ${rep.culto}</span><h3 class="text-sm font-extrabold text-white mt-1">${rep.tema}</h3></div>
+              <div class="flex items-center gap-1 shrink-0">
+                <button onclick="openStageWithRepertorio(${rep.id})" class="px-2 py-1.5 rounded-lg bg-indigo-600/20 text-indigo-300 text-xs font-semibold" title="Palco"><i class="fa-solid fa-guitar"></i></button>
+                <button onclick="salvarCultoOffline(${rep.id})" class="px-2 py-1.5 rounded-lg bg-teal-600/20 text-teal-300 text-xs font-semibold" title="Salvar Offline"><i class="fa-solid fa-cloud-arrow-down"></i></button>
+                <button onclick="mesclarEBaixarPdfRepertorio(${rep.id})" class="px-2 py-1.5 rounded-lg bg-rose-600/20 text-rose-300 text-xs font-semibold">PDF</button>
+                <button onclick="openWhatsAppModal(${rep.id}, 'equipe')" class="px-2 py-1.5 rounded-lg bg-emerald-600/20 text-emerald-300 text-xs font-semibold"><i class="fa-brands fa-whatsapp"></i></button>
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              ${(rep.itens || []).map(item => {
+                const info = getResolvedSongDetails(item);
+                const safeMusica = String(info.musica).replace(/'/g, "\\'");
+                const safeAutor = String(info.autor || "").replace(/'/g, "\\'");
+                return `
+                  <div class="flex items-center justify-between gap-2 bg-slate-800/60 px-3 py-2 rounded-xl">
+                    <div class="min-w-0"><span class="text-[10px] font-bold uppercase text-indigo-400 block">${item.momento}</span><span class="text-xs font-semibold text-white truncate block">${info.musica} (${info.autor})</span></div>
+                    <div class="flex items-center gap-1 shrink-0">
+                      ${info.hasFile ? `<button onclick="baixarCifraIndividual('${safeMusica}', '${safeAutor}', '${info.fileId}', '${info.viewUrl}')" class="px-2 py-0.5 rounded bg-indigo-600/25 text-indigo-200 text-xs" title="Baixar Cifra"><i class="fa-solid fa-download"></i></button>` : ""}
+                      <span class="px-2 py-0.5 rounded bg-slate-900 text-amber-400 font-bold text-xs">${info.tom}</span>
+                    </div>
+                  </div>`;
+              }).join("")}
+            </div>
+          </div>`;
+      }).join("");
+      populatePalcoSelect(); updateBadges();
+    }
+
+    function populatePalcoSelect() {
+      const sel = document.getElementById("palco-select-repertorio");
+      const currentVal = sel.value;
+      sel.innerHTML = repertorios.map(r => { const dObj = parseRepDate(r.dia); return `<option value="${r.id}">${dObj ? formatDatePtBr(dObj) : r.dia} - ${r.tema}</option>`; }).join("");
+      if (currentVal && repertorios.some(r => String(r.id) === String(currentVal))) sel.value = currentVal;
+      else if (selectedRepertorioId) sel.value = selectedRepertorioId;
+      renderPalco();
+    }
+    function toggleStageChordBox(idx) { const el = document.getElementById(`stage-chord-box-${idx}`); if (el) el.classList.toggle("hidden"); }
+    function toggleAllStageChords() {
+      allStageChordsVisible = !allStageChordsVisible;
+      document.querySelectorAll("[id^='stage-chord-box-']").forEach(b => b.classList.toggle("hidden", !allStageChordsVisible));
+    }
+
+    function renderPalco() {
+      const sel = document.getElementById("palco-select-repertorio");
+      const rep = repertorios.find(r => r.id === Number(sel.value)) || findNextUpcomingRepertorio() || repertorios[0];
+      const container = document.getElementById("palco-content");
+      if (!rep) { container.innerHTML = `<div class="text-slate-400 text-center py-8">Nenhum repertório selecionado.</div>`; return; }
+
+      const offlineJobs = [];
+      container.innerHTML = (rep.itens || []).map((it, idx) => {
+        const info = getResolvedSongDetails(it);
+        const key = normalizeSongKey(info.musica);
+        const hasOfflinePdf = offlineSavedChordKeys.has(key);
+        const safeMusica = String(info.musica).replace(/'/g, "\\'");
+        const safeAutor = String(info.autor || "").replace(/'/g, "\\'");
+        if (hasOfflinePdf) offlineJobs.push({ musica: info.musica, containerId: `offline-canvas-wrap-${idx}` });
+
+        return `
+          <div class="bg-slate-900 border ${hasOfflinePdf ? 'border-teal-500/40' : 'border-slate-800'} rounded-2xl p-4 space-y-4 shadow-xl">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div class="space-y-2 min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="text-xs font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-indigo-600/25 text-indigo-300">${idx + 1}. ${it.momento}</span>
+                  ${hasOfflinePdf ? `<span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30"><i class="fa-solid fa-bolt mr-1"></i>Cifra Offline Pronta</span>` : ""}
+                </div>
+                <h4 class="text-xl font-extrabold text-white">${info.musica}</h4>
+                <p class="text-xs text-slate-400">${info.autor} ${info.tempo ? `• ${info.tempo} BPM` : ""}</p>
+                <div class="flex flex-wrap items-center gap-2 pt-1">
+                  ${info.audio ? `<a href="${info.audio}" target="_blank" class="px-3 py-1.5 rounded-xl bg-rose-500/15 text-rose-300 text-xs font-bold"><i class="fa-brands fa-youtube mr-1"></i>YouTube</a>` : ""}
+                  ${info.hasFile ? `
+                    <a href="${info.viewUrl}" target="_blank" class="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 text-xs font-bold"><i class="fa-solid fa-arrow-up-right-from-square mr-1"></i>Abrir Cifra</a>
+                    <button onclick="baixarCifraIndividual('${safeMusica}', '${safeAutor}', '${info.fileId}', '${info.viewUrl}')" class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow"><i class="fa-solid fa-download"></i><span>Baixar Cifra PDF</span></button>
+                    <button onclick="toggleStageChordBox(${idx})" class="px-3 py-1.5 rounded-xl bg-slate-800 text-indigo-300 text-xs font-bold">Mostrar/Ocultar</button>
+                  ` : ""}
+                </div>
+              </div>
+              <div class="text-center bg-slate-800 border-2 border-amber-500/40 rounded-2xl px-6 py-3 shrink-0"><span class="text-[10px] uppercase text-slate-400 font-bold block">TOM</span><span class="text-3xl font-black text-amber-400">${info.tom}</span></div>
+            </div>
+            <div id="stage-chord-box-${idx}" class="${allStageChordsVisible ? '' : 'hidden'} pt-3 border-t border-slate-800 space-y-2">
+              ${hasOfflinePdf
+                ? `<div id="offline-canvas-wrap-${idx}" class="w-full overflow-y-auto max-h-[780px] custom-scroll rounded-xl"></div>`
+                : (info.hasFile ? `<iframe id="stage-chord-iframe-${idx}" src="${info.previewUrl}" style="height: 650px;" class="w-full rounded-xl border border-slate-700 bg-white"></iframe>` : `<div class="text-xs text-slate-500 text-center py-4">Sem cifra vinculada</div>`)
+              }
+            </div>
+          </div>`;
+      }).join("");
+
+      offlineJobs.forEach(job => renderOfflinePdfInCanvasContainer(job.musica, job.containerId));
+    }
+
+    function base64ToUint8Array(base64) {
+      const binaryStr = atob(base64);
+      const bytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+      return bytes;
+    }
+
+    async function mesclarEBaixarPdfRepertorio(repId) {
+      const rep = repertorios.find(r => r.id === Number(repId));
+      if (!rep) return;
+      const modal = document.getElementById("pdf-modal");
+      const statusEl = document.getElementById("pdf-merge-status");
+      const btnDownload = document.getElementById("btn-download-merged-pdf");
+      document.getElementById("pdf-modal-title").innerHTML = `<i class="fa-solid fa-file-pdf text-rose-400 mr-2"></i>Gerador de PDF Mesclado`;
+      btnDownload.classList.add("hidden"); modal.classList.remove("hidden"); modal.classList.add("flex");
+      const dObj = parseRepDate(rep.dia); const dateFormatted = dObj ? formatDatePtBr(dObj) : rep.dia;
+      statusEl.innerHTML = `<div class="p-4 bg-slate-800 rounded-xl"><i class="fa-solid fa-spinner fa-spin mr-2 text-rose-400"></i>Unindo os PDFs originais...</div>`;
+      try {
+        const itensPayload = (rep.itens || []).map(it => { const info = getResolvedSongDetails(it); return { musica: info.musica, autor: info.autor, fileId: info.fileId, cifraDoxa: info.viewUrl }; });
+        let arquivos = [];
+
+        if (navigator.onLine && scriptUrl) {
+          const res = await fetch(`${scriptUrl}?action=obterPdfsRepertorio&itens=${encodeURIComponent(JSON.stringify(itensPayload))}`);
+          const data = await res.json();
+          arquivos = (data && Array.isArray(data.arquivos)) ? data.arquivos : [];
+        } else {
+          for (let i = 0; i < itensPayload.length; i++) {
+            const b64 = await dbGet("chords", normalizeSongKey(itensPayload[i].musica));
+            arquivos.push({ musica: itensPayload[i].musica, encontrado: !!b64, pdfBase64: b64 });
+          }
+        }
+
+        const mergedPdf = await PDFLib.PDFDocument.create();
+        let encontradosCount = 0; let detalhesHtml = "";
+        for (let i = 0; i < arquivos.length; i++) {
+          const arq = arquivos[i];
+          if (arq && arq.encontrado && arq.pdfBase64) {
+            const key = normalizeSongKey(arq.musica);
+            await dbPut("chords", key, arq.pdfBase64);
+            offlineSavedChordKeys.add(key);
+            const donorPdf = await PDFLib.PDFDocument.load(base64ToUint8Array(arq.pdfBase64), { ignoreEncryption: true });
+            const copiedPages = await mergedPdf.copyPages(donorPdf, donorPdf.getPageIndices());
+            copiedPages.forEach(p => mergedPdf.addPage(p));
+            encontradosCount++;
+            detalhesHtml += `<div class="text-emerald-400">✓ <strong>${arq.musica}</strong> mesclada</div>`;
+          } else {
+            detalhesHtml += `<div class="text-rose-400">✗ <strong>${arq ? arq.musica : ""}</strong> não encontrada</div>`;
+          }
+        }
+        await refreshOfflineKeysCache();
+        if (encontradosCount > 0) {
+          const blob = new Blob([await mergedPdf.save()], { type: "application/pdf" });
+          btnDownload.href = URL.createObjectURL(blob);
+          btnDownload.download = `Repertorio_DOXA_${dateFormatted.replace(/\//g, "-")}.pdf`;
+          btnDownload.classList.remove("hidden"); btnDownload.classList.add("inline-flex");
+          btnDownload.click();
+        }
+        statusEl.innerHTML = `<div class="p-4 bg-slate-800 rounded-xl space-y-1"><p class="font-bold text-white">${encontradosCount} cifras mescladas!</p>${detalhesHtml}</div>`;
+      } catch (err) {
+        statusEl.innerHTML = `<div class="p-4 bg-rose-500/20 text-rose-300 rounded-xl">Erro ao mesclar PDF.</div>`;
+      }
+    }
+    function closePdfModal() { document.getElementById("pdf-modal").classList.add("hidden"); document.getElementById("pdf-modal").classList.remove("flex"); }
+    function gerarPdfRepertorioAtualPalco() { const sel = document.getElementById("palco-select-repertorio"); if (sel && sel.value) mesclarEBaixarPdfRepertorio(Number(sel.value)); }
+
+    function openRepertorioModal() {
+      if (!isAdmin) { handleAdminButtonClick(); return; }
+      document.getElementById("repertorio-form").reset();
+      draftRepertorioItems = []; renderDraftRepertorioItems();
+      document.getElementById("repertorio-modal").classList.remove("hidden"); document.getElementById("repertorio-modal").classList.add("flex");
+    }
+    function closeRepertorioModal() { document.getElementById("repertorio-modal").classList.add("hidden"); document.getElementById("repertorio-modal").classList.remove("flex"); }
+    function addSongToDraftRepertorio() {
+      const momento = document.getElementById("rep-item-momento").value.trim() || "Adoração";
+      const songId = Number(document.getElementById("rep-item-song-id").value);
+      const searchVal = document.getElementById("rep-item-song-search").value.trim();
+      let song = songs.find(s => s.id === songId) || (searchVal ? findFullSongByName(searchVal) : null);
+      if (!song) return;
+      draftRepertorioItems.push({ momento, musica: song.musica, autor: song.autor, tom: song.tom, fileId: song.fileId || "", cifraDoxa: song.cifraDoxa || "" });
+      clearRepSongSearch(); renderDraftRepertorioItems();
+    }
+    function renderDraftRepertorioItems() {
+      const container = document.getElementById("rep-draft-items");
+      container.innerHTML = draftRepertorioItems.map((it, idx) => `<div class="flex items-center justify-between bg-slate-900 px-3 py-2 rounded-lg text-xs"><span><strong class="text-amber-400">${idx + 1}. ${it.momento}:</strong> ${it.musica}</span><button type="button" onclick="draftRepertorioItems.splice(${idx},1);renderDraftRepertorioItems();" class="text-rose-400"><i class="fa-solid fa-trash"></i></button></div>`).join("");
+    }
+    function saveRepertorio(e) {
+      e.preventDefault();
+      if (!isAdmin || draftRepertorioItems.length === 0) return;
+      const novo = { id: Date.now(), dia: document.getElementById("rep-dia").value.trim(), culto: document.getElementById("rep-culto").value.trim() || "Domingo", tema: document.getElementById("rep-tema").value.trim(), itens: [...draftRepertorioItems] };
+      repertorios.unshift(novo); selectedRepertorioId = novo.id;
+      closeRepertorioModal(); renderRepertorios();
+      pushToGoogleSheet({ action: "saveRepertorio", repertorio: novo });
+      switchTab("repertorios");
+    }
+
+    function renderRelatorios() {
+      const authorMap = {}; const tagMap = {}; let totalVezes = 0;
+      songs.forEach(s => {
+        totalVezes += Number(s.vezes) || 0;
+        const autor = (s.autor || "Não informado").trim();
+        authorMap[autor] = (authorMap[autor] || 0) + 1;
+        parseTags(s.categoria).forEach(t => { tagMap[t] = (tagMap[t] || 0) + 1; });
+      });
+      document.getElementById("rep-stat-musicas").textContent = songs.length;
+      document.getElementById("rep-stat-tags").textContent = Object.keys(tagMap).length;
+      document.getElementById("rep-stat-autores").textContent = Object.keys(authorMap).length;
+      document.getElementById("rep-stat-vezes").textContent = totalVezes;
+      document.getElementById("report-autores").innerHTML = Object.entries(authorMap).sort((a, b) => b[1] - a[1]).map(([a, q]) => `<div class="flex justify-between bg-slate-800/70 px-3 py-2 rounded-xl text-xs"><span>${a}</span><span class="font-bold text-indigo-300">${q}</span></div>`).join("");
+      document.getElementById("report-mais-cantadas").innerHTML = [...songs].sort((a, b) => (Number(b.vezes) || 0) - (Number(a.vezes) || 0)).slice(0, 25).map(s => `<div class="flex justify-between bg-slate-800/70 px-3 py-2 rounded-xl text-xs"><span class="truncate pr-2">${s.musica}</span><span class="font-bold text-amber-300">${s.vezes || 0}x</span></div>`).join("");
+      document.getElementById("report-tags").innerHTML = Object.entries(tagMap).sort((a, b) => b[1] - a[1]).map(([t, q]) => `<div class="flex justify-between bg-slate-800/70 px-3 py-2 rounded-xl text-xs"><span>${t}</span><span class="font-bold text-emerald-300">${q}</span></div>`).join("");
+    }
+
+    function switchTab(tab) {
+      const labels = { musicas: "Músicas", repertorios: "Repertórios", palco: "Modo Palco", vs: "VS / Estudo", pedidos: "Pedidos", relatorios: "Relatórios" };
+      const pill = document.getElementById("active-tab-pill");
+      if (pill && labels[tab]) pill.textContent = labels[tab];
+
+      ["musicas", "repertorios", "palco", "vs", "pedidos", "relatorios"].forEach(t => {
+        const viewEl = document.getElementById(`view-${t}`);
+        if (viewEl) viewEl.classList.toggle("hidden", t !== tab);
+        const btn = document.getElementById(`tab-${t}`);
+        if (btn) btn.className = t === tab ? "px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 bg-indigo-600 text-white shadow" : "px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white";
+        const dBtn = document.getElementById(`drawer-tab-${t}`);
+        if (dBtn) dBtn.className = t === tab ? "w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-bold transition flex items-center justify-between bg-indigo-600 text-white shadow" : "w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition flex items-center justify-between text-slate-300 hover:bg-slate-800";
+      });
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (tab === "repertorios") renderRepertorios();
+      if (tab === "relatorios") renderRelatorios();
+      if (tab === "palco") populatePalcoSelect();
+      if (tab === "vs") loadVsFolders(false);
+      if (tab === "pedidos") initPedidosTab();
+    }
+
+    function updateBadges() {
+      document.getElementById("badge-total-musicas").textContent = songs.length;
+      document.getElementById("badge-total-repertorios").textContent = repertorios.length;
+      document.getElementById("drawer-badge-musicas").textContent = songs.length;
+      document.getElementById("drawer-badge-repertorios").textContent = repertorios.length;
+    }
 
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => {}); });
