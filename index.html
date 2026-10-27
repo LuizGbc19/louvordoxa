@@ -7,8 +7,73 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DOXA" />
-  <link rel="manifest" href="manifest.json" />
   <title>DOXA — Equipe de Louvor e Adoração</title>
+
+  <!-- GERADOR AUTOMÁTICO DE ÍCONE PWA (FUNDO PRETO SÓLIDO + LOGO BRANCA) PARA IPHONE E ANDROID -->
+  <script>
+    (function() {
+      try {
+        var c = document.createElement("canvas");
+        c.width = 512; c.height = 512;
+        var ctx = c.getContext("2d");
+        ctx.fillStyle = "#05070e";
+        ctx.fillRect(0, 0, 512, 512);
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 18;
+        ctx.beginPath();
+        ctx.arc(256, 210, 135, 0.2 * Math.PI, 0.8 * Math.PI, true);
+        ctx.stroke();
+        ctx.lineWidth = 12;
+        ctx.beginPath();
+        ctx.arc(256, 210, 152, 0.25 * Math.PI, 0.75 * Math.PI, true);
+        ctx.stroke();
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(242, 110, 28, 195);
+        ctx.fillRect(190, 165, 132, 26);
+        ctx.fillStyle = "#05070e";
+        ctx.fillRect(60, 320, 392, 120);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "900 96px Montserrat, Arial, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("DOXA", 256, 405);
+        ctx.font = "700 20px Montserrat, Arial, sans-serif";
+        ctx.fillText("LOUVOR E ADORAÇÃO", 256, 442);
+        var pngUrl = c.toDataURL("image/png");
+        window.__DOXA_ICON_PNG__ = pngUrl;
+
+        var appleIcon = document.createElement("link");
+        appleIcon.rel = "apple-touch-icon";
+        appleIcon.href = pngUrl;
+        document.head.appendChild(appleIcon);
+
+        var favIcon = document.createElement("link");
+        favIcon.rel = "icon";
+        favIcon.type = "image/png";
+        favIcon.href = pngUrl;
+        document.head.appendChild(favIcon);
+
+        var manifestObj = {
+          name: "DOXA — Equipe de Louvor e Adoração",
+          short_name: "DOXA",
+          start_url: window.location.origin + window.location.pathname,
+          display: "standalone",
+          background_color: "#05070e",
+          theme_color: "#05070e",
+          orientation: "portrait-primary",
+          icons: [
+            { src: pngUrl, sizes: "512x512", type: "image/png", purpose: "any" },
+            { src: pngUrl, sizes: "192x192", type: "image/png", purpose: "maskable" }
+          ]
+        };
+        var manifestBlob = new Blob([JSON.stringify(manifestObj)], { type: "application/manifest+json" });
+        var manifestLink = document.createElement("link");
+        manifestLink.rel = "manifest";
+        manifestLink.href = URL.createObjectURL(manifestBlob);
+        document.head.appendChild(manifestLink);
+      } catch (e) {}
+    })();
+  </script>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -27,7 +92,7 @@
 </head>
 <body class="min-h-screen flex flex-col relative">
 
-  <!-- AVISO FLUTUANTE DE DOWNLOAD DE CIFRA INDIVIDUAL -->
+  <!-- TOAST DE DOWNLOAD INDIVIDUAL -->
   <div id="single-download-toast" class="fixed bottom-5 right-5 z-50 hidden bg-slate-900 border border-emerald-500/50 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-xs font-bold">
     <i class="fa-solid fa-spinner fa-spin text-emerald-400 text-base" id="single-download-icon"></i>
     <span id="single-download-text">Preparando download da cifra em PDF...</span>
@@ -42,9 +107,9 @@
       <span id="network-mode-pill" class="text-[11px] px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-emerald-400 font-semibold">
         <i class="fa-solid fa-wifi mr-1"></i>Online
       </span>
-      <button onclick="openConnectionModal()" id="landing-status-pill" class="text-[11px] px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 font-medium hover:border-zinc-600">
-        <i class="fa-solid fa-spinner fa-spin mr-1"></i>Sincronizando...
-      </button>
+      <span id="landing-status-pill" class="text-[11px] px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 font-medium">
+        <i class="fa-solid fa-spinner fa-spin mr-1"></i>Carregando...
+      </span>
     </div>
     <div class="flex flex-col items-center justify-center text-center z-10 max-w-md w-full my-auto space-y-8">
       <div class="relative w-60 h-60 sm:w-72 sm:h-72 flex items-center justify-center">
@@ -82,12 +147,12 @@
         </div>
       </div>
     </div>
-    <div class="text-[11px] text-zinc-600 tracking-wider uppercase font-semibold z-10">DOXA • Louvor e Adoração • v2.7 Pro</div>
+    <div class="text-[11px] text-zinc-600 tracking-wider uppercase font-semibold z-10">DOXA • Louvor e Adoração • v2.8 Pro</div>
   </div>
 
   <!-- MENU LATERAL (☰) -->
   <div id="drawer-backdrop" onclick="closeSideDrawer()" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-40 hidden"></div>
-  <aside id="side-drawer" class="fixed top-0 left-0 bottom-0 w-72 max-w-[85vw] bg-slate-900 border-r border-slate-800 z-50 transform -translate-x-full transition-transform duration-300 flex flex-col justify-between p-4 shadow-2xl">
+  <aside id="side-drawer" class="fixed top-0 left-0 bottom-0 w-72 max-w-[85vw] bg-slate-900 border-r border-slate-800 z-50 transform -translate-x-full transition-transform duration-300 flex flex-col justify-between p-4 shadow-2xl overflow-y-auto custom-scroll">
     <div class="space-y-4">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <div class="flex items-center gap-2.5">
@@ -112,8 +177,8 @@
           <span class="flex items-center gap-3"><i class="fa-solid fa-guitar w-5 text-center text-emerald-400"></i><span>Modo Palco & Cifras</span></span>
         </button>
         <button onclick="switchTabFromDrawer('vs')" id="drawer-tab-vs" class="w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition flex items-center justify-between text-slate-300 hover:bg-slate-800">
-          <span class="flex items-center gap-3"><i class="fa-solid fa-sliders w-5 text-center text-purple-400"></i><span>VS / Estudo L/R</span></span>
-          <span id="drawer-badge-vs" class="text-[11px] px-2 py-0.5 rounded-full bg-purple-900/60 text-purple-200 font-bold">2.7</span>
+          <span class="flex items-center gap-3"><i class="fa-solid fa-sliders w-5 text-center text-purple-400"></i><span>VS / Mixer L-R</span></span>
+          <span id="drawer-badge-vs" class="text-[11px] px-2 py-0.5 rounded-full bg-purple-900/60 text-purple-200 font-bold">2.8</span>
         </button>
         <button onclick="switchTabFromDrawer('pedidos')" id="drawer-tab-pedidos" class="w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition flex items-center justify-between text-slate-300 hover:bg-slate-800">
           <span class="flex items-center gap-3"><i class="fa-solid fa-inbox w-5 text-center text-pink-400"></i><span>Pedidos (Formulário)</span></span>
@@ -127,23 +192,32 @@
             <span class="flex items-center gap-3"><i class="fa-solid fa-cloud-arrow-down w-5 text-center"></i><span>Memória Offline</span></span>
             <span id="drawer-offline-count" class="text-[10px] px-2 py-0.5 rounded-full bg-teal-900/60 text-teal-200">Ativo</span>
           </button>
-          <button onclick="closeSideDrawer(); openConnectionModal();" class="w-full px-3.5 py-2 rounded-xl text-left text-xs font-semibold text-amber-300 hover:bg-slate-800 flex items-center gap-3">
-            <i class="fa-solid fa-plug w-5 text-center"></i><span>Configurar Link da Planilha</span>
-          </button>
           <button onclick="closeSideDrawer(); showLandingScreen();" class="w-full px-3.5 py-2 rounded-xl text-left text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-3">
             <i class="fa-solid fa-house w-5 text-center"></i><span>Tela Inicial (Logo)</span>
           </button>
         </div>
       </div>
     </div>
+
+    <!-- RODAPÉ DO MENU (OPÇÕES DE SINCRONIZAÇÃO SÓ APARECEM PARA ADMIN) -->
     <div class="space-y-2 border-t border-slate-800 pt-3">
       <button onclick="closeSideDrawer(); handleAdminButtonClick();" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-slate-200 flex items-center justify-between">
         <span class="flex items-center gap-2"><i class="fa-solid fa-lock text-amber-400" id="drawer-admin-icon"></i><span id="drawer-admin-label">Modo Administrador</span></span>
         <i class="fa-solid fa-chevron-right text-[10px] text-slate-500"></i>
       </button>
-      <button onclick="closeSideDrawer(); syncFromGoogleSheet(true);" class="w-full px-3.5 py-2 rounded-xl bg-emerald-600/15 border border-emerald-500/30 text-xs font-bold text-emerald-300 flex items-center justify-center gap-2">
-        <i class="fa-solid fa-arrows-rotate"></i><span>Sincronizar Planilha</span>
-      </button>
+
+      <!-- Bloco Exclusivo do Admin no Menu Lateral -->
+      <div id="drawer-admin-only-box" class="hidden space-y-1.5 pt-1">
+        <button onclick="closeSideDrawer(); syncFromGoogleSheet(true);" class="w-full px-3.5 py-2 rounded-xl bg-emerald-600/15 border border-emerald-500/30 text-xs font-bold text-emerald-300 flex items-center justify-center gap-2">
+          <i class="fa-solid fa-arrows-rotate"></i><span>Sincronizar Planilha (Admin)</span>
+        </button>
+        <button onclick="closeSideDrawer(); openConnectionModal();" class="w-full px-3.5 py-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-xs font-bold text-amber-300 flex items-center justify-center gap-2">
+          <i class="fa-solid fa-plug"></i><span>Configurar URL /exec</span>
+        </button>
+        <button onclick="downloadGeneratedPwaIcon()" class="w-full px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-[11px] font-semibold text-slate-300 flex items-center justify-center gap-2">
+          <i class="fa-solid fa-image text-indigo-400"></i><span>Baixar icon-512.png (Fundo Preto)</span>
+        </button>
+      </div>
     </div>
   </aside>
 
@@ -159,9 +233,9 @@
             <button onclick="openSideDrawer()" class="text-base sm:text-xl font-black tracking-wider text-white font-doxa leading-none">DOXA</button>
             <span id="active-tab-pill" class="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700 text-indigo-300 font-bold uppercase">Músicas</span>
           </div>
-          <button onclick="openConnectionModal()" id="status-badge" class="text-[10px] text-emerald-400 font-medium block truncate text-left hover:underline" title="Clique para verificar ou configurar o link da planilha">
-            Conectando...
-          </button>
+          <span id="status-badge" class="text-[10px] text-emerald-400 font-medium block truncate text-left">
+            Carregando repertório...
+          </span>
         </div>
       </div>
 
@@ -169,7 +243,7 @@
         <button onclick="switchTab('musicas')" id="tab-musicas" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 bg-indigo-600 text-white shadow"><i class="fa-solid fa-music"></i><span>Músicas</span><span id="badge-total-musicas" class="text-xs px-1.5 py-0.5 rounded-full bg-indigo-800 text-indigo-100">0</span></button>
         <button onclick="switchTab('repertorios')" id="tab-repertorios" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-calendar-days"></i><span>Repertórios</span><span id="badge-total-repertorios" class="text-xs px-1.5 py-0.5 rounded-full bg-slate-700 text-slate-300">0</span></button>
         <button onclick="switchTab('palco')" id="tab-palco" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-guitar"></i><span>Modo Palco</span></button>
-        <button onclick="switchTab('vs')" id="tab-vs" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-sliders"></i><span>VS / Estudo</span><span id="badge-total-vs" class="text-xs px-1.5 py-0.5 rounded-full bg-purple-900/60 text-purple-200">2.7</span></button>
+        <button onclick="switchTab('vs')" id="tab-vs" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-sliders"></i><span>VS / Estudo</span><span id="badge-total-vs" class="text-xs px-1.5 py-0.5 rounded-full bg-purple-900/60 text-purple-200">2.8</span></button>
         <button onclick="switchTab('pedidos')" id="tab-pedidos" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-inbox"></i><span>Pedidos</span></button>
         <button onclick="switchTab('relatorios')" id="tab-relatorios" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-chart-pie"></i><span>Relatórios</span></button>
       </nav>
@@ -177,7 +251,8 @@
       <div class="flex items-center gap-1.5 shrink-0">
         <button onclick="openOfflineManagerModal()" class="px-2.5 py-2 rounded-xl bg-teal-500/15 hover:bg-teal-500/25 border border-teal-500/30 text-teal-300 text-xs font-bold flex items-center gap-1.5" title="Memória Offline"><i class="fa-solid fa-cloud-arrow-down"></i><span class="hidden sm:inline">Offline</span></button>
         <button onclick="handleAdminButtonClick()" id="btn-admin-lock" class="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5"><i class="fa-solid fa-lock text-amber-400" id="admin-lock-icon"></i><span id="admin-lock-label" class="hidden sm:inline">Admin</span></button>
-        <button onclick="syncFromGoogleSheet(true)" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-emerald-400 flex items-center justify-center" title="Sincronizar Agora"><i class="fa-solid fa-arrows-rotate text-xs" id="sync-icon"></i></button>
+        <!-- Botão de Sincronização Manual oculto por padrão (exclusivo para Admin) -->
+        <button onclick="syncFromGoogleSheet(true)" id="btn-sync-header" class="hidden w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-emerald-400 items-center justify-center" title="Sincronizar Planilha (Admin)"><i class="fa-solid fa-arrows-rotate text-xs" id="sync-icon"></i></button>
         <button onclick="openSongModal()" id="btn-new-song" class="hidden px-2.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold items-center gap-1.5"><i class="fa-solid fa-plus"></i><span class="hidden sm:inline">Nova Música</span></button>
         <button onclick="openRepertorioModal()" id="btn-new-rep" class="hidden px-2.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold items-center gap-1.5"><i class="fa-solid fa-calendar-plus"></i><span class="hidden sm:inline">Novo Repertório</span></button>
       </div>
@@ -301,14 +376,14 @@
       <div id="palco-content" class="space-y-5"></div>
     </section>
 
-    <!-- ABA 4: VS / ESTUDO MULTITRACK (COM CHAVE L / R) -->
+    <!-- ABA 4: VS / MIXER COM CHAVE L / C / R INDIVIDUAL POR FAIXA -->
     <section id="view-vs" class="hidden space-y-4">
       <div class="bg-slate-900 border border-purple-500/30 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-300 text-lg"><i class="fa-solid fa-sliders"></i></div>
           <div>
-            <h2 class="text-base sm:text-lg font-extrabold text-white">Estúdio VS & Multitracks (L / R Pan Mode)</h2>
-            <p class="text-xs text-slate-400">Defina a saída de som (Esquerdo L ou Direito R) e controle cada canal</p>
+            <h2 class="text-base sm:text-lg font-extrabold text-white">Estúdio VS & Mixer L/R por Faixa</h2>
+            <p class="text-xs text-slate-400">Direcione cada instrumento individualmente para o canal Esquerdo (L), Centro (C) ou Direito (R)</p>
           </div>
         </div>
         <button onclick="loadVsFolders(true)" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-purple-300 text-xs font-bold flex items-center gap-1.5">
@@ -336,7 +411,7 @@
             <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 space-y-3">
               <div class="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <span class="text-[10px] font-extrabold uppercase tracking-wider text-purple-400 block">Mesa Multitrack</span>
+                  <span class="text-[10px] font-extrabold uppercase tracking-wider text-purple-400 block">Mesa Multitrack com Junção L/R</span>
                   <h3 id="vs-active-song-title" class="text-lg font-black text-white">-</h3>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
@@ -350,13 +425,16 @@
                 </div>
               </div>
 
-              <!-- SELETOR DE SAÍDA L / R / ESTÉREO -->
+              <!-- ATALHOS DE PRÉ-ROTEAMENTO L/R PARA TODAS AS FAIXAS -->
               <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900/90 px-3.5 py-2 rounded-xl border border-purple-500/30 text-xs">
-                <span class="font-bold text-purple-300 flex items-center gap-1.5"><i class="fa-solid fa-headphones"></i><span>Saída do Som (Pan Mode):</span></span>
-                <div class="flex items-center gap-1 bg-slate-800 p-1 rounded-lg border border-slate-700">
-                  <button type="button" onclick="setVsPanMode('L')" id="btn-pan-l" class="px-2.5 py-1 rounded text-xs font-bold transition text-slate-300 hover:text-white">L (Esquerdo)</button>
-                  <button type="button" onclick="setVsPanMode('CENTER')" id="btn-pan-center" class="px-2.5 py-1 rounded text-xs font-bold transition bg-purple-600 text-white shadow">Normal (Estéreo)</button>
-                  <button type="button" onclick="setVsPanMode('R')" id="btn-pan-r" class="px-2.5 py-1 rounded text-xs font-bold transition text-slate-300 hover:text-white">R (Direito)</button>
+                <span class="font-bold text-purple-300 flex items-center gap-1.5"><i class="fa-solid fa-code-merge"></i><span>Pré-Ajuste de Canais L/R:</span></span>
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <button type="button" onclick="applyVsPanPreset('LIVE_SPLIT')" class="px-2.5 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 hover:text-white border border-indigo-500/40 text-[11px] font-bold transition">
+                    🎛️ Palco (Click/Guia = L | Banda = R)
+                  </button>
+                  <button type="button" onclick="applyVsPanPreset('ALL_CENTER')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-[11px] font-bold transition">
+                    🎧 Estudo Fone (Tudo no Centro C)
+                  </button>
                 </div>
               </div>
 
@@ -415,8 +493,8 @@
         </div>
       </div>
 
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-wrap items-center gap-2">
-        <span class="text-xs font-bold text-slate-400"><i class="fa-solid fa-link mr-1 text-pink-400"></i>Link da Planilha de Respostas:</span>
+      <div id="pedidos-admin-url-bar" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-3 flex-wrap items-center gap-2">
+        <span class="text-xs font-bold text-slate-400"><i class="fa-solid fa-link mr-1 text-pink-400"></i>Link da Planilha de Respostas (Admin):</span>
         <input type="text" id="input-form-sheet-url" placeholder="Cole aqui o link da planilha de respostas do Google Forms..." class="flex-1 min-w-[220px] px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-pink-500" />
         <button onclick="applyFormSheetUrl()" class="px-3.5 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold">Carregar Planilha</button>
       </div>
@@ -456,11 +534,11 @@
 
   </main>
 
-  <!-- MODAL CONEXÃO COM A PLANILHA (CASO PRECISE CONFIGURAR A URL /EXEC NA TELA) -->
+  <!-- MODAL CONEXÃO COM A PLANILHA (EXCLUSIVO ADMIN) -->
   <div id="connection-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-xl w-full p-5 space-y-4">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h3 class="text-base font-bold text-white"><i class="fa-solid fa-plug text-emerald-400 mr-2"></i>Conexão com a Planilha DOXA</h3>
+        <h3 class="text-base font-bold text-white"><i class="fa-solid fa-plug text-emerald-400 mr-2"></i>Conexão com a Planilha DOXA (Admin)</h3>
         <button onclick="closeConnectionModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
       <div class="space-y-3 text-xs text-slate-300">
@@ -515,9 +593,9 @@
     </div>
   </div>
 
-  <!-- MODAL WHATSAPP COM 2 OPÇÕES -->
+  <!-- MODAL WHATSAPP COM ENCURTADOR AUTOMÁTICO DE LINKS -->
   <div id="whatsapp-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-5 space-y-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-5 space-y-3.5">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <h3 class="text-base font-bold text-white"><i class="fa-brands fa-whatsapp text-emerald-400 mr-2"></i>Compartilhar no WhatsApp</h3>
         <button onclick="closeWhatsAppModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
@@ -530,8 +608,11 @@
           <i class="fa-brands fa-youtube text-rose-400"></i><span>2. Igreja (YouTube + Letras)</span>
         </button>
       </div>
+      <div id="wa-shortening-status" class="hidden text-[11px] font-semibold text-amber-300 flex items-center gap-1.5">
+        <i class="fa-solid fa-wand-magic-sparkles fa-spin"></i><span>Encurtando links automaticamente para ficar limpo no WhatsApp...</span>
+      </div>
       <textarea id="whatsapp-text-preview" rows="10" class="w-full p-3 bg-slate-800 border border-slate-700 rounded-xl text-xs text-slate-200 font-mono"></textarea>
-      <div id="whatsapp-copy-feedback" class="hidden text-xs font-bold text-emerald-400 text-center">Texto copiado automaticamente!</div>
+      <div id="whatsapp-copy-feedback" class="hidden text-xs font-bold text-emerald-400 text-center">Texto com links curtos copiado automaticamente!</div>
       <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
         <button onclick="copyWhatsAppTextNow()" class="px-4 py-2 rounded-xl bg-slate-800 border border-slate-600 text-white text-xs font-bold">Copiar Texto</button>
         <a id="whatsapp-direct-link" href="#" target="_blank" class="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold">Abrir no WhatsApp</a>
@@ -696,6 +777,17 @@
     let pageSize = 40;
     let offlineSavedChordKeys = new Set();
     let offlineSavedVsRefs = new Set();
+    let shortUrlCache = {};
+
+    function downloadGeneratedPwaIcon() {
+      if (!window.__DOXA_ICON_PNG__) return;
+      const a = document.createElement("a");
+      a.href = window.__DOXA_ICON_PNG__;
+      a.download = "icon-512.png";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
 
     // ============================================================================
     // BANCO DE DADOS OFFLINE (INDEXEDDB)
@@ -819,7 +911,7 @@
     }
 
     // ============================================================================
-    // DOWNLOAD INDIVIDUAL DE CADA CIFRA EM PDF (CONVERTE DOCX/PDF E BAIXA NA HORA)
+    // DOWNLOAD INDIVIDUAL DE CADA CIFRA EM PDF
     // ============================================================================
     async function baixarCifraIndividual(musica, autor, fileId, viewUrl) {
       const toast = document.getElementById("single-download-toast");
@@ -862,12 +954,8 @@
           return;
         }
 
-        // Caso não consiga converter via API, abre o link direto de download do Drive
-        if (fileId) {
-          window.open(`https://drive.google.com/uc?export=download&id=${fileId}`, "_blank");
-        } else if (viewUrl && viewUrl.startsWith("http")) {
-          window.open(viewUrl, "_blank");
-        }
+        if (fileId) window.open(`https://drive.google.com/uc?export=download&id=${fileId}`, "_blank");
+        else if (viewUrl && viewUrl.startsWith("http")) window.open(viewUrl, "_blank");
         toast.classList.add("hidden");
       } catch (err) {
         if (fileId) window.open(`https://drive.google.com/uc?export=download&id=${fileId}`, "_blank");
@@ -881,14 +969,14 @@
     function switchTabFromDrawer(tab) { closeSideDrawer(); switchTab(tab); }
 
     // ============================================================================
-    // 1. MIXER VS TURBO COM SUPORTE A PANORÂMICA (L / R PAN MODE)
+    // 1. MIXER VS COM CHAVE INDIVIDUAL [ L ] [ C ] [ R ] POR FAIXA E JUNÇÃO REAL
     // ============================================================================
     let vsFolders = [];
     let selectedVsFolderRef = "";
     let activeVsTracks = [];
-    let vsTracksState = {};
+    let vsTracksState = {}; // audioRef -> { htmlAudio, gainL, gainR, pan, volume, muted, solo, loaded, loading, error, savedOffline }
     let vsAudioCtx = null;
-    let vsPanMode = "CENTER";
+    let vsMasterMerger = null;
     let vsIsPlaying = false;
     let vsMaxDuration = 0;
     let vsPlaybackRate = 1;
@@ -898,20 +986,40 @@
     function ensureAudioContext() {
       if (!vsAudioCtx) {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (AudioCtx) vsAudioCtx = new AudioCtx();
+        if (AudioCtx) {
+          vsAudioCtx = new AudioCtx();
+          // Cria o somador Master Estéreo (Canal 0 = Esquerdo L | Canal 1 = Direito R)
+          vsMasterMerger = vsAudioCtx.createChannelMerger(2);
+          vsMasterMerger.connect(vsAudioCtx.destination);
+        }
       }
       if (vsAudioCtx && vsAudioCtx.state === "suspended") vsAudioCtx.resume();
       return vsAudioCtx;
     }
 
-    function setVsPanMode(mode) {
-      vsPanMode = mode;
-      ["L", "CENTER", "R"].forEach(m => {
-        const id = m === "CENTER" ? "btn-pan-center" : `btn-pan-${m.toLowerCase()}`;
-        const el = document.getElementById(id);
-        if (el) el.className = m === mode ? "px-2.5 py-1 rounded text-xs font-bold transition bg-purple-600 text-white shadow" : "px-2.5 py-1 rounded text-xs font-bold transition text-slate-300 hover:text-white";
+    // Define se uma faixa individual toca em L (Esquerdo), C (Centro) ou R (Direito)
+    function setTrackIndividualPan(audioRef, panVal) {
+      const st = vsTracksState[audioRef];
+      if (!st) return;
+      st.pan = panVal; // 'L', 'C' ou 'R'
+      applySoloMuteVolumes();
+      renderVsTracksChannels();
+    }
+
+    // Atalhos para pré-ajustar todas as faixas (Modo Palco L/R vs Modo Estudo Centro)
+    function applyVsPanPreset(preset) {
+      activeVsTracks.forEach(t => {
+        const st = vsTracksState[t.audioRef];
+        if (!st) return;
+        if (preset === "ALL_CENTER") {
+          st.pan = "C";
+        } else {
+          const isClickOrGuide = (t.categoria === "Click" || t.categoria === "Guia");
+          st.pan = isClickOrGuide ? "L" : "R";
+        }
       });
       applySoloMuteVolumes();
+      renderVsTracksChannels();
     }
 
     async function loadVsFolders(forceRefresh = false) {
@@ -978,7 +1086,21 @@
           activeVsTracks = faixasData.faixas;
           await refreshOfflineKeysCache();
           activeVsTracks.forEach(t => {
-            vsTracksState[t.audioRef] = { htmlAudio: null, panNode: null, gainNode: null, volume: 1, muted: false, solo: false, loaded: false, loading: false, error: "", savedOffline: offlineSavedVsRefs.has(t.audioRef) };
+            // Por padrão: Click e Guia vão para L (Esquerdo) e os demais instrumentos para R (Direito)
+            const defaultPan = (t.categoria === "Click" || t.categoria === "Guia") ? "L" : "R";
+            vsTracksState[t.audioRef] = {
+              htmlAudio: null,
+              gainL: null,
+              gainR: null,
+              pan: defaultPan,
+              volume: 1,
+              muted: false,
+              solo: false,
+              loaded: false,
+              loading: false,
+              error: "",
+              savedOffline: offlineSavedVsRefs.has(t.audioRef)
+            };
           });
           renderVsTracksChannels(); updateVsLoadedStatus();
         } else {
@@ -994,33 +1116,45 @@
       if (activeVsTracks.length === 0) { tracksEl.innerHTML = `<div class="text-center py-8 text-xs text-slate-400">Nenhum áudio encontrado.</div>`; return; }
       const anySolo = Object.values(vsTracksState).some(p => p.solo);
       tracksEl.innerHTML = activeVsTracks.map(t => {
-        const st = vsTracksState[t.audioRef] || { volume: 1, muted: false, solo: false, loaded: false, loading: false, error: "", savedOffline: false };
+        const st = vsTracksState[t.audioRef] || { volume: 1, pan: "C", muted: false, solo: false, loaded: false, loading: false, error: "", savedOffline: false };
         const effectivelyMuted = st.muted || (anySolo && !st.solo);
         return `
-          <div class="bg-slate-800/75 border ${st.loaded ? 'border-purple-500/50' : 'border-slate-800'} rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 transition ${effectivelyMuted ? 'opacity-55' : ''}">
-            <div class="flex items-center gap-3 min-w-[160px] flex-1">
+          <div class="bg-slate-800/75 border ${st.loaded ? 'border-purple-500/50' : 'border-slate-800'} rounded-xl p-3 flex flex-wrap items-center justify-between gap-2.5 transition ${effectivelyMuted ? 'opacity-55' : ''}">
+            <div class="flex items-center gap-3 min-w-[150px] flex-1">
               <div class="w-9 h-9 rounded-xl ${st.loaded ? 'bg-purple-600/25 border-purple-500/40 text-purple-300' : 'bg-slate-900 border-slate-700 text-slate-400'} border flex items-center justify-center shrink-0"><i class="fa-solid ${t.icone}"></i></div>
               <div class="min-w-0">
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1.5">
                   <span class="text-xs sm:text-sm font-bold text-white truncate">${t.nomeFaixa}</span>
                   <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-slate-300 font-semibold">${t.categoria}</span>
                   ${st.savedOffline ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-300 font-bold">Offline</span>` : ""}
                 </div>
                 <div class="text-[11px] text-slate-400 flex flex-wrap items-center gap-2">
-                  <span>${t.tamanhoMb ? `${t.tamanhoMb} MB` : ""}</span>
+                  <span>Canal: <strong class="${st.pan === 'L' ? 'text-amber-300' : st.pan === 'R' ? 'text-cyan-300' : 'text-purple-300'}">${st.pan === 'L' ? 'Esquerdo (L)' : st.pan === 'R' ? 'Direito (R)' : 'Centro (L+R)'}</strong></span>
                   ${st.loading ? `<span class="text-amber-300 font-semibold"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Baixando...</span>` : ""}
                   ${st.loaded ? `<span class="text-emerald-400 font-semibold"><i class="fa-solid fa-check mr-1"></i>Pronta</span>` : ""}
                   ${st.error ? `<span class="text-rose-400 font-semibold">${st.error}</span>` : ""}
                 </div>
               </div>
             </div>
-            <div class="flex flex-wrap items-center gap-2">
+
+            <div class="flex flex-wrap items-center gap-1.5">
               ${!st.loaded ? `<button onclick="loadSingleVsTrackFast('${t.audioRef}', true, false)" ${st.loading ? "disabled" : ""} class="px-2.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-1 shadow"><i class="fa-solid fa-bolt text-[10px]"></i><span>+ Mixer</span></button>` : ""}
+
+              <!-- SELETOR INDIVIDUAL [ L ] [ C ] [ R ] DA FAIXA -->
+              <div class="flex items-center bg-slate-900 p-0.5 rounded-lg border border-slate-700" title="Escolher lado desta faixa no Mixer (Esquerdo L, Centro C ou Direito R)">
+                <button type="button" onclick="setTrackIndividualPan('${t.audioRef}', 'L')" class="w-7 h-7 rounded-md font-black text-[11px] transition ${st.pan === 'L' ? 'bg-amber-500 text-black shadow' : 'text-slate-400 hover:text-white'}">L</button>
+                <button type="button" onclick="setTrackIndividualPan('${t.audioRef}', 'C')" class="w-7 h-7 rounded-md font-black text-[11px] transition ${st.pan === 'C' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}">C</button>
+                <button type="button" onclick="setTrackIndividualPan('${t.audioRef}', 'R')" class="w-7 h-7 rounded-md font-black text-[11px] transition ${st.pan === 'R' ? 'bg-cyan-500 text-black shadow' : 'text-slate-400 hover:text-white'}">R</button>
+              </div>
+
+              <!-- MUTE E SOLO -->
               <button onclick="toggleVsTrackMute('${t.audioRef}')" class="w-8 h-8 rounded-lg font-black text-xs border transition ${st.muted ? "bg-rose-600 text-white border-rose-400" : "bg-slate-900 text-slate-300 border-slate-700"}">M</button>
               <button onclick="toggleVsTrackSolo('${t.audioRef}')" class="w-8 h-8 rounded-lg font-black text-xs border transition ${st.solo ? "bg-amber-400 text-black border-amber-300" : "bg-slate-900 text-slate-300 border-slate-700"}">S</button>
-              <div class="flex items-center gap-1.5 bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-700">
+
+              <!-- VOLUME -->
+              <div class="flex items-center gap-1.5 bg-slate-900 px-2 py-1.5 rounded-lg border border-slate-700">
                 <i class="fa-solid fa-volume-high text-slate-400 text-[10px]"></i>
-                <input type="range" min="0" max="1" step="0.02" value="${st.volume}" oninput="changeVsTrackVolume('${t.audioRef}', this.value)" class="w-20 sm:w-24 h-1.5 cursor-pointer" />
+                <input type="range" min="0" max="1" step="0.02" value="${st.volume}" oninput="changeVsTrackVolume('${t.audioRef}', this.value)" class="w-16 sm:w-20 h-1.5 cursor-pointer" />
               </div>
             </div>
           </div>`;
@@ -1078,15 +1212,18 @@
           };
           st.htmlAudio = audio;
 
-          if (vsAudioCtx && typeof vsAudioCtx.createMediaElementSource === "function") {
+          // Matriz Dual-Gain L/R ligada ao ChannelMerger Master (100% de separação L e R em qualquer aparelho)
+          if (vsAudioCtx && vsMasterMerger && typeof vsAudioCtx.createMediaElementSource === "function") {
             try {
               const source = vsAudioCtx.createMediaElementSource(audio);
-              const panner = vsAudioCtx.createStereoPanner ? vsAudioCtx.createStereoPanner() : null;
-              const gain = vsAudioCtx.createGain();
-              source.connect(gain);
-              if (panner) { gain.connect(panner); panner.connect(vsAudioCtx.destination); st.panNode = panner; }
-              else { gain.connect(vsAudioCtx.destination); }
-              st.gainNode = gain;
+              const gainL = vsAudioCtx.createGain();
+              const gainR = vsAudioCtx.createGain();
+              source.connect(gainL);
+              source.connect(gainR);
+              gainL.connect(vsMasterMerger, 0, 0); // Canal 0 = Esquerdo (L)
+              gainR.connect(vsMasterMerger, 0, 1); // Canal 1 = Direito (R)
+              st.gainL = gainL;
+              st.gainR = gainR;
             } catch (eNode) {}
           }
         }
@@ -1120,7 +1257,7 @@
 
       if (total > 0) {
         bar.style.width = "15%"; pct.textContent = `0/${total}`;
-        txt.innerHTML = `<i class="fa-solid fa-bolt text-amber-400 mr-1.5"></i>Baixando ${total} faixas em paralelo...`;
+        txt.innerHTML = `<i class="fa-solid fa-bolt text-amber-400 mr-1.5"></i>Baixando e unindo ${total} faixas em L/R...`;
         await Promise.all(pending.map(async (t) => {
           await loadSingleVsTrackFast(t.audioRef, false, persistOffline);
           done++;
@@ -1132,7 +1269,7 @@
 
       updateVsLoadedStatus(); renderVsTracksChannels();
       bar.style.width = "100%";
-      txt.innerHTML = `<i class="fa-solid fa-check text-emerald-400 mr-1.5"></i>Pronto!`;
+      txt.innerHTML = `<i class="fa-solid fa-check text-emerald-400 mr-1.5"></i>Todas as faixas prontas no Mixer L/R!`;
       setTimeout(() => wrap.classList.add("hidden"), 1000);
 
       if (autoPlayWhenReady && !vsIsPlaying) toggleMasterVsPlay();
@@ -1189,12 +1326,15 @@
         if (!st.htmlAudio) return;
         const silence = st.muted || (anySolo && !st.solo);
         const targetGain = silence ? 0 : st.volume;
-        st.htmlAudio.volume = Math.min(1, Math.max(0, targetGain));
-        if (st.gainNode && vsAudioCtx) st.gainNode.gain.setTargetAtTime(targetGain, vsAudioCtx.currentTime, 0.015);
-        if (st.panNode) {
-          if (vsPanMode === "L") st.panNode.pan.value = -1;
-          else if (vsPanMode === "R") st.panNode.pan.value = 1;
-          else st.panNode.pan.value = 0;
+
+        if (st.gainL && st.gainR && vsAudioCtx) {
+          st.htmlAudio.volume = 1; // O volume e o lado L/R são controlados pelos barramentos GainL e GainR
+          const leftVal = (st.pan === "L" || st.pan === "C") ? targetGain : 0;
+          const rightVal = (st.pan === "R" || st.pan === "C") ? targetGain : 0;
+          st.gainL.gain.setTargetAtTime(leftVal, vsAudioCtx.currentTime, 0.012);
+          st.gainR.gain.setTargetAtTime(rightVal, vsAudioCtx.currentTime, 0.012);
+        } else {
+          st.htmlAudio.volume = Math.min(1, Math.max(0, targetGain));
         }
       });
     }
@@ -1212,7 +1352,7 @@
     }
     function updateVsLoadedStatus() {
       const loadedCount = getLoadedHtmlAudios().length;
-      document.getElementById("vs-loaded-status").textContent = loadedCount > 0 ? `${loadedCount} de ${activeVsTracks.length} faixas prontas` : `Toque em Play ou + Mixer`;
+      document.getElementById("vs-loaded-status").textContent = loadedCount > 0 ? `${loadedCount} de ${activeVsTracks.length} faixas no Mixer L/R` : `Toque em Play ou + Mixer`;
     }
     function startVsProgressLoop() {
       if (vsProgressTimer) clearInterval(vsProgressTimer);
@@ -1243,9 +1383,35 @@
     }
 
     // ============================================================================
-    // 2. WHATSAPP COM AS 2 OPÇÕES
+    // 2. WHATSAPP COM ENCURTADOR AUTOMÁTICO DE LINKS (SEM COLCHETES E SEM URL GIGANTE)
     // ============================================================================
-    function buildWhatsAppText(rep, mode) {
+    function toShortYouTubeUrl(url) {
+      if (!url) return "";
+      const m = String(url).match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+      return (m && m[1]) ? `https://youtu.be/${m[1]}` : url;
+    }
+
+    async function shortenUrlFast(longUrl) {
+      if (!longUrl || !longUrl.startsWith("http")) return longUrl;
+      const ytShort = toShortYouTubeUrl(longUrl);
+      if (ytShort.includes("youtu.be/")) return ytShort;
+      if (shortUrlCache[longUrl]) return shortUrlCache[longUrl];
+      if (!navigator.onLine) return longUrl;
+
+      try {
+        const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
+        if (res.ok) {
+          const shortTxt = (await res.text()).trim();
+          if (shortTxt.startsWith("http")) {
+            shortUrlCache[longUrl] = shortTxt;
+            return shortTxt;
+          }
+        }
+      } catch (e) {}
+      return longUrl;
+    }
+
+    async function buildWhatsAppTextAsync(rep, mode) {
       const dObj = parseRepDate(rep.dia);
       const dateFormatted = dObj ? formatDatePtBr(dObj) : rep.dia;
 
@@ -1254,26 +1420,42 @@
         text += `*REPERTÓRIO DOXA — ${dateFormatted} (${rep.culto})*\n`;
         if (rep.tema) text += `*Tema:* ${rep.tema}\n`;
         text += `\n`;
-        (rep.itens || []).forEach((it, i) => {
-          const info = getResolvedSongDetails(it);
+
+        const items = rep.itens || [];
+        for (let i = 0; i < items.length; i++) {
+          const info = getResolvedSongDetails(items[i]);
           const cleanAutor = (info.autor && info.autor !== "Autor não informado") ? info.autor : "";
-          const ytLink = info.audio || `https://www.youtube.com/results?search_query=${encodeURIComponent(info.musica + " " + cleanAutor)}`;
-          const letraLink = `https://www.letras.mus.br/?q=${encodeURIComponent(info.musica + " " + cleanAutor)}`;
+          const rawYt = info.audio || `https://www.youtube.com/results?search_query=${encodeURIComponent(info.musica + " " + cleanAutor)}`;
+          const rawLetra = `https://www.letras.mus.br/?q=${encodeURIComponent(info.musica + " " + cleanAutor)}`;
+
+          const [shortYt, shortLetra] = await Promise.all([
+            shortenUrlFast(rawYt),
+            shortenUrlFast(rawLetra)
+          ]);
+
           text += `${i + 1}. *${info.musica}*${cleanAutor ? ` (${cleanAutor})` : ""}\n`;
-          text += `   ▶️ [Assistir no YouTube](${ytLink})\n`;
-          text += `   📝 [Ver Letra da Música](${letraLink})\n`;
-        });
+          text += `   ▶️ YouTube: ${shortYt}\n`;
+          text += `   📝 Letra: ${shortLetra}\n`;
+        }
         text += `\n🙌 *Tem algum louvor que você gostaria de cantar conosco?*\nEnvie seu pedido de música aqui: ${LINK_FORMULARIO_PEDIDOS}`;
         return text;
       }
 
       let text = `*REPERTÓRIO DOXA — ${dateFormatted} (${rep.culto})*\n*Tema:* ${rep.tema}\n\n`;
-      (rep.itens || []).forEach((it, i) => {
+      const items = rep.itens || [];
+      for (let i = 0; i < items.length; i++) {
+        const it = items[i];
         const info = getResolvedSongDetails(it);
         text += `${i + 1}. *${it.momento}:* ${info.musica} (${info.autor}) — *Tom: ${info.tom}*${info.tempo ? ` • ${info.tempo} BPM` : ""}\n`;
-        if (info.hasFile) text += `   📄 [Abrir Cifra no Drive](${info.viewUrl})\n`;
-        if (info.audio) text += `   ▶️ [Ouvir no YouTube](${info.audio})\n`;
-      });
+        if (info.hasFile) {
+          const shortDrive = await shortenUrlFast(info.viewUrl);
+          text += `   📄 Cifra: ${shortDrive}\n`;
+        }
+        if (info.audio) {
+          const shortAudio = await shortenUrlFast(info.audio);
+          text += `   ▶️ Áudio: ${shortAudio}\n`;
+        }
+      }
       return text;
     }
 
@@ -1285,14 +1467,21 @@
       switchWhatsAppMode(initialMode);
     }
 
-    function switchWhatsAppMode(mode) {
+    async function switchWhatsAppMode(mode) {
       currentWhatsAppMode = mode;
       const rep = repertorios.find(r => r.id === Number(currentWhatsAppRepId));
       if (!rep) return;
+
       document.getElementById("btn-wa-equipe").className = mode === "equipe" ? "py-2 px-3 rounded-lg text-xs font-bold transition bg-indigo-600 text-white shadow flex items-center justify-center gap-1.5" : "py-2 px-3 rounded-lg text-xs font-bold transition text-slate-300 hover:text-white flex items-center justify-center gap-1.5";
       document.getElementById("btn-wa-igreja").className = mode === "igreja" ? "py-2 px-3 rounded-lg text-xs font-bold transition bg-emerald-600 text-white shadow flex items-center justify-center gap-1.5" : "py-2 px-3 rounded-lg text-xs font-bold transition text-slate-300 hover:text-white flex items-center justify-center gap-1.5";
 
-      const text = buildWhatsAppText(rep, mode);
+      const statusWait = document.getElementById("wa-shortening-status");
+      statusWait.classList.remove("hidden");
+      document.getElementById("whatsapp-copy-feedback").classList.add("hidden");
+
+      const text = await buildWhatsAppTextAsync(rep, mode);
+      statusWait.classList.add("hidden");
+
       document.getElementById("whatsapp-text-preview").value = text;
       document.getElementById("whatsapp-direct-link").href = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
       copyWhatsAppTextNow();
@@ -1384,6 +1573,7 @@
       loadFormResponsesFromScript();
     }
     function applyFormSheetUrl() {
+      if (!isAdmin) return;
       const val = document.getElementById("input-form-sheet-url").value.trim();
       if (!val) return;
       formSheetUrl = val;
@@ -1408,11 +1598,11 @@
           if (data.sheetUrl && !formSheetUrl) { formSheetUrl = data.sheetUrl; document.getElementById("input-form-sheet-url").value = formSheetUrl; embedFormSheet(formSheetUrl); }
           const headers = data.headers || []; const pedidos = data.pedidos || [];
           document.getElementById("drawer-badge-pedidos").textContent = pedidos.length;
-          document.getElementById("pedidos-thead").innerHTML = `<tr>${headers.map(h => `<th class="py-2.5 px-3">${h}</th>`).join("")}<th class="py-2.5 px-3 text-right">Ação</th></tr>`;
+          document.getElementById("pedidos-thead").innerHTML = `<tr>${headers.map(h => `<th class="py-2.5 px-3">${h}</th>`).join("")}${isAdmin ? '<th class="py-2.5 px-3 text-right">Ação</th>' : ''}</tr>`;
           document.getElementById("pedidos-tbody").innerHTML = pedidos.map(p => {
             const vals = p.valores || [];
             const possibleSong = vals[1] || vals[2] || ""; const possibleAuthor = vals[2] || vals[3] || "";
-            return `<tr class="hover:bg-slate-800/50">${vals.map(v => `<td class="py-2.5 px-3">${v}</td>`).join("")}<td class="py-2.5 px-3 text-right"><button onclick="cadastrarPedidoNoBanco('${String(possibleSong).replace(/'/g, "\\'")}', '${String(possibleAuthor).replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded-lg bg-indigo-600/20 text-indigo-300 font-bold text-[11px]">+ Cadastrar</button></td></tr>`;
+            return `<tr class="hover:bg-slate-800/50">${vals.map(v => `<td class="py-2.5 px-3">${v}</td>`).join("")}${isAdmin ? `<td class="py-2.5 px-3 text-right"><button onclick="cadastrarPedidoNoBanco('${String(possibleSong).replace(/'/g, "\\'")}', '${String(possibleAuthor).replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded-lg bg-indigo-600/20 text-indigo-300 font-bold text-[11px]">+ Cadastrar</button></td>` : ''}</tr>`;
           }).join("");
         }
       } catch (e) {}
@@ -1425,7 +1615,7 @@
     }
 
     // ============================================================================
-    // 5. CATÁLOGO, BUSCA, REPERTÓRIOS, PALCO, CONEXÃO E SINCRONIZAÇÃO COMPLETA
+    // 5. CATÁLOGO, BUSCA, REPERTÓRIOS, PALCO, ADMIN E SINCRONIZAÇÃO
     // ============================================================================
     document.addEventListener("click", function(e) {
       [["song-autor", "dropdown-autor-constants"], ["song-tom", "dropdown-tom-constants"], ["song-dificuldade", "dropdown-dif-constants"], ["rep-culto", "dropdown-culto-constants"], ["rep-item-momento", "dropdown-momento-constants"], ["rep-item-song-search", "dropdown-rep-songs"]].forEach(([inputId, dropId]) => {
@@ -1513,6 +1703,7 @@
     }
 
     function openConnectionModal() {
+      if (!isAdmin) { handleAdminButtonClick(); return; }
       document.getElementById("input-script-url").value = scriptUrl;
       document.getElementById("sync-feedback").classList.add("hidden");
       document.getElementById("connection-modal").classList.remove("hidden");
@@ -1523,6 +1714,7 @@
       document.getElementById("connection-modal").classList.remove("flex");
     }
     async function saveConnectionSettings() {
+      if (!isAdmin) return;
       const val = document.getElementById("input-script-url").value.trim();
       if (!val) return;
       scriptUrl = val;
@@ -1552,24 +1744,33 @@
     function updateAdminUI() {
       const icon = document.getElementById("admin-lock-icon");
       const label = document.getElementById("admin-lock-label");
+      const btnSyncHeader = document.getElementById("btn-sync-header");
       const btnNewSong = document.getElementById("btn-new-song");
       const btnNewRep = document.getElementById("btn-new-rep");
       const btnNewRepInline = document.getElementById("btn-new-rep-inline");
       const dIcon = document.getElementById("drawer-admin-icon");
       const dLabel = document.getElementById("drawer-admin-label");
+      const drawerAdminBox = document.getElementById("drawer-admin-only-box");
+      const pedidosUrlBar = document.getElementById("pedidos-admin-url-bar");
 
       if (isAdmin) {
         icon.className = "fa-solid fa-lock-open text-emerald-400"; label.textContent = "Admin Ativo";
+        btnSyncHeader.classList.remove("hidden"); btnSyncHeader.classList.add("flex");
         btnNewSong.classList.remove("hidden"); btnNewSong.classList.add("flex");
         btnNewRep.classList.remove("hidden"); btnNewRep.classList.add("flex");
         if (btnNewRepInline) { btnNewRepInline.classList.remove("hidden"); btnNewRepInline.classList.add("inline-flex"); }
+        if (drawerAdminBox) drawerAdminBox.classList.remove("hidden");
+        if (pedidosUrlBar) { pedidosUrlBar.classList.remove("hidden"); pedidosUrlBar.classList.add("flex"); }
         if (dIcon) dIcon.className = "fa-solid fa-lock-open text-emerald-400";
         if (dLabel) dLabel.textContent = "Admin Ativo (Sair)";
       } else {
         icon.className = "fa-solid fa-lock text-amber-400"; label.textContent = "Admin";
+        btnSyncHeader.classList.add("hidden"); btnSyncHeader.classList.remove("flex");
         btnNewSong.classList.add("hidden"); btnNewSong.classList.remove("flex");
         btnNewRep.classList.add("hidden"); btnNewRep.classList.remove("flex");
         if (btnNewRepInline) { btnNewRepInline.classList.add("hidden"); btnNewRepInline.classList.remove("inline-flex"); }
+        if (drawerAdminBox) drawerAdminBox.classList.add("hidden");
+        if (pedidosUrlBar) { pedidosUrlBar.classList.add("hidden"); pedidosUrlBar.classList.remove("flex"); }
         if (dIcon) dIcon.className = "fa-solid fa-lock text-amber-400";
         if (dLabel) dLabel.textContent = "Desbloquear Admin";
       }
@@ -1644,14 +1845,15 @@
       };
     }
 
-    async function syncFromGoogleSheet(showModalFeedback = false) {
+    async function syncFromGoogleSheet(manualAdminTrigger = false) {
+      if (manualAdminTrigger && !isAdmin) return;
       const icon = document.getElementById("sync-icon");
       if (icon) icon.classList.add("fa-spin");
       try {
         await loadCatalogFromOfflineCache();
         if (!scriptUrl || !scriptUrl.startsWith("http")) {
           updateConnectionBadge(false, songs.length, false);
-          if (showModalFeedback) openConnectionModal();
+          if (manualAdminTrigger && isAdmin) openConnectionModal();
           return;
         }
         if (!navigator.onLine) {
@@ -1679,17 +1881,17 @@
           renderRelatorios();
           updateConnectionBadge(true, songs.length, false);
           const fb = document.getElementById("sync-feedback");
-          if (fb && showModalFeedback) {
+          if (fb && manualAdminTrigger) {
             fb.classList.remove("hidden");
             fb.className = "p-3 rounded-xl text-xs font-semibold bg-emerald-500/20 text-emerald-300";
             fb.textContent = `Sincronizado com sucesso! ${songs.length} músicas carregadas.`;
-            setTimeout(() => closeConnectionModal(), 1000);
+            setTimeout(() => closeConnectionModal(), 900);
           }
         }
       } catch (err) {
         updateConnectionBadge(songs.length > 0, songs.length, true);
         const fb = document.getElementById("sync-feedback");
-        if (fb && showModalFeedback) {
+        if (fb && manualAdminTrigger) {
           fb.classList.remove("hidden");
           fb.className = "p-3 rounded-xl text-xs font-semibold bg-rose-500/20 text-rose-300";
           fb.textContent = "Erro ao conectar. Verifique se a URL /exec está correta.";
@@ -1700,7 +1902,7 @@
     }
 
     async function pushToGoogleSheet(payload) {
-      if (!scriptUrl) return;
+      if (!scriptUrl || !isAdmin) return;
       try {
         await fetch(scriptUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
       } catch (e) {}
@@ -1710,18 +1912,18 @@
       const badge = document.getElementById("status-badge");
       const landingPill = document.getElementById("landing-status-pill");
       if (connected && count > 0) {
-        badge.className = `text-[10px] ${isOfflineCache ? 'text-amber-300' : 'text-emerald-400'} font-semibold block truncate text-left hover:underline`;
-        badge.innerHTML = `<i class="fa-solid ${isOfflineCache ? 'fa-bolt' : 'fa-circle-check'} mr-1"></i>${count} músicas (${isOfflineCache ? 'Memória Offline' : 'Sincronizadas'})`;
+        badge.className = `text-[10px] ${isOfflineCache ? 'text-amber-300' : 'text-emerald-400'} font-semibold block truncate text-left`;
+        badge.innerHTML = `<i class="fa-solid ${isOfflineCache ? 'fa-bolt' : 'fa-circle-check'} mr-1"></i>${count} músicas ${isOfflineCache ? '(Offline)' : 'prontas'}`;
         if (landingPill) {
           landingPill.className = "text-[11px] px-3 py-1 rounded-full bg-zinc-900 border border-emerald-500/30 text-emerald-400 font-semibold";
           landingPill.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i>${count} músicas prontas`;
         }
       } else {
-        badge.className = "text-[10px] text-amber-300 font-bold block truncate text-left underline";
-        badge.innerHTML = `<i class="fa-solid fa-plug mr-1"></i>Clique aqui p/ colar a URL /exec`;
+        badge.className = "text-[10px] text-slate-400 font-medium block truncate text-left";
+        badge.innerHTML = `Aguardando sincronização Admin`;
         if (landingPill) {
-          landingPill.className = "text-[11px] px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-semibold";
-          landingPill.innerHTML = `<i class="fa-solid fa-plug mr-1"></i>Configurar Planilha`;
+          landingPill.className = "text-[11px] px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 font-medium";
+          landingPill.innerHTML = `Modo Leitura`;
         }
       }
     }
@@ -2229,7 +2431,7 @@
     }
 
     function switchTab(tab) {
-      const labels = { musicas: "Músicas", repertorios: "Repertórios", palco: "Modo Palco", vs: "VS / Estudo", pedidos: "Pedidos", relatorios: "Relatórios" };
+      const labels = { musicas: "Músicas", repertorios: "Repertórios", palco: "Modo Palco", vs: "VS / Mixer L-R", pedidos: "Pedidos", relatorios: "Relatórios" };
       const pill = document.getElementById("active-tab-pill");
       if (pill && labels[tab]) pill.textContent = labels[tab];
 
@@ -2264,7 +2466,7 @@
     updateNetworkPill();
     applyCustomLogoIfAvailable("");
     updateAdminUI();
-    syncFromGoogleSheet();
+    syncFromGoogleSheet(false);
   </script>
 </body>
 </html>
