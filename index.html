@@ -147,7 +147,7 @@
         </div>
       </div>
     </div>
-    <div class="text-[11px] text-zinc-600 tracking-wider uppercase font-semibold z-10">DOXA • Louvor e Adoração • v2.8 Pro</div>
+    <div class="text-[11px] text-zinc-600 tracking-wider uppercase font-semibold z-10">DOXA • Louvor e Adoração • v2.9 iOS Pro</div>
   </div>
 
   <!-- MENU LATERAL (☰) -->
@@ -178,7 +178,7 @@
         </button>
         <button onclick="switchTabFromDrawer('vs')" id="drawer-tab-vs" class="w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition flex items-center justify-between text-slate-300 hover:bg-slate-800">
           <span class="flex items-center gap-3"><i class="fa-solid fa-sliders w-5 text-center text-purple-400"></i><span>VS / Mixer L-R</span></span>
-          <span id="drawer-badge-vs" class="text-[11px] px-2 py-0.5 rounded-full bg-purple-900/60 text-purple-200 font-bold">2.8</span>
+          <span id="drawer-badge-vs" class="text-[11px] px-2 py-0.5 rounded-full bg-purple-900/60 text-purple-200 font-bold">2.9</span>
         </button>
         <button onclick="switchTabFromDrawer('pedidos')" id="drawer-tab-pedidos" class="w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition flex items-center justify-between text-slate-300 hover:bg-slate-800">
           <span class="flex items-center gap-3"><i class="fa-solid fa-inbox w-5 text-center text-pink-400"></i><span>Pedidos (Formulário)</span></span>
@@ -199,14 +199,13 @@
       </div>
     </div>
 
-    <!-- RODAPÉ DO MENU (OPÇÕES DE SINCRONIZAÇÃO SÓ APARECEM PARA ADMIN) -->
+    <!-- RODAPÉ DO MENU (SINCRONIZAÇÃO EXCLUSIVA PARA ADMIN) -->
     <div class="space-y-2 border-t border-slate-800 pt-3">
       <button onclick="closeSideDrawer(); handleAdminButtonClick();" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-slate-200 flex items-center justify-between">
         <span class="flex items-center gap-2"><i class="fa-solid fa-lock text-amber-400" id="drawer-admin-icon"></i><span id="drawer-admin-label">Modo Administrador</span></span>
         <i class="fa-solid fa-chevron-right text-[10px] text-slate-500"></i>
       </button>
 
-      <!-- Bloco Exclusivo do Admin no Menu Lateral -->
       <div id="drawer-admin-only-box" class="hidden space-y-1.5 pt-1">
         <button onclick="closeSideDrawer(); syncFromGoogleSheet(true);" class="w-full px-3.5 py-2 rounded-xl bg-emerald-600/15 border border-emerald-500/30 text-xs font-bold text-emerald-300 flex items-center justify-center gap-2">
           <i class="fa-solid fa-arrows-rotate"></i><span>Sincronizar Planilha (Admin)</span>
@@ -243,7 +242,7 @@
         <button onclick="switchTab('musicas')" id="tab-musicas" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 bg-indigo-600 text-white shadow"><i class="fa-solid fa-music"></i><span>Músicas</span><span id="badge-total-musicas" class="text-xs px-1.5 py-0.5 rounded-full bg-indigo-800 text-indigo-100">0</span></button>
         <button onclick="switchTab('repertorios')" id="tab-repertorios" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-calendar-days"></i><span>Repertórios</span><span id="badge-total-repertorios" class="text-xs px-1.5 py-0.5 rounded-full bg-slate-700 text-slate-300">0</span></button>
         <button onclick="switchTab('palco')" id="tab-palco" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-guitar"></i><span>Modo Palco</span></button>
-        <button onclick="switchTab('vs')" id="tab-vs" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-sliders"></i><span>VS / Estudo</span><span id="badge-total-vs" class="text-xs px-1.5 py-0.5 rounded-full bg-purple-900/60 text-purple-200">2.8</span></button>
+        <button onclick="switchTab('vs')" id="tab-vs" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-sliders"></i><span>VS / Estudo</span><span id="badge-total-vs" class="text-xs px-1.5 py-0.5 rounded-full bg-purple-900/60 text-purple-200">2.9</span></button>
         <button onclick="switchTab('pedidos')" id="tab-pedidos" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-inbox"></i><span>Pedidos</span></button>
         <button onclick="switchTab('relatorios')" id="tab-relatorios" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-chart-pie"></i><span>Relatórios</span></button>
       </nav>
@@ -251,7 +250,6 @@
       <div class="flex items-center gap-1.5 shrink-0">
         <button onclick="openOfflineManagerModal()" class="px-2.5 py-2 rounded-xl bg-teal-500/15 hover:bg-teal-500/25 border border-teal-500/30 text-teal-300 text-xs font-bold flex items-center gap-1.5" title="Memória Offline"><i class="fa-solid fa-cloud-arrow-down"></i><span class="hidden sm:inline">Offline</span></button>
         <button onclick="handleAdminButtonClick()" id="btn-admin-lock" class="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5"><i class="fa-solid fa-lock text-amber-400" id="admin-lock-icon"></i><span id="admin-lock-label" class="hidden sm:inline">Admin</span></button>
-        <!-- Botão de Sincronização Manual oculto por padrão (exclusivo para Admin) -->
         <button onclick="syncFromGoogleSheet(true)" id="btn-sync-header" class="hidden w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-emerald-400 items-center justify-center" title="Sincronizar Planilha (Admin)"><i class="fa-solid fa-arrows-rotate text-xs" id="sync-icon"></i></button>
         <button onclick="openSongModal()" id="btn-new-song" class="hidden px-2.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold items-center gap-1.5"><i class="fa-solid fa-plus"></i><span class="hidden sm:inline">Nova Música</span></button>
         <button onclick="openRepertorioModal()" id="btn-new-rep" class="hidden px-2.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold items-center gap-1.5"><i class="fa-solid fa-calendar-plus"></i><span class="hidden sm:inline">Novo Repertório</span></button>
@@ -376,14 +374,14 @@
       <div id="palco-content" class="space-y-5"></div>
     </section>
 
-    <!-- ABA 4: VS / MIXER COM CHAVE L / C / R INDIVIDUAL POR FAIXA -->
+    <!-- ABA 4: VS / MIXER NATIVO iOS & ANDROID COM CHAVE L / C / R POR FAIXA -->
     <section id="view-vs" class="hidden space-y-4">
       <div class="bg-slate-900 border border-purple-500/30 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-300 text-lg"><i class="fa-solid fa-sliders"></i></div>
           <div>
-            <h2 class="text-base sm:text-lg font-extrabold text-white">Estúdio VS & Mixer L/R por Faixa</h2>
-            <p class="text-xs text-slate-400">Direcione cada instrumento individualmente para o canal Esquerdo (L), Centro (C) ou Direito (R)</p>
+            <h2 class="text-base sm:text-lg font-extrabold text-white">Estúdio VS & Mixer L/R (Motor iOS Hardware Clock)</h2>
+            <p class="text-xs text-slate-400">Todas as faixas unificadas em um único canal de hardware (sem limite de vozes e zero engasgos)</p>
           </div>
         </div>
         <button onclick="loadVsFolders(true)" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-purple-300 text-xs font-bold flex items-center gap-1.5">
@@ -411,12 +409,12 @@
             <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 space-y-3">
               <div class="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <span class="text-[10px] font-extrabold uppercase tracking-wider text-purple-400 block">Mesa Multitrack com Junção L/R</span>
+                  <span class="text-[10px] font-extrabold uppercase tracking-wider text-purple-400 block">Mesa Multitrack Sincronizada</span>
                   <h3 id="vs-active-song-title" class="text-lg font-black text-white">-</h3>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
                   <button onclick="loadAllVsTracksParallel(true, false)" id="btn-load-all-vs" class="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-1.5 shadow">
-                    <i class="fa-solid fa-bolt"></i><span>Carregar Todas (Turbo)</span>
+                    <i class="fa-solid fa-bolt"></i><span>Carregar e Tocar Todas</span>
                   </button>
                   <button onclick="loadAllVsTracksParallel(false, true)" class="px-3 py-2 rounded-xl bg-teal-600/25 hover:bg-teal-600 text-teal-300 hover:text-white border border-teal-500/40 text-xs font-bold flex items-center gap-1.5" title="Salvar faixas no aparelho para estudo sem internet">
                     <i class="fa-solid fa-cloud-arrow-down"></i><span>Salvar VS Offline</span>
@@ -425,9 +423,9 @@
                 </div>
               </div>
 
-              <!-- ATALHOS DE PRÉ-ROTEAMENTO L/R PARA TODAS AS FAIXAS -->
+              <!-- ATALHOS DE PRÉ-ROTEAMENTO L/R -->
               <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900/90 px-3.5 py-2 rounded-xl border border-purple-500/30 text-xs">
-                <span class="font-bold text-purple-300 flex items-center gap-1.5"><i class="fa-solid fa-code-merge"></i><span>Pré-Ajuste de Canais L/R:</span></span>
+                <span class="font-bold text-purple-300 flex items-center gap-1.5"><i class="fa-solid fa-code-merge"></i><span>Pré-Ajuste L/R:</span></span>
                 <div class="flex flex-wrap items-center gap-1.5">
                   <button type="button" onclick="applyVsPanPreset('LIVE_SPLIT')" class="px-2.5 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 hover:text-white border border-indigo-500/40 text-[11px] font-bold transition">
                     🎛️ Palco (Click/Guia = L | Banda = R)
@@ -458,7 +456,7 @@
                     <span id="vs-loaded-status" class="text-purple-300 font-sans font-semibold">Toque em Play ou + Mixer</span>
                     <span id="vs-total-duration">00:00</span>
                   </div>
-                  <input type="range" id="vs-master-seek" min="0" max="100" value="0" step="0.1" oninput="seekMasterVs(this.value)" class="w-full h-2 bg-slate-900 rounded-lg cursor-pointer" />
+                  <input type="range" id="vs-master-seek" min="0" max="100" value="0" step="0.1" onchange="seekMasterVs(this.value)" oninput="previewSeekTime(this.value)" class="w-full h-2 bg-slate-900 rounded-lg cursor-pointer" />
                 </div>
                 <div class="flex items-center gap-1 bg-slate-900 px-2.5 py-1.5 rounded-xl border border-slate-700 shrink-0">
                   <span class="text-[10px] font-bold text-slate-400 uppercase mr-1">Vel:</span>
@@ -969,35 +967,61 @@
     function switchTabFromDrawer(tab) { closeSideDrawer(); switchTab(tab); }
 
     // ============================================================================
-    // 1. MIXER VS COM CHAVE INDIVIDUAL [ L ] [ C ] [ R ] POR FAIXA E JUNÇÃO REAL
+    // 1. MOTOR NATIVO iOS & ANDROID (AUDIOBUFFER HARDWARE CLOCK + DUAL L/R MERGER)
+    //    - Sem tags <audio> (100% das faixas tocam no iPhone sem limite de vozes)
+    //    - Sincronia por Clock Físico (Zero engasgos / Zero setInterval seek)
+    //    - Download em paralelo + Decodificação em fila leve a 32kHz
     // ============================================================================
     let vsFolders = [];
     let selectedVsFolderRef = "";
     let activeVsTracks = [];
-    let vsTracksState = {}; // audioRef -> { htmlAudio, gainL, gainR, pan, volume, muted, solo, loaded, loading, error, savedOffline }
+    let vsTracksState = {}; // audioRef -> { audioBuffer, sourceNode, gainL, gainR, pan, volume, muted, solo, loaded, loading, error, savedOffline }
     let vsAudioCtx = null;
     let vsMasterMerger = null;
     let vsIsPlaying = false;
+    let vsStartTimeCtx = 0;
+    let vsPauseOffset = 0;
     let vsMaxDuration = 0;
     let vsPlaybackRate = 1;
     let vsProgressTimer = null;
-    let vsBlobCache = {};
+    let vsMemoryBufferCache = {}; // Cache de AudioBuffer já decodificado na sessão
 
     function ensureAudioContext() {
       if (!vsAudioCtx) {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         if (AudioCtx) {
-          vsAudioCtx = new AudioCtx();
-          // Cria o somador Master Estéreo (Canal 0 = Esquerdo L | Canal 1 = Direito R)
+          try {
+            // 32000 Hz reduz o consumo de RAM no iPhone em 30% e acelera a decodificação
+            vsAudioCtx = new AudioCtx({ sampleRate: 32000 });
+          } catch (e) {
+            vsAudioCtx = new AudioCtx();
+          }
           vsMasterMerger = vsAudioCtx.createChannelMerger(2);
           vsMasterMerger.connect(vsAudioCtx.destination);
         }
       }
-      if (vsAudioCtx && vsAudioCtx.state === "suspended") vsAudioCtx.resume();
+      if (vsAudioCtx && vsAudioCtx.state === "suspended") {
+        vsAudioCtx.resume().catch(() => {});
+      }
+      // Desbloqueia o canal de áudio do iOS tocando 1 sample silencioso
+      if (vsAudioCtx && !window.__IOS_AUDIO_UNLOCKED__) {
+        try {
+          const silentBuf = vsAudioCtx.createBuffer(1, 1, 22050);
+          const sNode = vsAudioCtx.createBufferSource();
+          sNode.buffer = silentBuf;
+          sNode.connect(vsAudioCtx.destination);
+          sNode.start(0);
+          window.__IOS_AUDIO_UNLOCKED__ = true;
+        } catch (e) {}
+      }
       return vsAudioCtx;
     }
 
-    // Define se uma faixa individual toca em L (Esquerdo), C (Centro) ou R (Direito)
+    // Desbloqueio automático do áudio da Apple no primeiro toque na tela
+    document.addEventListener("touchstart", function unlockOnFirstTouch() {
+      if (vsAudioCtx) ensureAudioContext();
+    }, { passive: true });
+
     function setTrackIndividualPan(audioRef, panVal) {
       const st = vsTracksState[audioRef];
       if (!st) return;
@@ -1006,7 +1030,6 @@
       renderVsTracksChannels();
     }
 
-    // Atalhos para pré-ajustar todas as faixas (Modo Palco L/R vs Modo Estudo Centro)
     function applyVsPanPreset(preset) {
       activeVsTracks.forEach(t => {
         const st = vsTracksState[t.audioRef];
@@ -1086,10 +1109,10 @@
           activeVsTracks = faixasData.faixas;
           await refreshOfflineKeysCache();
           activeVsTracks.forEach(t => {
-            // Por padrão: Click e Guia vão para L (Esquerdo) e os demais instrumentos para R (Direito)
             const defaultPan = (t.categoria === "Click" || t.categoria === "Guia") ? "L" : "R";
             vsTracksState[t.audioRef] = {
-              htmlAudio: null,
+              audioBuffer: null,
+              sourceNode: null,
               gainL: null,
               gainR: null,
               pan: defaultPan,
@@ -1129,9 +1152,9 @@
                   ${st.savedOffline ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-300 font-bold">Offline</span>` : ""}
                 </div>
                 <div class="text-[11px] text-slate-400 flex flex-wrap items-center gap-2">
-                  <span>Canal: <strong class="${st.pan === 'L' ? 'text-amber-300' : st.pan === 'R' ? 'text-cyan-300' : 'text-purple-300'}">${st.pan === 'L' ? 'Esquerdo (L)' : st.pan === 'R' ? 'Direito (R)' : 'Centro (L+R)'}</strong></span>
-                  ${st.loading ? `<span class="text-amber-300 font-semibold"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Baixando...</span>` : ""}
-                  ${st.loaded ? `<span class="text-emerald-400 font-semibold"><i class="fa-solid fa-check mr-1"></i>Pronta</span>` : ""}
+                  <span>Saída: <strong class="${st.pan === 'L' ? 'text-amber-300' : st.pan === 'R' ? 'text-cyan-300' : 'text-purple-300'}">${st.pan === 'L' ? 'Esquerdo (L)' : st.pan === 'R' ? 'Direito (R)' : 'Centro (L+R)'}</strong></span>
+                  ${st.loading ? `<span class="text-amber-300 font-semibold"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Preparando...</span>` : ""}
+                  ${st.loaded ? `<span class="text-emerald-400 font-semibold"><i class="fa-solid fa-check mr-1"></i>Sincronizada</span>` : ""}
                   ${st.error ? `<span class="text-rose-400 font-semibold">${st.error}</span>` : ""}
                 </div>
               </div>
@@ -1154,188 +1177,333 @@
               <!-- VOLUME -->
               <div class="flex items-center gap-1.5 bg-slate-900 px-2 py-1.5 rounded-lg border border-slate-700">
                 <i class="fa-solid fa-volume-high text-slate-400 text-[10px]"></i>
-                <input type="range" min="0" max="1" step="0.02" value="${st.volume}" oninput="changeVsTrackVolume('${t.audioRef}', this.value)" class="w-16 sm:w-20 h-1.5 cursor-pointer" />
+                <input type="range" min="0" max="1.2" step="0.02" value="${st.volume}" oninput="changeVsTrackVolume('${t.audioRef}', this.value)" class="w-16 sm:w-20 h-1.5 cursor-pointer" />
               </div>
             </div>
           </div>`;
       }).join("");
     }
 
-    async function loadSingleVsTrackFast(audioRef, updateUiAfter = true, persistOffline = false) {
-      ensureAudioContext();
+    // Passo A: Baixa o Base64 da faixa (do IndexedDB ou da nuvem)
+    async function fetchTrackBase64Data(audioRef, persistOffline = false) {
+      let cachedAudio = await dbGet("vsTracks", audioRef);
+      if (!cachedAudio) {
+        const res = await fetch(`${scriptUrl}?action=obterAudioVsBase64&audioRef=${encodeURIComponent(audioRef)}`);
+        const data = await res.json();
+        if (!data || data.status !== "ok" || !data.base64) {
+          throw new Error((data && data.message) ? data.message : "Erro ao baixar");
+        }
+        cachedAudio = { base64: data.base64, mimeType: data.mimeType || "audio/mpeg" };
+        if (persistOffline) {
+          await dbPut("vsTracks", audioRef, cachedAudio);
+          offlineSavedVsRefs.add(audioRef);
+        }
+      } else if (persistOffline) {
+        offlineSavedVsRefs.add(audioRef);
+      }
+      return cachedAudio;
+    }
+
+    // Passo B: Decodifica no AudioContext com compatibilidade total para Safari/iOS
+    function decodeArrayBufferCrossBrowser(ctx, arrayBuffer) {
+      return new Promise((resolve, reject) => {
+        try {
+          const p = ctx.decodeAudioData(
+            arrayBuffer,
+            (decoded) => resolve(decoded),
+            (err) => reject(err || new Error("Falha ao decodificar"))
+          );
+          if (p && typeof p.catch === "function") p.catch(reject);
+        } catch (e) {
+          reject(e);
+        }
+      });
+    }
+
+    // Carrega e decodifica 1 única faixa
+    async function loadSingleVsTrackFast(audioRef, autoJoinIfPlaying = true, persistOffline = false) {
+      const ctx = ensureAudioContext();
       const st = vsTracksState[audioRef];
       if (!st || st.loading) return;
       if (st.loaded && !persistOffline) return;
+
       st.loading = true; st.error = "";
-      if (updateUiAfter) renderVsTracksChannels();
+      renderVsTracksChannels();
 
       try {
-        let blobUrl = vsBlobCache[audioRef];
-        if (!blobUrl) {
-          let cachedAudio = await dbGet("vsTracks", audioRef);
-          if (!cachedAudio) {
-            const res = await fetch(`${scriptUrl}?action=obterAudioVsBase64&audioRef=${encodeURIComponent(audioRef)}`);
-            const data = await res.json();
-            if (!data || data.status !== "ok" || !data.base64) {
-              st.loading = false; st.error = (data && data.message) ? data.message : "Erro";
-              if (updateUiAfter) renderVsTracksChannels();
-              return;
-            }
-            cachedAudio = { base64: data.base64, mimeType: data.mimeType || "audio/mpeg" };
-            if (persistOffline) { await dbPut("vsTracks", audioRef, cachedAudio); st.savedOffline = true; offlineSavedVsRefs.add(audioRef); }
-          } else { st.savedOffline = true; }
-
-          const bytes = base64ToUint8Array(cachedAudio.base64);
-          const blob = new Blob([bytes], { type: cachedAudio.mimeType });
-          blobUrl = URL.createObjectURL(blob);
-          vsBlobCache[audioRef] = blobUrl;
-        } else if (persistOffline && !st.savedOffline) {
-          const res = await fetch(`${scriptUrl}?action=obterAudioVsBase64&audioRef=${encodeURIComponent(audioRef)}`);
-          const data = await res.json();
-          if (data && data.base64) {
-            await dbPut("vsTracks", audioRef, { base64: data.base64, mimeType: data.mimeType || "audio/mpeg" });
-            st.savedOffline = true; offlineSavedVsRefs.add(audioRef);
+        let decoded = vsMemoryBufferCache[audioRef];
+        if (!decoded || persistOffline) {
+          const rawData = await fetchTrackBase64Data(audioRef, persistOffline);
+          if (persistOffline) st.savedOffline = true;
+          if (!decoded) {
+            const bytes = base64ToUint8Array(rawData.base64);
+            const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+            decoded = await decodeArrayBufferCrossBrowser(ctx, ab);
+            vsMemoryBufferCache[audioRef] = decoded;
           }
         }
 
-        if (!st.htmlAudio) {
-          const audio = new Audio();
-          audio.preload = "auto";
-          audio.playsInline = true;
-          audio.src = blobUrl;
-          audio.playbackRate = vsPlaybackRate;
-          audio.onloadedmetadata = () => {
-            if (audio.duration && audio.duration > vsMaxDuration) {
-              vsMaxDuration = audio.duration;
-              document.getElementById("vs-total-duration").textContent = formatSeconds(vsMaxDuration);
-            }
-          };
-          st.htmlAudio = audio;
+        st.audioBuffer = decoded;
+        st.loaded = true;
+        st.loading = false;
 
-          // Matriz Dual-Gain L/R ligada ao ChannelMerger Master (100% de separação L e R em qualquer aparelho)
-          if (vsAudioCtx && vsMasterMerger && typeof vsAudioCtx.createMediaElementSource === "function") {
-            try {
-              const source = vsAudioCtx.createMediaElementSource(audio);
-              const gainL = vsAudioCtx.createGain();
-              const gainR = vsAudioCtx.createGain();
-              source.connect(gainL);
-              source.connect(gainR);
-              gainL.connect(vsMasterMerger, 0, 0); // Canal 0 = Esquerdo (L)
-              gainR.connect(vsMasterMerger, 0, 1); // Canal 1 = Direito (R)
-              st.gainL = gainL;
-              st.gainR = gainR;
-            } catch (eNode) {}
-          }
+        if (decoded.duration > vsMaxDuration) {
+          vsMaxDuration = decoded.duration;
+          document.getElementById("vs-total-duration").textContent = formatSeconds(vsMaxDuration);
         }
 
-        st.loaded = true; st.loading = false;
-        applySoloMuteVolumes();
-
-        if (vsIsPlaying) {
-          const leader = getLoadedHtmlAudios()[0];
-          st.htmlAudio.currentTime = leader ? leader.currentTime : 0;
-          st.htmlAudio.play().catch(() => {});
+        // Se o mixer já estiver tocando, insere esta faixa exatamente no milissegundo atual
+        if (vsIsPlaying && autoJoinIfPlaying) {
+          startSingleBufferTrackNode(audioRef, getCurrentVsPlayheadTime(), ctx.currentTime);
         }
 
-        if (updateUiAfter) { updateVsLoadedStatus(); renderVsTracksChannels(); }
+        updateVsLoadedStatus();
+        renderVsTracksChannels();
       } catch (err) {
-        st.loading = false; st.error = "Erro";
-        if (updateUiAfter) renderVsTracksChannels();
+        st.loading = false;
+        st.error = "Erro ao carregar";
+        renderVsTracksChannels();
       }
     }
 
+    // Baixa TODAS as faixas em paralelo (rápido) e decodifica em fila sequencial (não trava o iPhone!)
     async function loadAllVsTracksParallel(autoPlayWhenReady = false, persistOffline = false) {
-      ensureAudioContext();
+      const ctx = ensureAudioContext();
+      const btn = document.getElementById("btn-load-all-vs");
       const wrap = document.getElementById("vs-loading-bar-wrap");
       const bar = document.getElementById("vs-loading-bar");
       const txt = document.getElementById("vs-loading-text");
       const pct = document.getElementById("vs-loading-percent");
 
+      if (btn) btn.disabled = true;
       wrap.classList.remove("hidden");
+
       const pending = activeVsTracks.filter(t => !vsTracksState[t.audioRef].loaded || (persistOffline && !vsTracksState[t.audioRef].savedOffline));
-      const total = pending.length; let done = 0;
+      const total = pending.length;
 
       if (total > 0) {
-        bar.style.width = "15%"; pct.textContent = `0/${total}`;
-        txt.innerHTML = `<i class="fa-solid fa-bolt text-amber-400 mr-1.5"></i>Baixando e unindo ${total} faixas em L/R...`;
-        await Promise.all(pending.map(async (t) => {
-          await loadSingleVsTrackFast(t.audioRef, false, persistOffline);
-          done++;
-          const progress = Math.round((done / total) * 100);
-          bar.style.width = `${progress}%`; pct.textContent = `${done}/${total}`;
-          renderVsTracksChannels();
+        let downloadedCount = 0;
+        bar.style.width = "10%";
+        pct.textContent = `0/${total}`;
+        txt.innerHTML = `<i class="fa-solid fa-bolt text-amber-400 mr-1.5"></i>Baixando ${total} faixas simultaneamente...`;
+
+        pending.forEach(t => { vsTracksState[t.audioRef].loading = true; });
+        renderVsTracksChannels();
+
+        // 1. Download 100% em Paralelo (Rede)
+        const downloadedResults = await Promise.all(pending.map(async (t) => {
+          try {
+            if (vsMemoryBufferCache[t.audioRef] && !persistOffline) {
+              downloadedCount++;
+              pct.textContent = `${downloadedCount}/${total}`;
+              return { audioRef: t.audioRef, cachedDecoded: vsMemoryBufferCache[t.audioRef] };
+            }
+            const rawData = await fetchTrackBase64Data(t.audioRef, persistOffline);
+            downloadedCount++;
+            bar.style.width = `${Math.round((downloadedCount / total) * 65)}%`;
+            pct.textContent = `${downloadedCount}/${total}`;
+            return { audioRef: t.audioRef, rawData: rawData };
+          } catch (e) {
+            return { audioRef: t.audioRef, error: e };
+          }
         }));
+
+        // 2. Decodificação em Fila Sequencial Rápida (Protege o processador de áudio do iPhone contra engasgos)
+        for (let i = 0; i < downloadedResults.length; i++) {
+          const item = downloadedResults[i];
+          const st = vsTracksState[item.audioRef];
+          txt.innerHTML = `<i class="fa-solid fa-microchip text-purple-300 mr-1.5"></i>Unificando faixa ${i + 1} de ${total} no motor de áudio...`;
+          bar.style.width = `${65 + Math.round(((i + 1) / total) * 35)}%`;
+
+          if (item.error) {
+            st.loading = false;
+            st.error = "Falha no download";
+            continue;
+          }
+
+          try {
+            let decoded = item.cachedDecoded || vsMemoryBufferCache[item.audioRef];
+            if (!decoded && item.rawData) {
+              const bytes = base64ToUint8Array(item.rawData.base64);
+              const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+              decoded = await decodeArrayBufferCrossBrowser(ctx, ab);
+              vsMemoryBufferCache[item.audioRef] = decoded;
+            }
+            st.audioBuffer = decoded;
+            st.loaded = true;
+            st.loading = false;
+            if (persistOffline) st.savedOffline = true;
+            if (decoded && decoded.duration > vsMaxDuration) {
+              vsMaxDuration = decoded.duration;
+              document.getElementById("vs-total-duration").textContent = formatSeconds(vsMaxDuration);
+            }
+          } catch (decErr) {
+            st.loading = false;
+            st.error = "Formato incompatível";
+          }
+          renderVsTracksChannels();
+        }
       }
 
-      updateVsLoadedStatus(); renderVsTracksChannels();
+      updateVsLoadedStatus();
+      renderVsTracksChannels();
       bar.style.width = "100%";
-      txt.innerHTML = `<i class="fa-solid fa-check text-emerald-400 mr-1.5"></i>Todas as faixas prontas no Mixer L/R!`;
+      pct.textContent = "100%";
+      txt.innerHTML = `<i class="fa-solid fa-check text-emerald-400 mr-1.5"></i>Todas as faixas prontas e sincronizadas!`;
       setTimeout(() => wrap.classList.add("hidden"), 1000);
 
-      if (autoPlayWhenReady && !vsIsPlaying) toggleMasterVsPlay();
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-check"></i><span>Todas Prontas</span>`;
+      }
+
+      if (autoPlayWhenReady) {
+        if (vsIsPlaying) startMasterBufferPlayback( getCurrentVsPlayheadTime() );
+        else startMasterBufferPlayback(vsPauseOffset);
+      }
     }
 
-    function getLoadedHtmlAudios() { return Object.values(vsTracksState).filter(s => s.loaded && s.htmlAudio).map(s => s.htmlAudio); }
+    // Cria e dispara 1 faixa no barramento L/R com precisão de hardware
+    function startSingleBufferTrackNode(audioRef, offsetSeconds, scheduledCtxTime) {
+      const ctx = ensureAudioContext();
+      const st = vsTracksState[audioRef];
+      if (!st || !st.loaded || !st.audioBuffer) return;
+
+      if (st.sourceNode) {
+        try { st.sourceNode.stop(); st.sourceNode.disconnect(); } catch (e) {}
+        st.sourceNode = null;
+      }
+
+      const source = ctx.createBufferSource();
+      source.buffer = st.audioBuffer;
+      source.playbackRate.value = vsPlaybackRate;
+
+      // Cria barramentos Mono explícitos para L (canal 0) e R (canal 1) garantindo 0% de vazamento no iPhone/Android
+      if (!st.gainL || !st.gainR) {
+        const gL = ctx.createGain();
+        const gR = ctx.createGain();
+        try {
+          gL.channelCount = 1; gL.channelCountMode = "explicit"; gL.channelInterpretation = "speakers";
+          gR.channelCount = 1; gR.channelCountMode = "explicit"; gR.channelInterpretation = "speakers";
+        } catch (e) {}
+        gL.connect(vsMasterMerger, 0, 0); // Saída Esquerda (L)
+        gR.connect(vsMasterMerger, 0, 1); // Saída Direita (R)
+        st.gainL = gL;
+        st.gainR = gR;
+      }
+
+      source.connect(st.gainL);
+      source.connect(st.gainR);
+      st.sourceNode = source;
+
+      applySoloMuteVolumes();
+
+      const safeOffset = Math.min(Math.max(0, offsetSeconds), st.audioBuffer.duration - 0.02);
+      if (safeOffset < st.audioBuffer.duration) {
+        source.start(scheduledCtxTime, safeOffset);
+      }
+    }
+
+    // Dispara TODAS as faixas cravadas no mesmo instante do relógio físico da placa de som
+    function startMasterBufferPlayback(offsetSeconds) {
+      const ctx = ensureAudioContext();
+      const loadedRefs = Object.keys(vsTracksState).filter(k => vsTracksState[k].loaded && vsTracksState[k].audioBuffer);
+      if (loadedRefs.length === 0) return;
+
+      // Para quaisquer nós anteriores antes de iniciar
+      Object.values(vsTracksState).forEach(st => {
+        if (st.sourceNode) {
+          try { st.sourceNode.stop(); st.sourceNode.disconnect(); } catch (e) {}
+          st.sourceNode = null;
+        }
+      });
+
+      vsPauseOffset = Math.max(0, offsetSeconds);
+      // Agenda todas as faixas para começarem juntas 40ms à frente no relógio de hardware (zero defasagem)
+      const launchTime = ctx.currentTime + 0.04;
+      vsStartTimeCtx = launchTime;
+
+      loadedRefs.forEach(ref => {
+        startSingleBufferTrackNode(ref, vsPauseOffset, launchTime);
+      });
+
+      vsIsPlaying = true;
+      document.getElementById("icon-vs-master-play").className = "fa-solid fa-pause";
+      startVsProgressLoop();
+    }
+
+    function getCurrentVsPlayheadTime() {
+      if (!vsIsPlaying || !vsAudioCtx) return vsPauseOffset;
+      const elapsed = Math.max(0, (vsAudioCtx.currentTime - vsStartTimeCtx) * vsPlaybackRate);
+      return Math.min(vsPauseOffset + elapsed, vsMaxDuration || 9999);
+    }
+
+    function pauseMasterVs() {
+      if (!vsIsPlaying) return;
+      vsPauseOffset = getCurrentVsPlayheadTime();
+      Object.values(vsTracksState).forEach(st => {
+        if (st.sourceNode) {
+          try { st.sourceNode.stop(); st.sourceNode.disconnect(); } catch (e) {}
+          st.sourceNode = null;
+        }
+      });
+      vsIsPlaying = false;
+      document.getElementById("icon-vs-master-play").className = "fa-solid fa-play";
+      if (vsProgressTimer) clearInterval(vsProgressTimer);
+    }
 
     async function toggleMasterVsPlay() {
       ensureAudioContext();
-      let audios = getLoadedHtmlAudios();
-      if (audios.length === 0 && activeVsTracks.length > 0) { await loadAllVsTracksParallel(true, false); return; }
-      if (audios.length === 0) return;
+      const loadedRefs = Object.keys(vsTracksState).filter(k => vsTracksState[k].loaded && vsTracksState[k].audioBuffer);
+      if (loadedRefs.length === 0 && activeVsTracks.length > 0) {
+        await loadAllVsTracksParallel(true, false);
+        return;
+      }
+      if (loadedRefs.length === 0) return;
 
-      const icon = document.getElementById("icon-vs-master-play");
       if (vsIsPlaying) {
-        audios.forEach(a => a.pause());
-        vsIsPlaying = false; icon.className = "fa-solid fa-play";
-        if (vsProgressTimer) clearInterval(vsProgressTimer);
+        pauseMasterVs();
       } else {
-        const refTime = audios[0].currentTime || 0;
-        audios.forEach(a => {
-          try { if (Math.abs(a.currentTime - refTime) > 0.04) a.currentTime = refTime; } catch (e) {}
-          a.playbackRate = vsPlaybackRate;
-        });
-        await Promise.all(audios.map(a => a.play().catch(() => {})));
-        vsIsPlaying = true; icon.className = "fa-solid fa-pause";
-        startVsProgressLoop();
+        if (vsMaxDuration > 0 && vsPauseOffset >= vsMaxDuration - 0.2) vsPauseOffset = 0;
+        startMasterBufferPlayback(vsPauseOffset);
       }
     }
 
     function stopMasterVs() {
-      getLoadedHtmlAudios().forEach(a => { a.pause(); try { a.currentTime = 0; } catch (e) {} });
-      vsIsPlaying = false;
-      document.getElementById("icon-vs-master-play").className = "fa-solid fa-play";
+      pauseMasterVs();
+      vsPauseOffset = 0;
       document.getElementById("vs-current-time").textContent = "00:00";
       document.getElementById("vs-master-seek").value = 0;
-      if (vsProgressTimer) clearInterval(vsProgressTimer);
+    }
+
+    function previewSeekTime(percentVal) {
+      if (!vsMaxDuration) return;
+      const newTime = (Number(percentVal) / 100) * vsMaxDuration;
+      document.getElementById("vs-current-time").textContent = formatSeconds(newTime);
     }
 
     function seekMasterVs(percentVal) {
-      const audios = getLoadedHtmlAudios();
-      if (audios.length === 0) return;
-      const dur = vsMaxDuration || audios[0].duration || 0;
-      if (!dur) return;
-      const newTime = (Number(percentVal) / 100) * dur;
-      audios.forEach(a => { try { a.currentTime = newTime; } catch (e) {} });
+      if (!vsMaxDuration) return;
+      const newTime = (Number(percentVal) / 100) * vsMaxDuration;
       document.getElementById("vs-current-time").textContent = formatSeconds(newTime);
+      if (vsIsPlaying) {
+        startMasterBufferPlayback(newTime);
+      } else {
+        vsPauseOffset = newTime;
+      }
     }
 
     function applySoloMuteVolumes() {
       const states = Object.values(vsTracksState);
       const anySolo = states.some(s => s.solo);
       states.forEach(st => {
-        if (!st.htmlAudio) return;
+        if (!st.gainL || !st.gainR || !vsAudioCtx) return;
         const silence = st.muted || (anySolo && !st.solo);
         const targetGain = silence ? 0 : st.volume;
-
-        if (st.gainL && st.gainR && vsAudioCtx) {
-          st.htmlAudio.volume = 1; // O volume e o lado L/R são controlados pelos barramentos GainL e GainR
-          const leftVal = (st.pan === "L" || st.pan === "C") ? targetGain : 0;
-          const rightVal = (st.pan === "R" || st.pan === "C") ? targetGain : 0;
-          st.gainL.gain.setTargetAtTime(leftVal, vsAudioCtx.currentTime, 0.012);
-          st.gainR.gain.setTargetAtTime(rightVal, vsAudioCtx.currentTime, 0.012);
-        } else {
-          st.htmlAudio.volume = Math.min(1, Math.max(0, targetGain));
-        }
+        const leftVal = (st.pan === "L" || st.pan === "C") ? targetGain : 0;
+        const rightVal = (st.pan === "R" || st.pan === "C") ? targetGain : 0;
+        st.gainL.gain.setTargetAtTime(leftVal, vsAudioCtx.currentTime, 0.012);
+        st.gainR.gain.setTargetAtTime(rightVal, vsAudioCtx.currentTime, 0.012);
       });
     }
 
@@ -1343,47 +1511,54 @@
     function toggleVsTrackSolo(audioRef) { const st = vsTracksState[audioRef]; if (st) { st.solo = !st.solo; applySoloMuteVolumes(); renderVsTracksChannels(); } }
     function resetVsSoloMute() { Object.values(vsTracksState).forEach(p => { p.muted = false; p.solo = false; }); applySoloMuteVolumes(); renderVsTracksChannels(); }
     function changeVsTrackVolume(audioRef, val) { const st = vsTracksState[audioRef]; if (st) { st.volume = Number(val); applySoloMuteVolumes(); } }
+
     function setVsPlaybackRate(rate) {
+      const curPos = getCurrentVsPlayheadTime();
       vsPlaybackRate = rate;
-      getLoadedHtmlAudios().forEach(a => { a.playbackRate = rate; });
+      if (vsIsPlaying) {
+        startMasterBufferPlayback(curPos);
+      }
       ["075", "090", "100"].forEach(id => { document.getElementById("rate-" + id).className = "px-2 py-0.5 rounded text-[11px] font-bold text-slate-400"; });
       const activeId = rate === 0.75 ? "075" : rate === 0.9 ? "090" : "100";
       document.getElementById("rate-" + activeId).className = "px-2 py-0.5 rounded text-[11px] font-bold bg-purple-600 text-white";
     }
+
     function updateVsLoadedStatus() {
-      const loadedCount = getLoadedHtmlAudios().length;
-      document.getElementById("vs-loaded-status").textContent = loadedCount > 0 ? `${loadedCount} de ${activeVsTracks.length} faixas no Mixer L/R` : `Toque em Play ou + Mixer`;
+      const loadedCount = Object.values(vsTracksState).filter(s => s.loaded && s.audioBuffer).length;
+      document.getElementById("vs-loaded-status").textContent = loadedCount > 0 ? `${loadedCount} de ${activeVsTracks.length} faixas prontas no Mixer` : `Toque em Carregar e Tocar Todas`;
     }
+
+    // Apenas atualiza o relógio visual na tela (NÃO mexe no áudio, garantindo 0% de engasgo!)
     function startVsProgressLoop() {
       if (vsProgressTimer) clearInterval(vsProgressTimer);
       vsProgressTimer = setInterval(() => {
-        const audios = getLoadedHtmlAudios();
-        if (!vsIsPlaying || audios.length === 0) return;
-        const leader = audios[0];
-        const cur = leader.currentTime || 0;
-        const dur = vsMaxDuration || leader.duration || 0;
+        if (!vsIsPlaying) return;
+        const cur = getCurrentVsPlayheadTime();
         document.getElementById("vs-current-time").textContent = formatSeconds(cur);
-        for (let i = 1; i < audios.length; i++) {
-          if (Math.abs(audios[i].currentTime - cur) > 0.06) { try { audios[i].currentTime = cur; } catch (e) {} }
+        if (vsMaxDuration > 0) {
+          document.getElementById("vs-master-seek").value = Math.min(100, (cur / vsMaxDuration) * 100);
+          if (cur >= vsMaxDuration) stopMasterVs();
         }
-        if (dur > 0) {
-          document.getElementById("vs-master-seek").value = Math.min(100, (cur / dur) * 100);
-          if (leader.ended || cur >= dur) stopMasterVs();
-        }
-      }, 250);
+      }, 200);
     }
+
     function formatSeconds(sec) {
       if (!sec || isNaN(sec)) return "00:00";
       return `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(Math.floor(sec % 60)).padStart(2, "0")}`;
     }
+
     function clearVsAudioPlayers() {
-      Object.values(vsTracksState).forEach(st => { if (st.htmlAudio) { st.htmlAudio.pause(); st.htmlAudio.src = ""; } });
-      vsTracksState = {}; vsMaxDuration = 0;
+      Object.values(vsTracksState).forEach(st => {
+        if (st.sourceNode) { try { st.sourceNode.stop(); st.sourceNode.disconnect(); } catch (e) {} }
+        if (st.gainL) { try { st.gainL.disconnect(); } catch (e) {} }
+        if (st.gainR) { try { st.gainR.disconnect(); } catch (e) {} }
+      });
+      vsTracksState = {}; vsMaxDuration = 0; vsPauseOffset = 0;
       document.getElementById("vs-total-duration").textContent = "00:00";
     }
 
     // ============================================================================
-    // 2. WHATSAPP COM ENCURTADOR AUTOMÁTICO DE LINKS (SEM COLCHETES E SEM URL GIGANTE)
+    // 2. WHATSAPP COM ENCURTADOR AUTOMÁTICO DE LINKS
     // ============================================================================
     function toShortYouTubeUrl(url) {
       if (!url) return "";
