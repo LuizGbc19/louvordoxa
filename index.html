@@ -100,7 +100,7 @@
         </div>
       </div>
     </div>
-    <div class="text-[11px] text-zinc-600 tracking-wider uppercase font-semibold z-10">DOXA • Louvor e Adoração • v3.1 iOS Ready</div>
+    <div class="text-[11px] text-zinc-600 tracking-wider uppercase font-semibold z-10">DOXA • Louvor e Adoração • v3.2 Turbo & Reaper</div>
   </div>
 
   <!-- MENU LATERAL (☰) -->
@@ -110,7 +110,7 @@
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <div class="flex items-center gap-2.5">
           <div class="w-9 h-9 rounded-xl bg-black border border-zinc-700 flex items-center justify-center text-white font-black">DX</div>
-          <div><span class="text-lg font-black text-white font-doxa block leading-none">DOXA</span><span class="text-[10px] text-indigo-400 font-semibold">Menu v3.1</span></div>
+          <div><span class="text-lg font-black text-white font-doxa block leading-none">DOXA</span><span class="text-[10px] text-indigo-400 font-semibold">Menu v3.2</span></div>
         </div>
         <button onclick="closeSideDrawer()" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
       </div>
@@ -128,7 +128,7 @@
         </button>
         <button onclick="switchTabFromDrawer('vs')" id="drawer-tab-vs" class="w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold flex items-center justify-between text-slate-300 hover:bg-slate-800">
           <span class="flex items-center gap-3"><i class="fa-solid fa-sliders w-5 text-center text-purple-400"></i><span>VS / Mixer L-R</span></span>
-          <span id="drawer-badge-vs" class="text-[11px] px-2 py-0.5 rounded-full bg-purple-900/60 text-purple-200 font-bold">3.1</span>
+          <span id="drawer-badge-vs" class="text-[11px] px-2 py-0.5 rounded-full bg-purple-900/60 text-purple-200 font-bold">3.2</span>
         </button>
         <button onclick="switchTabFromDrawer('pedidos')" id="drawer-tab-pedidos" class="w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold flex items-center justify-between text-slate-300 hover:bg-slate-800">
           <span class="flex items-center gap-3"><i class="fa-solid fa-inbox w-5 text-center text-pink-400"></i><span>Pedidos (Formulário)</span></span>
@@ -178,7 +178,7 @@
         <button onclick="switchTab('musicas')" id="tab-musicas" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 bg-indigo-600 text-white shadow"><i class="fa-solid fa-music"></i><span>Músicas</span><span id="badge-total-musicas" class="text-xs px-1.5 py-0.5 rounded-full bg-indigo-800">0</span></button>
         <button onclick="switchTab('repertorios')" id="tab-repertorios" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-calendar-days"></i><span>Repertórios</span><span id="badge-total-repertorios" class="text-xs px-1.5 py-0.5 rounded-full bg-slate-700">0</span></button>
         <button onclick="switchTab('palco')" id="tab-palco" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-guitar"></i><span>Modo Palco</span></button>
-        <button onclick="switchTab('vs')" id="tab-vs" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-sliders"></i><span>VS / Mixer</span><span id="badge-total-vs" class="text-xs px-1.5 py-0.5 rounded-full bg-purple-900/60 text-purple-200">3.1</span></button>
+        <button onclick="switchTab('vs')" id="tab-vs" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-sliders"></i><span>VS / Mixer</span><span id="badge-total-vs" class="text-xs px-1.5 py-0.5 rounded-full bg-purple-900/60 text-purple-200">3.2</span></button>
         <button onclick="switchTab('pedidos')" id="tab-pedidos" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-inbox"></i><span>Pedidos</span></button>
         <button onclick="switchTab('relatorios')" id="tab-relatorios" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-chart-pie"></i><span>Relatórios</span></button>
       </nav>
@@ -187,7 +187,7 @@
         <button onclick="handleAdminButtonClick()" id="btn-admin-lock" class="px-2.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5"><i class="fa-solid fa-lock text-amber-400" id="admin-lock-icon"></i><span id="admin-lock-label" class="hidden sm:inline">Admin</span></button>
         <button onclick="syncFromGoogleSheet(true)" id="btn-sync-header" class="hidden w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 text-emerald-400 items-center justify-center"><i class="fa-solid fa-arrows-rotate text-xs" id="sync-icon"></i></button>
         <button onclick="openSongModal()" id="btn-new-song" class="hidden px-2.5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold items-center gap-1.5"><i class="fa-solid fa-plus"></i><span class="hidden sm:inline">Nova Música</span></button>
-        <button onclick="openRepertorioModal()" id="btn-new-rep" class="hidden px-2.5 py-2 rounded-xl bg-amber-600 text-white text-xs font-semibold items-center gap-1.5"><i class="fa-solid fa-calendar-plus"></i><span class="hidden sm:inline">Novo Repertório</span></button>
+        <button onclick="openRepertorioModal(null)" id="btn-new-rep" class="hidden px-2.5 py-2 rounded-xl bg-amber-600 text-white text-xs font-semibold items-center gap-1.5"><i class="fa-solid fa-calendar-plus"></i><span class="hidden sm:inline">Novo Repertório</span></button>
       </div>
     </div>
   </header>
@@ -281,7 +281,7 @@
       <div class="space-y-2.5">
         <div class="flex items-center justify-between">
           <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Histórico de Repertórios</h3>
-          <button onclick="openRepertorioModal()" id="btn-new-rep-inline" class="hidden px-3 py-1.5 rounded-xl bg-amber-600 text-white text-xs font-bold items-center gap-1.5"><i class="fa-solid fa-plus"></i><span>Criar Repertório</span></button>
+          <button onclick="openRepertorioModal(null)" id="btn-new-rep-inline" class="hidden px-3 py-1.5 rounded-xl bg-amber-600 text-white text-xs font-bold items-center gap-1.5"><i class="fa-solid fa-plus"></i><span>Criar Repertório</span></button>
         </div>
         <div id="repertorios-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
       </div>
@@ -292,35 +292,42 @@
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div>
           <h2 class="text-base sm:text-lg font-bold text-white">Modo Palco & Cifras (Online / Offline)</h2>
-          <p class="text-xs text-slate-400">Baixe cada cifra individualmente ou o culto inteiro para ler sem internet</p>
+          <p class="text-xs text-slate-400">Baixe as cifras para abrir sem internet ou gere a sessão `.RPP` para o Reaper</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <select id="palco-select-repertorio" onchange="renderPalco()" class="flex-1 sm:flex-initial px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm text-white font-semibold"></select>
-          <button onclick="salvarCultoAtualOfflinePalco()" class="px-3.5 py-2 rounded-xl bg-teal-600 text-white text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-cloud-arrow-down"></i><span>Baixar Culto Offline</span></button>
+          <button onclick="salvarCultoAtualOfflinePalco()" class="px-3 py-2 rounded-xl bg-teal-600 text-white text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-cloud-arrow-down"></i><span>Baixar Offline</span></button>
+          <button onclick="abrirReaperAtualPalco()" class="px-3 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-sliders"></i><span>Reaper (.RPP)</span></button>
           <button onclick="toggleAllStageChords()" class="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-indigo-300 text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-eye"></i><span>Cifras</span></button>
-          <button onclick="gerarPdfRepertorioAtualPalco()" class="px-3.5 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-file-pdf"></i><span>PDF Mesclado</span></button>
-          <button onclick="compartilharWhatsAppPalco()" class="px-3.5 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5"><i class="fa-brands fa-whatsapp"></i><span>WhatsApp</span></button>
+          <button onclick="gerarPdfRepertorioAtualPalco()" class="px-3 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-file-pdf"></i><span>PDF Mesclado</span></button>
+          <button onclick="compartilharWhatsAppPalco()" class="px-3 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5"><i class="fa-brands fa-whatsapp"></i><span>WhatsApp</span></button>
         </div>
       </div>
       <div id="palco-content" class="space-y-5"></div>
     </section>
 
-    <!-- ABA 4: VS / MIXER OTIMIZADO PARA IPHONE (v3.1) -->
+    <!-- ABA 4: VS / MIXER TURBO (PC/ANDROID) + MODO ADAPTATIVO IPHONE -->
     <section id="view-vs" class="hidden space-y-4">
       <div class="bg-slate-900 border border-purple-500/30 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-300 text-lg"><i class="fa-solid fa-sliders"></i></div>
           <div>
-            <div class="flex items-center gap-2">
-              <h2 class="text-base sm:text-lg font-extrabold text-white">Estúdio VS & Mixer L/R por Faixa</h2>
-              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">iOS Native v3.1</span>
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="text-base sm:text-lg font-extrabold text-white">Estúdio VS & Mixer L/R</h2>
+              <span id="vs-mode-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Auto</span>
             </div>
-            <p class="text-xs text-slate-400">Canais Mono na frequência nativa do iPhone (zero engasgos e separação L/R total)</p>
+            <p class="text-xs text-slate-400">Mixer Turbo em paralelo para PC/Android e Mix em 1 Ficheiro sem engasgos para iPhone</p>
           </div>
         </div>
-        <button onclick="loadVsFolders(true)" class="px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-purple-300 text-xs font-bold flex items-center gap-1.5">
-          <i class="fa-solid fa-arrows-rotate" id="vs-refresh-icon"></i><span>Atualizar Pastas VS</span>
-        </button>
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700 text-xs">
+            <button type="button" onclick="setVsEngineMode('IOS_MIX')" id="btn-engine-ios" class="px-2.5 py-1.5 rounded-lg font-bold transition">📱 Modo iPhone</button>
+            <button type="button" onclick="setVsEngineMode('REALTIME')" id="btn-engine-rt" class="px-2.5 py-1.5 rounded-lg font-bold transition">⚡ Mixer Turbo</button>
+          </div>
+          <button onclick="loadVsFolders(true)" class="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-purple-300 text-xs font-bold flex items-center gap-1.5">
+            <i class="fa-solid fa-arrows-rotate" id="vs-refresh-icon"></i><span>Pastas</span>
+          </button>
+        </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -343,9 +350,16 @@
                   <span class="text-[10px] font-extrabold uppercase tracking-wider text-purple-400 block">Mesa Multitrack L/R</span>
                   <h3 id="vs-active-song-title" class="text-lg font-black text-white">-</h3>
                 </div>
-                <div class="flex flex-wrap items-center gap-2">
-                  <button onclick="loadAllVsTracksSmartQueue(true, false)" id="btn-load-all-vs" class="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-1.5 shadow"><i class="fa-solid fa-bolt"></i><span>Carregar e Tocar Todas</span></button>
-                  <button onclick="loadAllVsTracksSmartQueue(false, true)" class="px-3 py-2 rounded-xl bg-teal-600/25 text-teal-300 border border-teal-500/40 text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-cloud-arrow-down"></i><span>Salvar VS Offline</span></button>
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <a id="btn-open-drive-folder" href="#" target="_blank" class="hidden px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-700 border border-slate-600 text-amber-300 text-xs font-bold items-center gap-1.5" title="Abrir pasta no Google Drive">
+                    <i class="fa-brands fa-google-drive"></i><span>Pasta Drive</span>
+                  </a>
+                  <button onclick="exportCurrentVsSongToReaper()" class="px-3 py-2 rounded-xl bg-purple-600/25 hover:bg-purple-600 text-purple-200 hover:text-white border border-purple-500/40 text-xs font-bold flex items-center gap-1.5" title="Gerar projeto Reaper (.RPP) desta música">
+                    <i class="fa-solid fa-sliders"></i><span>.RPP</span>
+                  </button>
+                  <button onclick="saveCurrentVsFolderOffline()" class="px-3 py-2 rounded-xl bg-teal-600/25 hover:bg-teal-600 text-teal-300 hover:text-white border border-teal-500/40 text-xs font-bold flex items-center gap-1.5">
+                    <i class="fa-solid fa-cloud-arrow-down"></i><span>Salvar VS Offline</span>
+                  </button>
                   <button onclick="resetVsSoloMute()" class="px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 text-xs font-semibold">Limpar M/S</button>
                 </div>
               </div>
@@ -360,33 +374,62 @@
 
               <div id="vs-loading-bar-wrap" class="hidden space-y-1 bg-slate-900/90 p-2.5 rounded-xl border border-purple-500/30">
                 <div class="flex items-center justify-between text-[11px] font-semibold text-purple-300">
-                  <span id="vs-loading-text">A preparar faixas...</span><span id="vs-loading-percent">0%</span>
+                  <span id="vs-loading-text">Sincronizando faixas...</span><span id="vs-loading-percent">0%</span>
                 </div>
                 <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden"><div id="vs-loading-bar" class="h-full bg-purple-500 transition-all" style="width:0%"></div></div>
               </div>
 
-              <button id="ios-ready-play-banner" onclick="startMasterBufferPlayback(vsPauseOffset)" class="hidden w-full py-3 px-4 rounded-xl bg-emerald-600 text-white font-extrabold text-xs sm:text-sm shadow-lg items-center justify-center gap-2 animate-pulse">
-                <i class="fa-solid fa-circle-play text-base"></i><span>Faixas prontas! Toque aqui para iniciar o som no iPhone</span>
-              </button>
-
-              <div class="pt-2 border-t border-slate-700/80 flex flex-col sm:flex-row sm:items-center gap-3">
-                <div class="flex items-center gap-2">
-                  <button onclick="toggleMasterVsPlay()" id="btn-vs-master-play" class="w-11 h-11 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-base font-bold shadow"><i class="fa-solid fa-play" id="icon-vs-master-play"></i></button>
-                  <button onclick="stopMasterVs()" class="w-10 h-11 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 flex items-center justify-center text-sm"><i class="fa-solid fa-stop"></i></button>
-                </div>
-                <div class="flex-1 space-y-1">
-                  <div class="flex items-center justify-between text-[11px] font-mono text-slate-300">
-                    <span id="vs-current-time">00:00</span>
-                    <span id="vs-loaded-status" class="text-purple-300 font-sans font-semibold">Toque em Carregar e Tocar Todas</span>
-                    <span id="vs-total-duration">00:00</span>
+              <!-- PAINEL MODO IPHONE (ESTÁVEL EM 1 ÚNICO FICHEIRO NATIVO + ESCUTA ISOLADA) -->
+              <div id="vs-ios-panel" class="hidden bg-slate-900/95 border border-emerald-500/30 rounded-xl p-3.5 space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div class="text-xs text-slate-300">
+                    <strong class="text-emerald-400 block">📱 Estudo Estável p/ iPhone (Zero Engasgos)</strong>
+                    <span>Ajuste <strong>M / S / L-C-R / Volumes</strong> abaixo e gere 1 áudio unificado (ou toque em <strong>▶️ Só Esta</strong> na faixa).</span>
                   </div>
-                  <input type="range" id="vs-master-seek" min="0" max="100" value="0" step="0.1" onchange="seekMasterVs(this.value)" oninput="previewSeekTime(this.value)" class="w-full h-2 bg-slate-900 rounded-lg cursor-pointer" />
+                  <button onclick="generateIosSingleMix()" id="btn-generate-ios-mix" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold flex items-center gap-2 shadow-lg shrink-0">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i><span>Gerar Mix p/ iPhone</span>
+                  </button>
                 </div>
-                <div class="flex items-center gap-1 bg-slate-900 px-2.5 py-1.5 rounded-xl border border-slate-700 shrink-0">
-                  <span class="text-[10px] font-bold text-slate-400 uppercase mr-1">Vel:</span>
-                  <button onclick="setVsPlaybackRate(0.75)" id="rate-075" class="px-2 py-0.5 rounded text-[11px] font-bold text-slate-400">0.75x</button>
-                  <button onclick="setVsPlaybackRate(0.9)" id="rate-090" class="px-2 py-0.5 rounded text-[11px] font-bold text-slate-400">0.9x</button>
-                  <button onclick="setVsPlaybackRate(1)" id="rate-100" class="px-2 py-0.5 rounded text-[11px] font-bold bg-purple-600 text-white">1.0x</button>
+                <div id="ios-player-wrap" class="hidden pt-2 border-t border-slate-800 space-y-2">
+                  <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <span id="ios-player-label" class="font-bold text-emerald-300 truncate">Mix Pronto</span>
+                    <div class="flex items-center gap-1">
+                      <span class="text-[10px] text-slate-400 uppercase mr-1">Vel:</span>
+                      <button type="button" onclick="setIosNativeRate(0.75)" class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[11px] font-bold">0.75x</button>
+                      <button type="button" onclick="setIosNativeRate(0.9)" class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[11px] font-bold">0.9x</button>
+                      <button type="button" onclick="setIosNativeRate(1)" class="px-2 py-0.5 rounded bg-purple-600 text-white text-[11px] font-bold">1.0x</button>
+                    </div>
+                  </div>
+                  <audio id="ios-native-audio" controls playsinline class="w-full h-10 rounded-lg"></audio>
+                </div>
+              </div>
+
+              <!-- PAINEL MODO MIXER TURBO EM PARALELO (PC / ANDROID) -->
+              <div id="vs-realtime-panel" class="pt-2 border-t border-slate-700/80 space-y-3">
+                <div class="flex justify-end">
+                  <button onclick="loadAllVsTracksTurbo(true)" id="btn-load-all-vs" class="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-1.5 shadow">
+                    <i class="fa-solid fa-bolt"></i><span>Carregar Todas (Turbo)</span>
+                  </button>
+                </div>
+                <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <div class="flex items-center gap-2">
+                    <button onclick="toggleMasterVsPlay()" id="btn-vs-master-play" class="w-11 h-11 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-base font-bold shadow"><i class="fa-solid fa-play" id="icon-vs-master-play"></i></button>
+                    <button onclick="stopMasterVs()" class="w-10 h-11 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 flex items-center justify-center text-sm"><i class="fa-solid fa-stop"></i></button>
+                  </div>
+                  <div class="flex-1 space-y-1">
+                    <div class="flex items-center justify-between text-[11px] font-mono text-slate-300">
+                      <span id="vs-current-time">00:00</span>
+                      <span id="vs-loaded-status" class="text-purple-300 font-sans font-semibold">Toque em Play ou Carregar Todas (Turbo)</span>
+                      <span id="vs-total-duration">00:00</span>
+                    </div>
+                    <input type="range" id="vs-master-seek" min="0" max="100" value="0" step="0.1" oninput="seekMasterVs(this.value)" class="w-full h-2 bg-slate-900 rounded-lg cursor-pointer" />
+                  </div>
+                  <div class="flex items-center gap-1 bg-slate-900 px-2.5 py-1.5 rounded-xl border border-slate-700 shrink-0">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase mr-1">Vel:</span>
+                    <button onclick="setVsPlaybackRate(0.75)" id="rate-075" class="px-2 py-0.5 rounded text-[11px] font-bold text-slate-400">0.75x</button>
+                    <button onclick="setVsPlaybackRate(0.9)" id="rate-090" class="px-2 py-0.5 rounded text-[11px] font-bold text-slate-400">0.9x</button>
+                    <button onclick="setVsPlaybackRate(1)" id="rate-100" class="px-2 py-0.5 rounded text-[11px] font-bold bg-purple-600 text-white">1.0x</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -443,7 +486,55 @@
 
   </main>
 
-  <!-- MODAIS -->
+  <!-- MODAL GERADOR DE SESSÃO REAPER (.RPP) -->
+  <div id="reaper-modal" class="fixed inset-0 bg-black/85 z-50 hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-purple-500/40 rounded-2xl max-w-xl w-full p-5 space-y-4 max-h-[92vh] overflow-y-auto custom-scroll">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div>
+          <h3 class="text-base font-extrabold text-white"><i class="fa-solid fa-sliders text-purple-400 mr-2"></i>Exportar Projeto REAPER (.RPP)</h3>
+          <p id="reaper-modal-subtitle" class="text-xs text-slate-400">Monta a timeline com Pastas, Markers, BPM e Roteamento</p>
+        </div>
+        <button onclick="closeReaperModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-purple-300 mb-1">Pasta Raiz Local de VS no Notebook (Opcional)</label>
+          <input type="text" id="reaper-base-path" placeholder="Ex: G:\Meu Drive\VS (vazio = caminho relativo na pasta VS)" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white" />
+          <p class="text-[11px] text-slate-400 mt-1">Se deixar vazio, basta guardar o ficheiro <code>.RPP</code> dentro da sua pasta geral de VS no computador que o Reaper localiza todas as subpastas automaticamente.</p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-300 mb-1">Modo de Saída no Reaper</label>
+            <select id="reaper-routing-mode" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white">
+              <option value="SPLIT_LR">Split Cabo Y (Click/Guia = L | Banda = R)</option>
+              <option value="MULTI_OUT">Interface Multicanal (Banda 1/2 | Click/Guia 3/4)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-300 mb-1">Duração da Janela por Música (seg)</label>
+            <input type="number" id="reaper-slot-sec" value="480" min="180" max="1200" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white" />
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-4 pt-1">
+          <label class="flex items-center gap-2 cursor-pointer text-slate-200 font-semibold">
+            <input type="checkbox" id="reaper-auto-stop" checked class="rounded accent-purple-500 w-4 h-4" />
+            <span>Parar sozinho no fim de cada música (<code>!1016</code>)</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-200 font-semibold">
+            <input type="checkbox" id="reaper-auto-bpm" checked class="rounded accent-purple-500 w-4 h-4" />
+            <span>Aplicar BPM automático do catálogo</span>
+          </label>
+        </div>
+        <div id="reaper-export-status" class="hidden p-3 bg-slate-800 rounded-xl space-y-1 text-slate-300 max-h-48 overflow-y-auto custom-scroll"></div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+        <button onclick="closeReaperModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Fechar</button>
+        <button onclick="generateReaperRppFile()" id="btn-run-reaper-export" class="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow"><i class="fa-solid fa-download"></i><span>Baixar Projeto .RPP</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEMAIS MODAIS -->
   <div id="connection-modal" class="fixed inset-0 bg-black/80 z-50 hidden items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-xl w-full p-5 space-y-4">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -557,19 +648,22 @@
     </div>
   </div>
 
+  <!-- MODAL CRIAR / EDITAR REPERTÓRIO -->
   <div id="repertorio-modal" class="fixed inset-0 bg-black/75 z-50 hidden items-center justify-center p-3">
     <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full p-5 space-y-4 max-h-[92vh] overflow-y-auto custom-scroll">
       <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-        <h3 class="text-base font-bold text-white">Novo Repertório de Culto</h3>
+        <h3 id="repertorio-modal-title" class="text-base font-bold text-white">Novo Repertório de Culto</h3>
         <button onclick="closeRepertorioModal()" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <form id="repertorio-form" onsubmit="saveRepertorio(event)" class="space-y-3">
+        <input type="hidden" id="rep-edit-id" />
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <div><label class="block text-xs text-slate-300 mb-1">Data *</label><input type="text" id="rep-dia" required placeholder="01/11/2026" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white" /></div>
           <div><label class="block text-xs text-slate-300 mb-1">Culto *</label><input type="text" id="rep-culto" required value="Domingo" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white" /></div>
           <div><label class="block text-xs text-slate-300 mb-1">Tema *</label><input type="text" id="rep-tema" required class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white" /></div>
         </div>
         <div class="bg-slate-800/60 border border-slate-700 rounded-xl p-3 space-y-2">
+          <p class="text-[11px] font-bold text-amber-300 uppercase">Músicas do Culto (Adicione, edite o momento/tom ou reordene com ↑ ↓)</p>
           <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
             <div class="sm:col-span-4"><input type="text" id="rep-item-momento" value="Adoração" placeholder="Momento..." class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white" /></div>
             <div class="sm:col-span-6 relative">
@@ -583,7 +677,7 @@
         </div>
         <div class="flex justify-end gap-2">
           <button type="button" onclick="closeRepertorioModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Cancelar</button>
-          <button type="submit" class="px-5 py-2 rounded-xl bg-amber-600 text-white text-xs font-semibold">Salvar Repertório</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-amber-600 text-white text-xs font-bold">Salvar Repertório</button>
         </div>
       </form>
     </div>
@@ -591,7 +685,7 @@
 
   <script>
     // =========================================================================================
-    // COLE A SUA URL /EXEC DO APPS SCRIPT ABAIXO:
+    // CONFIGURAÇÕES ORIGINAIS DO SEU PROJETO DOXA:
     // =========================================================================================
     const URL_FIXA_DO_SCRIPT = "https://script.google.com/macros/s/AKfycbxHqR0nh7ngy0NhlKdqNq6lCrOCjV06mlQeXBoI5qXA1hwR4D8JBX1rj1NFQaBaVyyKzA/exec";
     const URL_PLANILHA_FORMULARIO = "https://docs.google.com/spreadsheets/d/1DiyYzGgMiCDM5b191tFreFjP_vAo0ROHEqxbiBGdNlQ/edit?usp=sharing";
@@ -600,10 +694,14 @@
 
     if (window.pdfjsLib) window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
+    const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    let vsEngineMode = isIOSDevice ? "IOS_MIX" : "REALTIME";
+
     let scriptUrl = (URL_FIXA_DO_SCRIPT && URL_FIXA_DO_SCRIPT.startsWith("http")) ? URL_FIXA_DO_SCRIPT.trim() : (localStorage.getItem("doxa_script_url") || "");
     let formSheetUrl = (URL_PLANILHA_FORMULARIO && URL_PLANILHA_FORMULARIO.startsWith("http")) ? URL_PLANILHA_FORMULARIO.trim() : (localStorage.getItem("doxa_form_sheet_url") || "");
     let fixedFolderUrl = "", songs = [], repertorios = [], sheetConstants = { categorias: [] };
-    let isAdmin = false, draftRepertorioItems = [], calendarCurrentDate = new Date(), selectedRepertorioId = null;
+    let isAdmin = false, draftRepertorioItems = [], editingOriginalRepMeta = null;
+    let calendarCurrentDate = new Date(), selectedRepertorioId = null, reaperTargetPayload = null;
     let currentWhatsAppRepId = null, currentWhatsAppMode = "equipe", allStageChordsVisible = true, currentPage = 1, pageSize = 40;
     let offlineSavedChordKeys = new Set(), offlineSavedVsRefs = new Set(), shortUrlCache = {};
 
@@ -697,12 +795,29 @@
     function switchTabFromDrawer(tab) { closeSideDrawer(); switchTab(tab); }
 
     // ============================================================================
-    // 1. MOTOR DE ÁUDIO v3.1 NATIVO PARA IPHONE (FREQUÊNCIA NATIVA + MONO + MERGER L/R)
+    // 1. MOTOR VS HÍBRIDO:
+    //    - PC / ANDROID: MIXER TURBO EM PARALELO (<audio> + ChannelMerger L/R, 0 espera)
+    //    - IPHONE / IOS: ESCUTA ISOLADA INSTANTÂNEA + MIX UNIFICADO EM 1 FICHEIRO WAV
     // ============================================================================
-    let vsFolders = [], selectedVsFolderRef = "", activeVsTracks = [], vsTracksState = {};
-    let vsAudioCtx = null, vsMasterMerger = null, vsKeepAliveNode = null;
-    let vsIsPlaying = false, vsStartTimeCtx = 0, vsPauseOffset = 0, vsMaxDuration = 0, vsPlaybackRate = 1, vsProgressTimer = null;
-    let vsMemoryBufferCache = {};
+    let vsFolders = [], selectedVsFolderRef = "", selectedVsFolderName = "", activeVsTracks = [], vsTracksState = {};
+    let vsAudioCtx = null, vsMasterMerger = null;
+    let vsIsPlaying = false, vsMaxDuration = 0, vsPlaybackRate = 1, vsProgressTimer = null;
+    let vsBlobCache = {}, iosCurrentBlobUrl = null;
+
+    function setVsEngineMode(mode) {
+      stopMasterVs();
+      const iosAudio = document.getElementById("ios-native-audio");
+      if (iosAudio) iosAudio.pause();
+      vsEngineMode = mode;
+      const isIosMode = mode === "IOS_MIX";
+      const btnIos = document.getElementById("btn-engine-ios"), btnRt = document.getElementById("btn-engine-rt");
+      if (btnIos) btnIos.className = isIosMode ? "px-2.5 py-1.5 rounded-lg font-bold bg-emerald-600 text-white shadow" : "px-2.5 py-1.5 rounded-lg font-bold text-slate-400 hover:text-white";
+      if (btnRt) btnRt.className = !isIosMode ? "px-2.5 py-1.5 rounded-lg font-bold bg-purple-600 text-white shadow" : "px-2.5 py-1.5 rounded-lg font-bold text-slate-400 hover:text-white";
+      document.getElementById("vs-mode-badge").textContent = isIosMode ? "Modo iPhone" : "Mixer Turbo";
+      document.getElementById("vs-ios-panel")?.classList.toggle("hidden", !isIosMode);
+      document.getElementById("vs-realtime-panel")?.classList.toggle("hidden", isIosMode);
+      renderVsTracksChannels();
+    }
 
     function ensureAudioContext() {
       if (!vsAudioCtx) {
@@ -713,32 +828,46 @@
           vsMasterMerger.connect(vsAudioCtx.destination);
         }
       }
-      if (vsAudioCtx && vsAudioCtx.state !== "running") { try { vsAudioCtx.resume(); } catch (e) {} }
-      if (vsAudioCtx && !vsKeepAliveNode) {
-        try {
-          const silentBuf = vsAudioCtx.createBuffer(1, 2048, vsAudioCtx.sampleRate);
-          const sNode = vsAudioCtx.createBufferSource();
-          sNode.buffer = silentBuf; sNode.loop = true;
-          const zGain = vsAudioCtx.createGain(); zGain.gain.value = 0.00001;
-          sNode.connect(zGain); zGain.connect(vsAudioCtx.destination); sNode.start(0);
-          vsKeepAliveNode = sNode;
-        } catch (e) {}
-      }
+      if (vsAudioCtx && vsAudioCtx.state === "suspended") { vsAudioCtx.resume().catch(() => {}); }
       return vsAudioCtx;
     }
 
-    // Converte Stereo -> Mono mantendo a taxa de amostragem EXATA do iPhone (Zero Resampling = Zero Engasgos!)
-    function toNativeMonoBuffer(ctx, rawBuffer) {
-      if (!rawBuffer || rawBuffer.numberOfChannels === 1) return rawBuffer;
-      try {
-        const len = rawBuffer.length;
-        const mono = ctx.createBuffer(1, len, rawBuffer.sampleRate);
-        const out = mono.getChannelData(0);
-        const ch0 = rawBuffer.getChannelData(0);
-        const ch1 = rawBuffer.getChannelData(1);
-        for (let i = 0; i < len; i++) out[i] = (ch0[i] + ch1[i]) * 0.5;
-        return mono;
-      } catch (e) { return rawBuffer; }
+    async function fetchTrackCachedOrNetwork(audioRef, persistOffline = false) {
+      let cached = await dbGet("vsTracks", audioRef);
+      if (!cached) {
+        const res = await fetch(`${scriptUrl}?action=obterAudioVsBase64&audioRef=${encodeURIComponent(audioRef)}`);
+        const data = await res.json();
+        if (!data || data.status !== "ok" || !data.base64) throw new Error((data && data.message) || "Erro");
+        cached = { base64: data.base64, mimeType: data.mimeType || "audio/mpeg" };
+        if (persistOffline) {
+          await dbPut("vsTracks", audioRef, cached);
+          offlineSavedVsRefs.add(audioRef);
+        }
+      } else if (persistOffline) {
+        offlineSavedVsRefs.add(audioRef);
+      }
+      return cached;
+    }
+
+    async function saveCurrentVsFolderOffline() {
+      if (activeVsTracks.length === 0) return;
+      const wrap = document.getElementById("vs-loading-bar-wrap"), bar = document.getElementById("vs-loading-bar"), txt = document.getElementById("vs-loading-text"), pct = document.getElementById("vs-loading-percent");
+      wrap.classList.remove("hidden"); bar.style.width = "10%";
+      let done = 0; const total = activeVsTracks.length;
+      txt.textContent = `Guardando ${total} faixas na memória offline...`;
+      await Promise.all(activeVsTracks.map(async (t) => {
+        try {
+          await fetchTrackCachedOrNetwork(t.audioRef, true);
+          if (vsTracksState[t.audioRef]) vsTracksState[t.audioRef].savedOffline = true;
+        } catch (e) {}
+        done++;
+        bar.style.width = `${Math.round((done / total) * 100)}%`;
+        pct.textContent = `${done}/${total}`;
+      }));
+      await refreshOfflineKeysCache();
+      renderVsTracksChannels();
+      txt.textContent = "Todas as faixas guardadas offline!";
+      setTimeout(() => wrap.classList.add("hidden"), 900);
     }
 
     function setTrackIndividualPan(audioRef, panVal) {
@@ -790,11 +919,20 @@
 
     async function selectVsSongFolder(folderRef, folderName) {
       stopMasterVs(); clearVsAudioPlayers();
-      selectedVsFolderRef = folderRef; renderVsFoldersList();
+      selectedVsFolderRef = folderRef; selectedVsFolderName = folderName;
+      renderVsFoldersList();
       document.getElementById("vs-mixer-empty").classList.add("hidden");
       document.getElementById("vs-mixer-container").classList.remove("hidden");
-      document.getElementById("ios-ready-play-banner").classList.add("hidden");
+      document.getElementById("ios-player-wrap").classList.add("hidden");
       document.getElementById("vs-active-song-title").textContent = folderName;
+
+      const driveBtn = document.getElementById("btn-open-drive-folder");
+      if (folderRef && folderRef.length >= 15) {
+        driveBtn.href = `https://drive.google.com/drive/folders/${folderRef}`;
+        driveBtn.classList.remove("hidden"); driveBtn.classList.add("inline-flex");
+      }
+
+      setVsEngineMode(vsEngineMode);
       document.getElementById("vs-tracks-list").innerHTML = `<div class="text-center py-8 text-xs text-slate-400">A ler faixas de <strong>${folderName}</strong>...</div>`;
       try {
         let faixasData = await dbGet("catalog", "vsFolder_" + folderRef);
@@ -808,7 +946,7 @@
           await refreshOfflineKeysCache();
           activeVsTracks.forEach(t => {
             const defPan = (t.categoria === "Click" || t.categoria === "Guia") ? "L" : "R";
-            vsTracksState[t.audioRef] = { audioBuffer: null, sourceNode: null, gainL: null, gainR: null, pan: defPan, volume: 1, muted: false, solo: false, loaded: false, loading: false, error: "", savedOffline: offlineSavedVsRefs.has(t.audioRef) };
+            vsTracksState[t.audioRef] = { htmlAudio: null, gainL: null, gainR: null, pan: defPan, volume: 1, muted: false, solo: false, loaded: false, loading: false, error: "", savedOffline: offlineSavedVsRefs.has(t.audioRef) };
           });
           renderVsTracksChannels(); updateVsLoadedStatus();
         }
@@ -817,11 +955,13 @@
 
     function renderVsTracksChannels() {
       const anySolo = Object.values(vsTracksState).some(p => p.solo);
+      const isIosMode = vsEngineMode === "IOS_MIX";
       document.getElementById("vs-tracks-list").innerHTML = activeVsTracks.map(t => {
         const st = vsTracksState[t.audioRef] || { volume: 1, pan: "C", muted: false, solo: false, loaded: false, loading: false, error: "", savedOffline: false };
         const effMuted = st.muted || (anySolo && !st.solo);
+        const safeName = String(t.nomeFaixa).replace(/'/g, "\\'");
         return `
-          <div class="bg-slate-800/75 border ${st.loaded ? 'border-purple-500/50' : 'border-slate-800'} rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 transition ${effMuted ? 'opacity-55' : ''}">
+          <div class="bg-slate-800/75 border ${st.loaded ? 'border-purple-500/50' : 'border-slate-800'} rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 transition ${effMuted ? 'opacity-50' : ''}">
             <div class="flex items-center gap-2.5 min-w-[140px] flex-1">
               <div class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-purple-300 shrink-0"><i class="fa-solid ${t.icone}"></i></div>
               <div class="min-w-0">
@@ -831,14 +971,17 @@
                 </div>
                 <div class="text-[11px] text-slate-400">
                   <span>Saída: <strong class="text-purple-300">${st.pan}</strong></span>
-                  ${st.loading ? `<span class="text-amber-300 ml-2"><i class="fa-solid fa-spinner fa-spin mr-1"></i>A preparar...</span>` : ""}
-                  ${st.loaded ? `<span class="text-emerald-400 ml-2">✓ Pronta</span>` : ""}
+                  ${st.loading ? `<span class="text-amber-300 ml-2"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Baixando...</span>` : ""}
+                  ${(!isIosMode && st.loaded) ? `<span class="text-emerald-400 ml-2">✓ Pronta</span>` : ""}
                   ${st.error ? `<span class="text-rose-400 ml-2">${st.error}</span>` : ""}
                 </div>
               </div>
             </div>
             <div class="flex flex-wrap items-center gap-1.5">
-              ${!st.loaded ? `<button onclick="loadSingleVsTrackFast('${t.audioRef}', true, false, true)" ${st.loading ? "disabled" : ""} class="px-2.5 py-1.5 rounded-lg bg-purple-600 text-white text-xs font-bold">+ Mixer</button>` : ""}
+              ${isIosMode
+                ? `<button type="button" onclick="playIsolatedTrackOnIos('${t.audioRef}', '${safeName}')" class="px-2.5 py-1.5 rounded-lg bg-emerald-600/25 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40 text-[11px] font-bold">▶️ Só Esta</button>`
+                : (!st.loaded ? `<button onclick="loadSingleVsTrackTurbo('${t.audioRef}', true)" ${st.loading ? "disabled" : ""} class="px-2.5 py-1.5 rounded-lg bg-purple-600 text-white text-xs font-bold">+ Mixer</button>` : "")
+              }
               <div class="flex items-center bg-slate-900 p-0.5 rounded-lg border border-slate-700">
                 <button type="button" onclick="setTrackIndividualPan('${t.audioRef}', 'L')" class="w-7 h-7 rounded font-black text-[11px] ${st.pan === 'L' ? 'bg-amber-500 text-black' : 'text-slate-400'}">L</button>
                 <button type="button" onclick="setTrackIndividualPan('${t.audioRef}', 'C')" class="w-7 h-7 rounded font-black text-[11px] ${st.pan === 'C' ? 'bg-purple-600 text-white' : 'text-slate-400'}">C</button>
@@ -846,182 +989,282 @@
               </div>
               <button onclick="toggleVsTrackMute('${t.audioRef}')" class="w-8 h-8 rounded-lg font-black text-xs border ${st.muted ? "bg-rose-600 text-white border-rose-400" : "bg-slate-900 text-slate-300 border-slate-700"}">M</button>
               <button onclick="toggleVsTrackSolo('${t.audioRef}')" class="w-8 h-8 rounded-lg font-black text-xs border ${st.solo ? "bg-amber-400 text-black border-amber-300" : "bg-slate-900 text-slate-300 border-slate-700"}">S</button>
-              <input type="range" min="0" max="1.2" step="0.02" value="${st.volume}" oninput="changeVsTrackVolume('${t.audioRef}', this.value)" class="w-16 sm:w-20 h-1.5 cursor-pointer" />
+              <input type="range" min="0" max="1" step="0.02" value="${st.volume}" oninput="changeVsTrackVolume('${t.audioRef}', this.value)" class="w-16 sm:w-20 h-1.5 cursor-pointer" />
             </div>
           </div>`;
       }).join("");
     }
 
-    function decodeBufferCrossBrowser(ctx, ab) {
-      return new Promise((res, rej) => {
-        try {
-          const p = ctx.decodeAudioData(ab, d => res(d), e => rej(e));
-          if (p && p.catch) p.catch(rej);
-        } catch (e) { rej(e); }
-      });
-    }
-
-    async function loadSingleVsTrackFast(audioRef, autoJoin = true, persistOffline = false, updateUi = true) {
-      const ctx = ensureAudioContext();
+    // --- A) MOTOR TURBO PARALELO (PC / ANDROID) ---
+    async function loadSingleVsTrackTurbo(audioRef, updateUiAfter = true) {
+      ensureAudioContext();
       const st = vsTracksState[audioRef];
-      if (!st || st.loading || (st.loaded && !persistOffline)) return;
+      if (!st || st.loading || st.loaded) return;
       st.loading = true; st.error = "";
-      if (updateUi) renderVsTracksChannels();
+      if (updateUiAfter) renderVsTracksChannels();
       try {
-        let monoBuf = vsMemoryBufferCache[audioRef];
-        if (!monoBuf || persistOffline) {
-          let cached = await dbGet("vsTracks", audioRef);
-          if (!cached) {
-            const res = await fetch(`${scriptUrl}?action=obterAudioVsBase64&audioRef=${encodeURIComponent(audioRef)}`);
-            const data = await res.json();
-            if (!data || data.status !== "ok" || !data.base64) throw new Error("Erro");
-            cached = { base64: data.base64, mimeType: data.mimeType || "audio/mpeg" };
-            if (persistOffline) { await dbPut("vsTracks", audioRef, cached); st.savedOffline = true; offlineSavedVsRefs.add(audioRef); }
-          } else if (persistOffline) st.savedOffline = true;
-          if (!monoBuf) {
-            let bytes = base64ToUint8Array(cached.base64); cached = null;
-            let ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength); bytes = null;
-            let rawDecoded = await decodeBufferCrossBrowser(ctx, ab); ab = null;
-            monoBuf = toNativeMonoBuffer(ctx, rawDecoded); rawDecoded = null;
-            vsMemoryBufferCache[audioRef] = monoBuf;
+        let blobUrl = vsBlobCache[audioRef];
+        if (!blobUrl) {
+          const cachedAudio = await fetchTrackCachedOrNetwork(audioRef, false);
+          blobUrl = URL.createObjectURL(new Blob([base64ToUint8Array(cachedAudio.base64)], { type: cachedAudio.mimeType }));
+          vsBlobCache[audioRef] = blobUrl;
+        }
+        if (!st.htmlAudio) {
+          const audio = new Audio();
+          audio.preload = "auto"; audio.playsInline = true; audio.src = blobUrl; audio.playbackRate = vsPlaybackRate;
+          audio.onloadedmetadata = () => {
+            if (audio.duration && audio.duration > vsMaxDuration) {
+              vsMaxDuration = audio.duration;
+              document.getElementById("vs-total-duration").textContent = formatSeconds(vsMaxDuration);
+            }
+          };
+          st.htmlAudio = audio;
+          if (vsAudioCtx && vsMasterMerger && typeof vsAudioCtx.createMediaElementSource === "function") {
+            try {
+              const source = vsAudioCtx.createMediaElementSource(audio);
+              const gL = vsAudioCtx.createGain(), gR = vsAudioCtx.createGain();
+              try { gL.channelCount = 1; gL.channelCountMode = "explicit"; gR.channelCount = 1; gR.channelCountMode = "explicit"; } catch (e) {}
+              source.connect(gL); source.connect(gR);
+              gL.connect(vsMasterMerger, 0, 0); gR.connect(vsMasterMerger, 0, 1);
+              st.gainL = gL; st.gainR = gR;
+            } catch (eNode) {}
           }
         }
-        st.audioBuffer = monoBuf; st.loaded = true; st.loading = false;
-        if (monoBuf.duration > vsMaxDuration) {
-          vsMaxDuration = monoBuf.duration;
-          document.getElementById("vs-total-duration").textContent = formatSeconds(vsMaxDuration);
+        st.loaded = true; st.loading = false;
+        applySoloMuteVolumes();
+        if (vsIsPlaying) {
+          const leader = getLoadedHtmlAudios()[0];
+          st.htmlAudio.currentTime = leader ? leader.currentTime : 0;
+          st.htmlAudio.play().catch(() => {});
         }
-        if (vsIsPlaying && autoJoin) startSingleBufferTrackNode(audioRef, getCurrentVsPlayheadTime(), ctx.currentTime);
-        if (updateUi) { updateVsLoadedStatus(); renderVsTracksChannels(); }
+        if (updateUiAfter) { updateVsLoadedStatus(); renderVsTracksChannels(); }
       } catch (e) {
         st.loading = false; st.error = "Falha";
-        if (updateUi) renderVsTracksChannels();
+        if (updateUiAfter) renderVsTracksChannels();
       }
     }
 
-    async function loadAllVsTracksSmartQueue(autoPlay = false, persistOffline = false) {
+    async function loadAllVsTracksTurbo(autoPlayWhenReady = false) {
       ensureAudioContext();
-      const btn = document.getElementById("btn-load-all-vs");
-      const wrap = document.getElementById("vs-loading-bar-wrap");
-      const bar = document.getElementById("vs-loading-bar");
-      const txt = document.getElementById("vs-loading-text");
-      const pct = document.getElementById("vs-loading-percent");
-      const iosBanner = document.getElementById("ios-ready-play-banner");
-      if (btn) btn.disabled = true;
-      iosBanner.classList.add("hidden"); iosBanner.classList.remove("flex");
+      const wrap = document.getElementById("vs-loading-bar-wrap"), bar = document.getElementById("vs-loading-bar"), txt = document.getElementById("vs-loading-text"), pct = document.getElementById("vs-loading-percent");
       wrap.classList.remove("hidden");
-
-      const pending = activeVsTracks.filter(t => !vsTracksState[t.audioRef].loaded || (persistOffline && !vsTracksState[t.audioRef].savedOffline));
+      const pending = activeVsTracks.filter(t => !vsTracksState[t.audioRef].loaded);
       const total = pending.length; let done = 0;
-
-      for (let i = 0; i < total; i += 2) {
-        const batch = pending.slice(i, i + 2);
-        txt.innerHTML = `<i class="fa-solid fa-bolt text-amber-400 mr-1.5"></i>A carregar faixas (${Math.min(i + 2, total)}/${total})...`;
-        await Promise.all(batch.map(async (t) => {
-          await loadSingleVsTrackFast(t.audioRef, false, persistOffline, false);
+      if (total > 0) {
+        bar.style.width = "15%"; pct.textContent = `0/${total}`;
+        txt.innerHTML = `<i class="fa-solid fa-bolt text-amber-400 mr-1.5"></i>Baixando ${total} faixas em paralelo (Turbo)...`;
+        await Promise.all(pending.map(async (t) => {
+          await loadSingleVsTrackTurbo(t.audioRef, false);
           done++;
           bar.style.width = `${Math.round((done / total) * 100)}%`;
           pct.textContent = `${done}/${total}`;
+          renderVsTracksChannels();
         }));
-        renderVsTracksChannels(); updateVsLoadedStatus();
-        await new Promise(r => setTimeout(r, 30));
       }
-
+      updateVsLoadedStatus(); renderVsTracksChannels();
       wrap.classList.add("hidden");
-      if (btn) { btn.disabled = false; btn.innerHTML = `<i class="fa-solid fa-check"></i><span>Todas Prontas</span>`; }
-      if (autoPlay) {
-        startMasterBufferPlayback(vsPauseOffset);
-        setTimeout(() => {
-          if (vsAudioCtx && vsAudioCtx.state !== "running") { iosBanner.classList.remove("hidden"); iosBanner.classList.add("flex"); }
-        }, 120);
+      if (autoPlayWhenReady && !vsIsPlaying) toggleMasterVsPlay();
+    }
+
+    function getLoadedHtmlAudios() { return Object.values(vsTracksState).filter(s => s.loaded && s.htmlAudio).map(s => s.htmlAudio); }
+
+    async function toggleMasterVsPlay() {
+      ensureAudioContext();
+      const audios = getLoadedHtmlAudios();
+      if (audios.length === 0 && activeVsTracks.length > 0) { await loadAllVsTracksTurbo(true); return; }
+      if (audios.length === 0) return;
+      const icon = document.getElementById("icon-vs-master-play");
+      if (vsIsPlaying) {
+        audios.forEach(a => a.pause());
+        vsIsPlaying = false; icon.className = "fa-solid fa-play";
+        if (vsProgressTimer) clearInterval(vsProgressTimer);
+      } else {
+        const refTime = audios[0].currentTime || 0;
+        audios.forEach(a => {
+          try { if (Math.abs(a.currentTime - refTime) > 0.04) a.currentTime = refTime; } catch (e) {}
+          a.playbackRate = vsPlaybackRate;
+        });
+        await Promise.all(audios.map(a => a.play().catch(() => {})));
+        vsIsPlaying = true; icon.className = "fa-solid fa-pause";
+        startVsProgressLoop();
       }
     }
 
-    function startSingleBufferTrackNode(audioRef, offsetSec, whenCtx) {
-      const ctx = ensureAudioContext();
-      const st = vsTracksState[audioRef];
-      if (!st || !st.loaded || !st.audioBuffer) return;
-      if (st.sourceNode) { try { st.sourceNode.stop(); st.sourceNode.disconnect(); } catch (e) {} }
-      const source = ctx.createBufferSource();
-      source.buffer = st.audioBuffer;
-      source.playbackRate.value = vsPlaybackRate;
-      if (!st.gainL || !st.gainR) {
-        const gL = ctx.createGain(), gR = ctx.createGain();
-        try {
-          gL.channelCount = 1; gL.channelCountMode = "explicit";
-          gR.channelCount = 1; gR.channelCountMode = "explicit";
-        } catch (e) {}
-        gL.connect(vsMasterMerger, 0, 0);
-        gR.connect(vsMasterMerger, 0, 1);
-        st.gainL = gL; st.gainR = gR;
-      }
-      source.connect(st.gainL); source.connect(st.gainR);
-      st.sourceNode = source;
-      applySoloMuteVolumes();
-      const safeOff = Math.min(Math.max(0, offsetSec), st.audioBuffer.duration - 0.02);
-      if (safeOff < st.audioBuffer.duration) source.start(whenCtx, safeOff);
-    }
-
-    function startMasterBufferPlayback(offsetSec) {
-      const ctx = ensureAudioContext();
-      if (ctx.state !== "running") { try { ctx.resume(); } catch (e) {} }
-      const iosBanner = document.getElementById("ios-ready-play-banner");
-      if (iosBanner) { iosBanner.classList.add("hidden"); iosBanner.classList.remove("flex"); }
-      const loadedRefs = Object.keys(vsTracksState).filter(k => vsTracksState[k].loaded && vsTracksState[k].audioBuffer);
-      if (loadedRefs.length === 0) return;
-      Object.values(vsTracksState).forEach(st => { if (st.sourceNode) { try { st.sourceNode.stop(); st.sourceNode.disconnect(); } catch (e) {} st.sourceNode = null; } });
-      vsPauseOffset = Math.max(0, offsetSec);
-      const launchTime = ctx.currentTime + 0.05;
-      vsStartTimeCtx = launchTime;
-      loadedRefs.forEach(ref => startSingleBufferTrackNode(ref, vsPauseOffset, launchTime));
-      vsIsPlaying = true;
-      document.getElementById("icon-vs-master-play").className = "fa-solid fa-pause";
-      startVsProgressLoop();
-    }
-
-    function getCurrentVsPlayheadTime() {
-      if (!vsIsPlaying || !vsAudioCtx) return vsPauseOffset;
-      return Math.min(vsPauseOffset + Math.max(0, (vsAudioCtx.currentTime - vsStartTimeCtx) * vsPlaybackRate), vsMaxDuration || 9999);
-    }
-
-    function pauseMasterVs() {
-      if (!vsIsPlaying) return;
-      vsPauseOffset = getCurrentVsPlayheadTime();
-      Object.values(vsTracksState).forEach(st => { if (st.sourceNode) { try { st.sourceNode.stop(); st.sourceNode.disconnect(); } catch (e) {} st.sourceNode = null; } });
+    function stopMasterVs() {
+      getLoadedHtmlAudios().forEach(a => { a.pause(); try { a.currentTime = 0; } catch (e) {} });
       vsIsPlaying = false;
-      document.getElementById("icon-vs-master-play").className = "fa-solid fa-play";
+      const ic = document.getElementById("icon-vs-master-play"); if (ic) ic.className = "fa-solid fa-play";
+      document.getElementById("vs-current-time").textContent = "00:00";
+      document.getElementById("vs-master-seek").value = 0;
       if (vsProgressTimer) clearInterval(vsProgressTimer);
     }
 
-    function toggleMasterVsPlay() {
-      ensureAudioContext();
-      const loadedRefs = Object.keys(vsTracksState).filter(k => vsTracksState[k].loaded && vsTracksState[k].audioBuffer);
-      if (loadedRefs.length === 0 && activeVsTracks.length > 0) { loadAllVsTracksSmartQueue(true, false); return; }
-      if (vsIsPlaying) pauseMasterVs();
-      else {
-        if (vsMaxDuration > 0 && vsPauseOffset >= vsMaxDuration - 0.2) vsPauseOffset = 0;
-        startMasterBufferPlayback(vsPauseOffset);
-      }
-    }
-
-    function stopMasterVs() { pauseMasterVs(); vsPauseOffset = 0; document.getElementById("vs-current-time").textContent = "00:00"; document.getElementById("vs-master-seek").value = 0; }
-    function previewSeekTime(pct) { if (vsMaxDuration) document.getElementById("vs-current-time").textContent = formatSeconds((Number(pct) / 100) * vsMaxDuration); }
     function seekMasterVs(pct) {
-      if (!vsMaxDuration) return;
-      const t = (Number(pct) / 100) * vsMaxDuration;
+      const audios = getLoadedHtmlAudios();
+      if (audios.length === 0) return;
+      const dur = vsMaxDuration || audios[0].duration || 0;
+      if (!dur) return;
+      const t = (Number(pct) / 100) * dur;
+      audios.forEach(a => { try { a.currentTime = t; } catch (e) {} });
       document.getElementById("vs-current-time").textContent = formatSeconds(t);
-      if (vsIsPlaying) startMasterBufferPlayback(t); else vsPauseOffset = t;
     }
 
     function applySoloMuteVolumes() {
-      const states = Object.values(vsTracksState);
-      const anySolo = states.some(s => s.solo);
+      const states = Object.values(vsTracksState), anySolo = states.some(s => s.solo);
       states.forEach(st => {
-        if (!st.gainL || !st.gainR || !vsAudioCtx) return;
+        if (!st.htmlAudio) return;
         const gain = (st.muted || (anySolo && !st.solo)) ? 0 : st.volume;
-        st.gainL.gain.setTargetAtTime((st.pan === "L" || st.pan === "C") ? gain : 0, vsAudioCtx.currentTime, 0.015);
-        st.gainR.gain.setTargetAtTime((st.pan === "R" || st.pan === "C") ? gain : 0, vsAudioCtx.currentTime, 0.015);
+        if (st.gainL && st.gainR && vsAudioCtx) {
+          st.htmlAudio.volume = 1;
+          st.gainL.gain.setTargetAtTime((st.pan === "L" || st.pan === "C") ? gain : 0, vsAudioCtx.currentTime, 0.012);
+          st.gainR.gain.setTargetAtTime((st.pan === "R" || st.pan === "C") ? gain : 0, vsAudioCtx.currentTime, 0.012);
+        } else {
+          st.htmlAudio.volume = Math.min(1, Math.max(0, gain));
+        }
       });
+    }
+
+    // --- B) MODO IPHONE (ESCUTA ISOLADA + MIX UNIFICADO EM 1 FICHEIRO WAV) ---
+    async function playIsolatedTrackOnIos(audioRef, trackName) {
+      stopMasterVs();
+      const wrap = document.getElementById("vs-loading-bar-wrap"), txt = document.getElementById("vs-loading-text"), bar = document.getElementById("vs-loading-bar");
+      wrap.classList.remove("hidden"); bar.style.width = "45%";
+      txt.textContent = `Abrindo faixa isolada: ${trackName}...`;
+      try {
+        const raw = await fetchTrackCachedOrNetwork(audioRef, true);
+        if (vsTracksState[audioRef]) vsTracksState[audioRef].savedOffline = true;
+        bar.style.width = "100%";
+        if (iosCurrentBlobUrl) URL.revokeObjectURL(iosCurrentBlobUrl);
+        iosCurrentBlobUrl = URL.createObjectURL(new Blob([base64ToUint8Array(raw.base64)], { type: raw.mimeType || "audio/mpeg" }));
+        const player = document.getElementById("ios-native-audio");
+        document.getElementById("ios-player-wrap").classList.remove("hidden");
+        document.getElementById("ios-player-label").textContent = `🎧 Isolada: ${trackName}`;
+        player.src = iosCurrentBlobUrl;
+        player.play().catch(() => {});
+        renderVsTracksChannels();
+      } catch (e) {
+        alert("Não foi possível carregar esta faixa.");
+      } finally {
+        setTimeout(() => wrap.classList.add("hidden"), 400);
+      }
+    }
+
+    function setIosNativeRate(rate) { const p = document.getElementById("ios-native-audio"); if (p) p.playbackRate = rate; }
+
+    function decodeBufferCrossBrowser(ctx, ab) {
+      return new Promise((res, rej) => {
+        try { const p = ctx.decodeAudioData(ab, d => res(d), e => rej(e)); if (p && p.catch) p.catch(rej); } catch (e) { rej(e); }
+      });
+    }
+
+    function encodeStereoWav16(mixL, mixR, sampleRate) {
+      const frames = mixL.length, dataSize = frames * 4;
+      const buf = new ArrayBuffer(44 + dataSize), view = new DataView(buf);
+      const writeStr = (off, s) => { for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); };
+      writeStr(0, "RIFF"); view.setUint32(4, 36 + dataSize, true); writeStr(8, "WAVE");
+      writeStr(12, "fmt "); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 2, true);
+      view.setUint32(24, sampleRate, true); view.setUint32(28, sampleRate * 4, true); view.setUint16(32, 4, true); view.setUint16(34, 16, true);
+      writeStr(36, "data"); view.setUint32(40, dataSize, true);
+      const pcm = new Int16Array(buf, 44);
+      for (let i = 0; i < frames; i++) {
+        const l = Math.max(-1, Math.min(1, mixL[i])), r = Math.max(-1, Math.min(1, mixR[i]));
+        pcm[i * 2] = l < 0 ? l * 32768 : l * 32767;
+        pcm[i * 2 + 1] = r < 0 ? r * 32768 : r * 32767;
+      }
+      return new Blob([buf], { type: "audio/wav" });
+    }
+
+    async function generateIosSingleMix() {
+      const anySolo = Object.values(vsTracksState).some(s => s.solo);
+      const selectedTracks = activeVsTracks.filter(t => {
+        const st = vsTracksState[t.audioRef];
+        return st && !st.muted && (!anySolo || st.solo) && st.volume > 0;
+      });
+      if (selectedTracks.length === 0) return;
+
+      const btn = document.getElementById("btn-generate-ios-mix");
+      const wrap = document.getElementById("vs-loading-bar-wrap"), bar = document.getElementById("vs-loading-bar"), txt = document.getElementById("vs-loading-text"), pct = document.getElementById("vs-loading-percent");
+      btn.disabled = true; wrap.classList.remove("hidden"); bar.style.width = "8%";
+
+      try {
+        // Etapa 1: Descarrega faixas em falta em lotes rápidos de 3 diretamente para o IndexedDB (sem reter na RAM)
+        const uncached = selectedTracks.filter(t => !offlineSavedVsRefs.has(t.audioRef));
+        for (let b = 0; b < uncached.length; b += 3) {
+          const chunk = uncached.slice(b, b + 3);
+          txt.textContent = `Baixando faixas (${Math.min(b + 3, uncached.length)}/${uncached.length})...`;
+          await Promise.all(chunk.map(async (t) => {
+            await fetchTrackCachedOrNetwork(t.audioRef, true);
+            if (vsTracksState[t.audioRef]) vsTracksState[t.audioRef].savedOffline = true;
+          }));
+        }
+        renderVsTracksChannels();
+
+        // Etapa 2: Soma 1 faixa de cada vez a 22.05kHz libertando a RAM imediatamente
+        const TARGET_RATE = 22050;
+        let mixL = null, mixR = null;
+        const ctx = ensureAudioContext();
+
+        for (let i = 0; i < selectedTracks.length; i++) {
+          const t = selectedTracks[i], st = vsTracksState[t.audioRef];
+          const pVal = Math.round(((i + 1) / selectedTracks.length) * 95);
+          txt.textContent = `Unificando ${i + 1}/${selectedTracks.length}: ${t.nomeFaixa}...`;
+          pct.textContent = `${pVal}%`; bar.style.width = `${pVal}%`;
+
+          let raw = await dbGet("vsTracks", t.audioRef);
+          let bytes = base64ToUint8Array(raw.base64); raw = null;
+          let ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength); bytes = null;
+          let decoded = await decodeBufferCrossBrowser(ctx, ab); ab = null;
+
+          const outLen = Math.ceil(decoded.duration * TARGET_RATE);
+          if (!mixL) {
+            mixL = new Float32Array(outLen); mixR = new Float32Array(outLen);
+          } else if (outLen > mixL.length) {
+            const nL = new Float32Array(outLen), nR = new Float32Array(outLen);
+            nL.set(mixL); nR.set(mixR); mixL = nL; mixR = nR;
+          }
+
+          const ch0 = decoded.getChannelData(0);
+          const ch1 = decoded.numberOfChannels > 1 ? decoded.getChannelData(1) : null;
+          const ratio = decoded.sampleRate / TARGET_RATE;
+          const gL = (st.pan === "L" || st.pan === "C") ? st.volume : 0;
+          const gR = (st.pan === "R" || st.pan === "C") ? st.volume : 0;
+
+          for (let j = 0; j < outLen; j++) {
+            const idx = Math.min(decoded.length - 1, Math.floor(j * ratio));
+            const s = ch1 ? (ch0[idx] + ch1[idx]) * 0.5 : ch0[idx];
+            if (gL > 0) mixL[j] += s * gL;
+            if (gR > 0) mixR[j] += s * gR;
+          }
+          decoded = null;
+          await new Promise(r => setTimeout(r, 35));
+        }
+
+        let peak = 0;
+        for (let i = 0; i < mixL.length; i++) {
+          const aL = Math.abs(mixL[i]), aR = Math.abs(mixR[i]);
+          if (aL > peak) peak = aL;
+          if (aR > peak) peak = aR;
+        }
+        if (peak > 0.96) {
+          const sc = 0.95 / peak;
+          for (let i = 0; i < mixL.length; i++) { mixL[i] *= sc; mixR[i] *= sc; }
+        }
+
+        const wavBlob = encodeStereoWav16(mixL, mixR, TARGET_RATE);
+        mixL = null; mixR = null;
+
+        if (iosCurrentBlobUrl) URL.revokeObjectURL(iosCurrentBlobUrl);
+        iosCurrentBlobUrl = URL.createObjectURL(wavBlob);
+        const player = document.getElementById("ios-native-audio");
+        document.getElementById("ios-player-wrap").classList.remove("hidden");
+        document.getElementById("ios-player-label").textContent = `✅ Mix Pronto (${selectedTracks.length} faixas)`;
+        player.src = iosCurrentBlobUrl;
+        player.play().catch(() => {});
+      } catch (err) {
+        alert("Erro ao gerar o mix p/ iPhone. Tente novamente.");
+      } finally {
+        btn.disabled = false; wrap.classList.add("hidden");
+      }
     }
 
     function toggleVsTrackMute(ref) { const st = vsTracksState[ref]; if (st) { st.muted = !st.muted; applySoloMuteVolumes(); renderVsTracksChannels(); } }
@@ -1029,36 +1272,161 @@
     function resetVsSoloMute() { Object.values(vsTracksState).forEach(p => { p.muted = false; p.solo = false; }); applySoloMuteVolumes(); renderVsTracksChannels(); }
     function changeVsTrackVolume(ref, val) { const st = vsTracksState[ref]; if (st) { st.volume = Number(val); applySoloMuteVolumes(); } }
     function setVsPlaybackRate(rate) {
-      const pos = getCurrentVsPlayheadTime(); vsPlaybackRate = rate;
-      if (vsIsPlaying) startMasterBufferPlayback(pos);
+      vsPlaybackRate = rate;
+      getLoadedHtmlAudios().forEach(a => { a.playbackRate = rate; });
       ["075", "090", "100"].forEach(id => { document.getElementById("rate-" + id).className = "px-2 py-0.5 rounded text-[11px] font-bold text-slate-400"; });
       document.getElementById("rate-" + (rate === 0.75 ? "075" : rate === 0.9 ? "090" : "100")).className = "px-2 py-0.5 rounded text-[11px] font-bold bg-purple-600 text-white";
     }
     function updateVsLoadedStatus() {
-      const c = Object.values(vsTracksState).filter(s => s.loaded).length;
-      document.getElementById("vs-loaded-status").textContent = c > 0 ? `${c} de ${activeVsTracks.length} faixas prontas` : `Toque em Carregar e Tocar Todas`;
+      const c = getLoadedHtmlAudios().length;
+      document.getElementById("vs-loaded-status").textContent = c > 0 ? `${c} de ${activeVsTracks.length} faixas prontas no Mixer` : `Toque em Play ou Carregar Todas (Turbo)`;
     }
     function startVsProgressLoop() {
       if (vsProgressTimer) clearInterval(vsProgressTimer);
       vsProgressTimer = setInterval(() => {
-        if (!vsIsPlaying) return;
-        const cur = getCurrentVsPlayheadTime();
+        const audios = getLoadedHtmlAudios();
+        if (!vsIsPlaying || audios.length === 0) return;
+        const leader = audios[0], cur = leader.currentTime || 0, dur = vsMaxDuration || leader.duration || 0;
         document.getElementById("vs-current-time").textContent = formatSeconds(cur);
-        if (vsMaxDuration > 0) {
-          document.getElementById("vs-master-seek").value = Math.min(100, (cur / vsMaxDuration) * 100);
-          if (cur >= vsMaxDuration) stopMasterVs();
+        for (let i = 1; i < audios.length; i++) {
+          if (Math.abs(audios[i].currentTime - cur) > 0.06) { try { audios[i].currentTime = cur; } catch (e) {} }
+        }
+        if (dur > 0) {
+          document.getElementById("vs-master-seek").value = Math.min(100, (cur / dur) * 100);
+          if (leader.ended || cur >= dur) stopMasterVs();
         }
       }, 250);
     }
     function formatSeconds(sec) { return (!sec || isNaN(sec)) ? "00:00" : `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(Math.floor(sec % 60)).padStart(2, "0")}`; }
     function clearVsAudioPlayers() {
-      Object.values(vsTracksState).forEach(st => {
-        if (st.sourceNode) { try { st.sourceNode.stop(); st.sourceNode.disconnect(); } catch (e) {} }
-        if (st.gainL) { try { st.gainL.disconnect(); } catch (e) {} }
-        if (st.gainR) { try { st.gainR.disconnect(); } catch (e) {} }
-      });
-      vsTracksState = {}; vsMemoryBufferCache = {}; vsMaxDuration = 0; vsPauseOffset = 0;
+      Object.values(vsTracksState).forEach(st => { if (st.htmlAudio) { st.htmlAudio.pause(); st.htmlAudio.src = ""; } });
+      vsTracksState = {}; vsMaxDuration = 0;
       document.getElementById("vs-total-duration").textContent = "00:00";
+    }
+
+    // ============================================================================
+    // 2. GERADOR DE SESSÃO REAPER (.RPP) — CULTO COMPLETO OU MÚSICA AVULSA
+    // ============================================================================
+    function openReaperModal(repId) {
+      const rep = repertorios.find(r => r.id === Number(repId));
+      if (!rep) return;
+      reaperTargetPayload = {
+        fileName: `Culto_DOXA_${String(rep.dia).replace(/[\\/:]/g, "-")}.rpp`,
+        label: `Culto: ${rep.dia} (${rep.culto}) — ${(rep.itens || []).length} músicas`,
+        items: rep.itens || []
+      };
+      document.getElementById("reaper-base-path").value = localStorage.getItem("doxa_reaper_base_path") || "";
+      document.getElementById("reaper-modal-subtitle").textContent = reaperTargetPayload.label;
+      document.getElementById("reaper-export-status").classList.add("hidden");
+      document.getElementById("reaper-modal").classList.remove("hidden"); document.getElementById("reaper-modal").classList.add("flex");
+    }
+
+    function exportCurrentVsSongToReaper() {
+      if (!selectedVsFolderRef || !selectedVsFolderName) return;
+      const cat = findFullSongByName(selectedVsFolderName) || {};
+      reaperTargetPayload = {
+        fileName: `VS_DOXA_${selectedVsFolderName.replace(/[\\/:*?"<>|]/g, "")}.rpp`,
+        label: `Música avulsa: ${selectedVsFolderName}`,
+        items: [{ momento: "VS", musica: selectedVsFolderName, tom: cat.tom || "-", tempo: cat.tempo || "", forcedFolderRef: selectedVsFolderRef, forcedFolderName: selectedVsFolderName }]
+      };
+      document.getElementById("reaper-base-path").value = localStorage.getItem("doxa_reaper_base_path") || "";
+      document.getElementById("reaper-modal-subtitle").textContent = reaperTargetPayload.label;
+      document.getElementById("reaper-export-status").classList.add("hidden");
+      document.getElementById("reaper-modal").classList.remove("hidden"); document.getElementById("reaper-modal").classList.add("flex");
+    }
+
+    function closeReaperModal() { document.getElementById("reaper-modal").classList.add("hidden"); document.getElementById("reaper-modal").classList.remove("flex"); }
+    function abrirReaperAtualPalco() { const sel = document.getElementById("palco-select-repertorio"); if (sel && sel.value) openReaperModal(Number(sel.value)); }
+
+    async function generateReaperRppFile() {
+      if (!reaperTargetPayload || !reaperTargetPayload.items.length) return;
+      const basePath = document.getElementById("reaper-base-path").value.trim().replace(/[\\/]+$/, "");
+      localStorage.setItem("doxa_reaper_base_path", basePath);
+      const routing = document.getElementById("reaper-routing-mode").value;
+      const slotSec = Math.max(180, Number(document.getElementById("reaper-slot-sec").value) || 480);
+      const autoStop = document.getElementById("reaper-auto-stop").checked;
+      const autoBpm = document.getElementById("reaper-auto-bpm").checked;
+
+      const statusBox = document.getElementById("reaper-export-status"), btn = document.getElementById("btn-run-reaper-export");
+      statusBox.classList.remove("hidden"); btn.disabled = true;
+      statusBox.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1 text-purple-400"></i>Montando sessão .RPP...`;
+
+      try {
+        if (vsFolders.length === 0) await loadVsFolders(false);
+        const sep = basePath.includes("/") ? "/" : "\\";
+        let markersRpp = "", tracksRpp = "", tempoPoints = "", firstBpm = 120, logHtml = "";
+        const items = reaperTargetPayload.items;
+
+        for (let i = 0; i < items.length; i++) {
+          const rawIt = items[i];
+          const info = getResolvedSongDetails(rawIt);
+          const posSec = i * (slotSec + 15);
+          const bpmNum = parseFloat(String(info.tempo || rawIt.tempo || "").replace(",", ".").replace(/[^0-9.]/g, ""));
+          if (autoBpm && bpmNum >= 40 && bpmNum <= 240) {
+            if (i === 0) firstBpm = bpmNum;
+            tempoPoints += `    PT ${posSec} ${bpmNum} 1\n`;
+          }
+
+          const cleanTitle = `${i + 1}. ${info.musica} (${info.tom})${bpmNum ? " " + bpmNum + "bpm" : ""}`.replace(/"/g, "'");
+          markersRpp += `  MARKER ${i + 1} ${posSec} "${cleanTitle}" 0 0 1 R\n`;
+          if (autoStop) markersRpp += `  MARKER ${100 + i} ${posSec + slotSec} "!1016" 0 0 1 R\n`;
+
+          let matchedFolder = null;
+          if (rawIt.forcedFolderRef) {
+            matchedFolder = { folderRef: rawIt.forcedFolderRef, nome: rawIt.forcedFolderName };
+          } else {
+            const songKey = normalizeSongKey(removeHymnPrefix(info.musica));
+            matchedFolder = vsFolders.find(f => {
+              const fk = normalizeSongKey(removeHymnPrefix(f.nome));
+              return fk === songKey || (songKey.length >= 4 && (fk.includes(songKey) || songKey.includes(fk)));
+            });
+          }
+
+          if (!matchedFolder) {
+            logHtml += `<div class="text-amber-300">⚠️ <strong>${info.musica}:</strong> Sem pasta VS (criado Marker + faixa guia vazia)</div>`;
+            tracksRpp += `  <TRACK\n    NAME "${cleanTitle}"\n    VOLPAN 1 0 -1 -1 1\n  >\n`;
+            continue;
+          }
+
+          let faixasData = await dbGet("catalog", "vsFolder_" + matchedFolder.folderRef);
+          if (!faixasData && navigator.onLine && scriptUrl) {
+            const r = await fetch(`${scriptUrl}?action=listarFaixasVs&folderRef=${encodeURIComponent(matchedFolder.folderRef)}`);
+            faixasData = await r.json();
+            if (faixasData && faixasData.status === "ok") await dbPut("catalog", "vsFolder_" + matchedFolder.folderRef, faixasData);
+          }
+
+          const faixas = (faixasData && Array.isArray(faixasData.faixas)) ? faixasData.faixas : [];
+          logHtml += `<div class="text-emerald-400">✓ <strong>${info.musica}:</strong> ${faixas.length} faixas vinculadas (${matchedFolder.nome})</div>`;
+
+          tracksRpp += `  <TRACK\n    NAME "${cleanTitle}"\n    BUSCOMP 1 0 -1 -1 0\n    VOLPAN 1 0 -1 -1 1\n  >\n`;
+
+          faixas.forEach((fx, idxFx) => {
+            const isLast = idxFx === faixas.length - 1;
+            const isClickGuide = fx.categoria === "Click" || fx.categoria === "Guia";
+            const rawFileName = fx.nomeArquivo || `${fx.nomeFaixa}.mp3`;
+            const fullFilePath = basePath ? `${basePath}${sep}${matchedFolder.nome}${sep}${rawFileName}` : `${matchedFolder.nome}/${rawFileName}`;
+            const srcType = fx.reaperSourceType || (/\.wav$/i.test(rawFileName) ? "WAVE" : (/\.flac$/i.test(rawFileName) ? "FLAC" : (/\.ogg$/i.test(rawFileName) ? "VORBIS" : "MP3")));
+            const panVal = routing === "SPLIT_LR" ? (isClickGuide ? -1 : 1) : 0;
+            const routingLines = (routing === "MULTI_OUT" && isClickGuide)
+              ? `    MAINSEND 0 0\n    HWOUT 2 0 1 0 0 0 1 -1:U -1\n`
+              : `    MAINSEND 1 0\n`;
+
+            tracksRpp += `  <TRACK\n    NAME "${fx.nomeFaixa.replace(/"/g, "'")}"\n    VOLPAN 1 ${panVal} -1 -1 1\n${routingLines}    BUSCOMP ${isLast ? "2 -1" : "0 0"} -1 -1 0\n    <ITEM\n      POSITION ${posSec}\n      LENGTH ${slotSec}\n      LOOP 0\n      NAME "${fx.nomeFaixa.replace(/"/g, "'")}"\n      <SOURCE ${srcType}\n        FILE "${fullFilePath}"\n      >\n    >\n  >\n`;
+          });
+        }
+
+        const tempoEnvBlock = tempoPoints ? `  <TEMPOENVEX\n${tempoPoints}  >\n` : "";
+        const rppContent = `<REAPER_PROJECT 0.1 "7.0" 1730000000\n  TEMPO ${firstBpm} 4 4\n${tempoEnvBlock}${markersRpp}${tracksRpp}>\n`;
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([rppContent], { type: "application/octet-stream" }));
+        a.download = reaperTargetPayload.fileName;
+        a.click();
+        statusBox.innerHTML = `<p class="font-bold text-white mb-1">Ficheiro .RPP gerado com sucesso!</p>${logHtml}`;
+      } catch (e) {
+        statusBox.innerHTML = `<div class="text-rose-400">Erro ao gerar projeto do Reaper.</div>`;
+      } finally {
+        btn.disabled = false;
+      }
     }
 
     // WHATSAPP COM ENCURTADOR AUTOMÁTICO
@@ -1210,6 +1578,7 @@
     }
 
     // CATÁLOGO, ADMIN E SINCRONIZAÇÃO
+    function toggleMobileFilters() { document.getElementById("filters-panel").classList.toggle("hidden"); }
     function parseTags(str) { return str ? String(str).split(/[,;/]+/).map(t => t.trim()).filter(Boolean) : []; }
     function normalizeSongKey(str) { return str ? String(str).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "") : ""; }
     function removeHymnPrefix(str) { return str ? String(str).replace(/^\s*\(\d+[a-z]?\)\s*[-–—]?\s*/i, "").replace(/^\s*\d{1,3}[a-z]?\s*[-–—]\s*/i, "") : ""; }
@@ -1229,7 +1598,7 @@
       return {
         musica: cat.musica || (item && item.musica) || "Música",
         autor: cat.autor || (item && item.autor) || "Autor não informado",
-        tom: cat.tom || (item && item.tom) || "-",
+        tom: (item && item.tom && item.tom !== "-") ? item.tom : (cat.tom || "-"),
         tempo: cat.tempo || (item && item.tempo) || "",
         dificuldade: cat.dificuldade || (item && item.dificuldade) || "",
         vezes: cat.vezes != null ? cat.vezes : ((item && item.vezes) || 0),
@@ -1298,7 +1667,7 @@
     function updateAdminUI() {
       document.getElementById("admin-lock-icon").className = isAdmin ? "fa-solid fa-lock-open text-emerald-400" : "fa-solid fa-lock text-amber-400";
       document.getElementById("admin-lock-label").textContent = isAdmin ? "Admin Ativo" : "Admin";
-      ["btn-sync-header", "btn-new-song", "btn-new-rep", "drawer-admin-only-box", "pedidos-admin-url-bar"].forEach(id => {
+      ["btn-sync-header", "btn-new-song", "btn-new-rep", "btn-new-rep-inline", "drawer-admin-only-box", "pedidos-admin-url-bar"].forEach(id => {
         const el = document.getElementById(id);
         if (el) { el.classList.toggle("hidden", !isAdmin); if (isAdmin && id !== "drawer-admin-only-box") el.classList.add("flex"); }
       });
@@ -1391,6 +1760,7 @@
       if (id) {
         const s = songs.find(x => x.id === id);
         if (s) {
+          document.getElementById("song-modal-title").textContent = "Editar Música";
           document.getElementById("song-id").value = s.id; document.getElementById("song-musica").value = s.musica;
           document.getElementById("song-autor").value = s.autor || ""; document.getElementById("song-tom").value = s.tom || "";
           document.getElementById("song-tempo").value = s.tempo || ""; document.getElementById("song-dificuldade").value = s.dificuldade || "";
@@ -1398,7 +1768,10 @@
           document.getElementById("song-ref").value = s.ref || ""; document.getElementById("song-audio").value = s.audio || "";
           document.getElementById("song-cifra").value = s.cifra || ""; document.getElementById("song-cifra-doxa").value = s.cifraDoxa || "";
         }
-      } else document.getElementById("song-id").value = "";
+      } else {
+        document.getElementById("song-modal-title").textContent = "Nova Música";
+        document.getElementById("song-id").value = "";
+      }
       document.getElementById("song-modal").classList.remove("hidden"); document.getElementById("song-modal").classList.add("flex");
     }
     function closeSongModal() { document.getElementById("song-modal").classList.add("hidden"); document.getElementById("song-modal").classList.remove("flex"); }
@@ -1418,12 +1791,14 @@
       closeSongModal(); renderSongs(); pushToGoogleSheet({ action: "saveSong", song: payload });
     }
     function deleteSong(id) {
-      if (!isAdmin) return;
+      if (!isAdmin || !confirm("Excluir esta música do Banco de Músicas?")) return;
       const s = songs.find(x => x.id === id); if (!s) return;
       songs = songs.filter(x => x.id !== id); renderSongs(); pushToGoogleSheet({ action: "deleteSong", musica: s.musica });
     }
 
-    // REPERTÓRIOS E PALCO
+    // ============================================================================
+    // 3. REPERTÓRIOS (COM CRIAR, EDITAR, REORDENAR E EXCLUIR) & MODO PALCO
+    // ============================================================================
     function parseRepDate(dStr) {
       if (!dStr) return null;
       const p = String(dStr).trim().split(/[\/\-]/);
@@ -1469,9 +1844,11 @@
       document.getElementById("featured-rep-actions").innerHTML = `
         <button onclick="openStageWithRepertorio(${rep.id})" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-bold">Palco</button>
         <button onclick="salvarCultoOffline(${rep.id})" class="px-3 py-1.5 rounded-xl bg-teal-600 text-white text-xs font-bold">Baixar Offline</button>
+        <button onclick="openReaperModal(${rep.id})" class="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold"><i class="fa-solid fa-sliders mr-1"></i>Reaper (.RPP)</button>
         <button onclick="mesclarEBaixarPdfRepertorio(${rep.id})" class="px-3 py-1.5 rounded-xl bg-rose-600 text-white text-xs font-bold">PDF Mesclado</button>
-        <button onclick="openWhatsAppModal(${rep.id}, 'equipe')" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold">WhatsApp Equipe</button>
-        <button onclick="openWhatsAppModal(${rep.id}, 'igreja')" class="px-3 py-1.5 rounded-xl bg-emerald-800 text-emerald-200 text-xs font-bold">WhatsApp Igreja</button>`;
+        <button onclick="openWhatsAppModal(${rep.id}, 'equipe')" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold">WA Equipe</button>
+        <button onclick="openWhatsAppModal(${rep.id}, 'igreja')" class="px-3 py-1.5 rounded-xl bg-emerald-800 text-emerald-200 text-xs font-bold">WA Igreja</button>
+        ${isAdmin ? `<button onclick="openRepertorioModal(${rep.id})" class="px-3 py-1.5 rounded-xl bg-amber-600 text-white text-xs font-bold"><i class="fa-solid fa-pen mr-1"></i>Editar</button>` : ""}`;
       document.getElementById("featured-rep-body").innerHTML = `<h3 class="text-base font-extrabold text-white">${rep.tema}</h3><div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${(rep.itens || []).map((it, i) => {
         const info = getResolvedSongDetails(it), sM = String(info.musica).replace(/'/g, "\\'"), sA = String(info.autor || "").replace(/'/g, "\\'");
         return `<div class="flex items-center justify-between bg-slate-800/70 px-3 py-2 rounded-xl border border-slate-700"><div class="min-w-0"><span class="text-[10px] font-bold uppercase text-indigo-400 block">${i + 1}. ${it.momento}</span><span class="text-xs font-bold text-white truncate block">${info.musica}</span></div><div class="flex items-center gap-1">${info.hasFile ? `<button onclick="baixarCifraIndividual('${sM}','${sA}','${info.fileId}','${info.viewUrl}')" class="px-2 py-1 rounded bg-indigo-600/30 text-indigo-200 text-xs"><i class="fa-solid fa-download"></i></button>` : ""}<span class="px-2 py-1 rounded bg-slate-900 text-amber-400 font-bold text-xs">${info.tom}</span></div></div>`;
@@ -1482,7 +1859,7 @@
     function renderRepertorios() {
       if (!selectedRepertorioId) { const n = findNextUpcomingRepertorio(); if (n) selectedRepertorioId = n.id; }
       renderCalendar(); renderFeaturedRepertorio();
-      document.getElementById("repertorios-grid").innerHTML = repertorios.map(rep => `<div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-2"><div class="flex justify-between border-b border-slate-800 pb-2"><div><span class="text-xs font-bold text-amber-300">${rep.dia} • ${rep.culto}</span><h3 class="text-sm font-bold text-white">${rep.tema}</h3></div><div class="flex gap-1"><button onclick="openStageWithRepertorio(${rep.id})" class="px-2 py-1 rounded bg-indigo-600/20 text-indigo-300 text-xs">Palco</button><button onclick="openWhatsAppModal(${rep.id},'equipe')" class="px-2 py-1 rounded bg-emerald-600/20 text-emerald-300 text-xs"><i class="fa-brands fa-whatsapp"></i></button></div></div></div>`).join("");
+      document.getElementById("repertorios-grid").innerHTML = repertorios.map(rep => `<div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-2"><div class="flex justify-between items-start border-b border-slate-800 pb-2"><div><span class="text-xs font-bold text-amber-300">${rep.dia} • ${rep.culto}</span><h3 class="text-sm font-bold text-white">${rep.tema}</h3></div><div class="flex flex-wrap gap-1"><button onclick="openStageWithRepertorio(${rep.id})" class="px-2 py-1 rounded bg-indigo-600/20 text-indigo-300 text-xs">Palco</button><button onclick="openReaperModal(${rep.id})" class="px-2 py-1 rounded bg-purple-600/20 text-purple-300 text-xs" title="Exportar Reaper .RPP">RPP</button><button onclick="openWhatsAppModal(${rep.id},'equipe')" class="px-2 py-1 rounded bg-emerald-600/20 text-emerald-300 text-xs"><i class="fa-brands fa-whatsapp"></i></button>${isAdmin ? `<button onclick="openRepertorioModal(${rep.id})" class="px-2 py-1 rounded bg-amber-600/25 text-amber-300 text-xs" title="Editar Repertório"><i class="fa-solid fa-pen"></i></button><button onclick="deleteRepertorio(${rep.id})" class="px-2 py-1 rounded bg-rose-600/20 text-rose-400 text-xs" title="Excluir Repertório"><i class="fa-solid fa-trash"></i></button>` : ""}</div></div></div>`).join("");
       populatePalcoSelect(); updateBadges();
     }
 
@@ -1558,7 +1935,28 @@
     function closePdfModal() { document.getElementById("pdf-modal").classList.add("hidden"); document.getElementById("pdf-modal").classList.remove("flex"); }
     function gerarPdfRepertorioAtualPalco() { const sel = document.getElementById("palco-select-repertorio"); if (sel && sel.value) mesclarEBaixarPdfRepertorio(Number(sel.value)); }
 
-    function openRepertorioModal() { if (!isAdmin) return; draftRepertorioItems = []; renderDraftRepertorioItems(); document.getElementById("repertorio-modal").classList.remove("hidden"); document.getElementById("repertorio-modal").classList.add("flex"); }
+    function openRepertorioModal(repId = null) {
+      if (!isAdmin) { handleAdminButtonClick(); return; }
+      document.getElementById("repertorio-form").reset();
+      if (repId) {
+        const rep = repertorios.find(r => r.id === Number(repId));
+        if (!rep) return;
+        document.getElementById("repertorio-modal-title").textContent = "Editar Repertório de Culto";
+        document.getElementById("rep-edit-id").value = rep.id;
+        document.getElementById("rep-dia").value = rep.dia || "";
+        document.getElementById("rep-culto").value = rep.culto || "Domingo";
+        document.getElementById("rep-tema").value = rep.tema || "";
+        editingOriginalRepMeta = { id: rep.id, dia: rep.dia, tema: rep.tema, culto: rep.culto };
+        draftRepertorioItems = (rep.itens || []).map(it => Object.assign({}, it));
+      } else {
+        document.getElementById("repertorio-modal-title").textContent = "Novo Repertório de Culto";
+        document.getElementById("rep-edit-id").value = "";
+        editingOriginalRepMeta = null;
+        draftRepertorioItems = [];
+      }
+      renderDraftRepertorioItems();
+      document.getElementById("repertorio-modal").classList.remove("hidden"); document.getElementById("repertorio-modal").classList.add("flex");
+    }
     function closeRepertorioModal() { document.getElementById("repertorio-modal").classList.add("hidden"); document.getElementById("repertorio-modal").classList.remove("flex"); }
     function filterRepSongsDropdown() {
       const q = document.getElementById("rep-item-song-search").value.toLowerCase().trim(), drop = document.getElementById("dropdown-rep-songs");
@@ -1567,17 +1965,71 @@
       drop.classList.remove("hidden");
     }
     function addSongToDraftRepertorio() {
-      const s = songs.find(x => x.id === Number(document.getElementById("rep-item-song-id").value)); if (!s) return;
-      draftRepertorioItems.push({ momento: document.getElementById("rep-item-momento").value || "Adoração", musica: s.musica, autor: s.autor, tom: s.tom, fileId: s.fileId || "" });
-      document.getElementById("rep-item-song-search").value = ""; renderDraftRepertorioItems();
+      const searchText = document.getElementById("rep-item-song-search").value.trim();
+      const s = songs.find(x => x.id === Number(document.getElementById("rep-item-song-id").value)) || findFullSongByName(searchText);
+      if (!s && !searchText) return;
+      draftRepertorioItems.push({
+        momento: document.getElementById("rep-item-momento").value || "Adoração",
+        musica: s ? s.musica : searchText,
+        autor: s ? (s.autor || "") : "",
+        tom: s ? (s.tom || "") : "",
+        ref: s ? (s.ref || "") : "",
+        fileId: s ? (s.fileId || "") : ""
+      });
+      document.getElementById("rep-item-song-id").value = ""; document.getElementById("rep-item-song-search").value = "";
+      renderDraftRepertorioItems();
+    }
+    function moveDraftItem(idx, dir) {
+      const target = idx + dir;
+      if (target < 0 || target >= draftRepertorioItems.length) return;
+      const tmp = draftRepertorioItems[idx]; draftRepertorioItems[idx] = draftRepertorioItems[target]; draftRepertorioItems[target] = tmp;
+      renderDraftRepertorioItems();
     }
     function renderDraftRepertorioItems() {
-      document.getElementById("rep-draft-items").innerHTML = draftRepertorioItems.map((it, i) => `<div class="flex justify-between bg-slate-900 px-3 py-1.5 rounded text-xs"><span>${i + 1}. ${it.momento}: ${it.musica}</span><button type="button" onclick="draftRepertorioItems.splice(${i},1);renderDraftRepertorioItems();" class="text-rose-400">x</button></div>`).join("");
+      document.getElementById("rep-draft-items").innerHTML = draftRepertorioItems.map((it, i) => `
+        <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900 px-3 py-2 rounded-lg text-xs border border-slate-800">
+          <div class="flex items-center gap-2 flex-1 min-w-[180px]">
+            <span class="text-amber-400 font-bold">${i + 1}.</span>
+            <input type="text" value="${(it.momento || '').replace(/"/g, '&quot;')}" onchange="draftRepertorioItems[${i}].momento=this.value" class="w-28 px-2 py-1 bg-slate-800 border border-slate-700 rounded text-amber-300 font-semibold text-xs" title="Momento Litúrgico" />
+            <span class="font-bold text-white truncate flex-1">${it.musica}</span>
+            <input type="text" value="${(it.tom || '').replace(/"/g, '&quot;')}" onchange="draftRepertorioItems[${i}].tom=this.value" placeholder="Tom" class="w-12 px-1.5 py-1 bg-slate-800 border border-slate-700 rounded text-center text-amber-400 font-bold text-xs" title="Tom neste culto" />
+          </div>
+          <div class="flex items-center gap-1">
+            <button type="button" onclick="moveDraftItem(${i},-1)" class="w-6 h-6 rounded bg-slate-800 text-slate-300 hover:text-white" title="Subir">↑</button>
+            <button type="button" onclick="moveDraftItem(${i},1)" class="w-6 h-6 rounded bg-slate-800 text-slate-300 hover:text-white" title="Descer">↓</button>
+            <button type="button" onclick="draftRepertorioItems.splice(${i},1);renderDraftRepertorioItems();" class="w-6 h-6 rounded bg-rose-600/20 text-rose-400" title="Remover">×</button>
+          </div>
+        </div>`).join("");
     }
-    function saveRepertorio(e) {
+    async function saveRepertorio(e) {
       e.preventDefault(); if (!isAdmin || draftRepertorioItems.length === 0) return;
-      const novo = { id: Date.now(), dia: document.getElementById("rep-dia").value.trim(), culto: document.getElementById("rep-culto").value.trim(), tema: document.getElementById("rep-tema").value.trim(), itens: [...draftRepertorioItems] };
-      repertorios.unshift(novo); selectedRepertorioId = novo.id; closeRepertorioModal(); renderRepertorios(); pushToGoogleSheet({ action: "saveRepertorio", repertorio: novo });
+      const editId = document.getElementById("rep-edit-id").value;
+      const payload = {
+        id: editId ? Number(editId) : Date.now(),
+        dia: document.getElementById("rep-dia").value.trim(),
+        culto: document.getElementById("rep-culto").value.trim(),
+        tema: document.getElementById("rep-tema").value.trim(),
+        itens: [...draftRepertorioItems]
+      };
+      if (editId) {
+        const idx = repertorios.findIndex(r => r.id === Number(editId));
+        if (idx > -1) repertorios[idx] = payload;
+      } else {
+        repertorios.unshift(payload);
+      }
+      selectedRepertorioId = payload.id;
+      await dbPut("catalog", "mainData", { songs, repertorios, constantes: sheetConstants, folderUrl: fixedFolderUrl });
+      closeRepertorioModal(); renderRepertorios();
+      pushToGoogleSheet({ action: editId ? "updateRepertorio" : "saveRepertorio", original: editingOriginalRepMeta, repertorio: payload });
+    }
+    async function deleteRepertorio(repId) {
+      if (!isAdmin || !confirm("Deseja realmente excluir este repertório da folha de cálculo?")) return;
+      const target = repertorios.find(r => r.id === Number(repId)); if (!target) return;
+      repertorios = repertorios.filter(r => r.id !== Number(repId));
+      if (selectedRepertorioId === Number(repId)) selectedRepertorioId = null;
+      await dbPut("catalog", "mainData", { songs, repertorios, constantes: sheetConstants, folderUrl: fixedFolderUrl });
+      renderRepertorios();
+      pushToGoogleSheet({ action: "deleteRepertorio", original: { dia: target.dia, tema: target.tema, culto: target.culto }, repertorio: target });
     }
 
     function renderRelatorios() {
@@ -1608,7 +2060,7 @@
       if (tab === "repertorios") renderRepertorios();
       if (tab === "relatorios") renderRelatorios();
       if (tab === "palco") populatePalcoSelect();
-      if (tab === "vs") loadVsFolders(false);
+      if (tab === "vs") { setVsEngineMode(vsEngineMode); loadVsFolders(false); }
       if (tab === "pedidos") initPedidosTab();
     }
 
@@ -1619,9 +2071,14 @@
       document.getElementById("drawer-badge-repertorios").textContent = repertorios.length;
     }
 
+    document.addEventListener("click", (e) => {
+      const inp = document.getElementById("rep-item-song-search"), drop = document.getElementById("dropdown-rep-songs");
+      if (inp && drop && !inp.contains(e.target) && !drop.contains(e.target)) drop.classList.add("hidden");
+    });
+
     updateAdminUI();
     syncFromGoogleSheet(false);
   </script>
 </body>
 </html>
-<!-- FIM DO ARQUIVO DOXA v3.1 -->
+<!-- FIM DO ARQUIVO DOXA v3.2 -->
