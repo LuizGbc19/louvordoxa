@@ -486,50 +486,78 @@
 
   </main>
 
-  <!-- MODAL GERADOR DE SESSÃO REAPER (.RPP) -->
+ <!-- MODAL GERADOR DE SESSÃO REAPER (.RPP) -->
   <div id="reaper-modal" class="fixed inset-0 bg-black/85 z-50 hidden items-center justify-center p-4">
-    <div class="bg-slate-900 border border-purple-500/40 rounded-2xl max-w-xl w-full p-5 space-y-4 max-h-[92vh] overflow-y-auto custom-scroll">
+    <div class="bg-slate-900 border border-purple-500/40 rounded-2xl max-w-2xl w-full p-5 space-y-4 max-h-[92vh] overflow-y-auto custom-scroll">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <div>
           <h3 class="text-base font-extrabold text-white"><i class="fa-solid fa-sliders text-purple-400 mr-2"></i>Exportar Projeto REAPER (.RPP)</h3>
-          <p id="reaper-modal-subtitle" class="text-xs text-slate-400">Monta a timeline com Pastas, Markers, BPM e Roteamento</p>
+          <p id="reaper-modal-subtitle" class="text-xs text-slate-400">Canais fixos por instrumento + Regiões na horizontal</p>
         </div>
         <button onclick="closeReaperModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
       </div>
+
       <div class="space-y-3 text-xs">
-        <div>
-          <label class="block font-bold text-purple-300 mb-1">Pasta Raiz Local de VS no Notebook (Opcional)</label>
-          <input type="text" id="reaper-base-path" placeholder="Ex: G:\Meu Drive\VS (vazio = caminho relativo na pasta VS)" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white" />
-          <p class="text-[11px] text-slate-400 mt-1">Se deixar vazio, basta guardar o ficheiro <code>.RPP</code> dentro da sua pasta geral de VS no computador que o Reaper localiza todas as subpastas automaticamente.</p>
+        <!-- OPÇÃO 1: VINCULAR PASTA LOCAL DO PC (SALVA DIRETO NA PASTA VS E LÊ DURAÇÃO REAL) -->
+        <div class="bg-purple-950/30 border border-purple-500/40 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
+          <div class="space-y-0.5">
+            <span class="font-extrabold text-purple-200 block">💻 Usando no Notebook? (Carregamento 100% garantido)</span>
+            <span id="reaper-local-folder-status" class="text-[11px] text-slate-300 block">Selecione sua pasta local de VS para ler os arquivos reais (.m4a/.wav/.mp3) e salvar o .RPP direto nela.</span>
+          </div>
+          <button type="button" onclick="pickLocalVsDirectoryForReaper()" class="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold flex items-center gap-1.5 shrink-0 shadow">
+            <i class="fa-solid fa-folder-open"></i><span>Ler Pasta VS do PC</span>
+          </button>
         </div>
+
+        <!-- OPÇÃO 2: CAMINHO BASE MANUAL (SE NÃO USAR O SELETOR ACIMA) -->
+        <div>
+          <label class="block font-bold text-slate-300 mb-1">Ou digite o caminho completo da Pasta VS no PC</label>
+          <input type="text" id="reaper-base-path" placeholder="Ex: C:\Users\Luiz\Music\VS ou G:\Meu Drive\VS" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white" />
+        </div>
+
+        <!-- CONFERÊNCIA E VÍNCULO MANUAL DE PASTA POR MÚSICA -->
+        <div class="bg-slate-800/60 border border-slate-700 rounded-xl p-3 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-amber-300 uppercase text-[11px]">Vínculo de Pastas do Repertório</span>
+            <span class="text-[10px] text-slate-400">Ajuste se alguma música tiver outro nome na pasta</span>
+          </div>
+          <div id="reaper-song-mapping-list" class="space-y-1.5 max-h-44 overflow-y-auto custom-scroll pr-1"></div>
+        </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block font-bold text-slate-300 mb-1">Modo de Saída no Reaper</label>
+            <label class="block font-bold text-slate-300 mb-1">Panorama / Saída no Mixer do Reaper</label>
             <select id="reaper-routing-mode" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white">
-              <option value="SPLIT_LR">Split Cabo Y (Click/Guia = L | Banda = R)</option>
-              <option value="MULTI_OUT">Interface Multicanal (Banda 1/2 | Click/Guia 3/4)</option>
+              <option value="STEREO_CENTER">Estéreo Centralizado (Igual à foto)</option>
+              <option value="SPLIT_LR">Split Cabo Y (Metronome/Guia = L | Banda = R)</option>
+              <option value="MULTI_OUT">Interface Multicanal (Banda 1/2 | Metronome 3/4)</option>
             </select>
           </div>
           <div>
-            <label class="block font-bold text-slate-300 mb-1">Duração da Janela por Música (seg)</label>
-            <input type="number" id="reaper-slot-sec" value="480" min="180" max="1200" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white" />
+            <label class="block font-bold text-slate-300 mb-1">Duração padrão se gerar pela nuvem (seg)</label>
+            <input type="number" id="reaper-slot-sec" value="270" min="120" max="1200" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white" />
           </div>
         </div>
+
         <div class="flex flex-wrap gap-4 pt-1">
           <label class="flex items-center gap-2 cursor-pointer text-slate-200 font-semibold">
             <input type="checkbox" id="reaper-auto-stop" checked class="rounded accent-purple-500 w-4 h-4" />
-            <span>Parar sozinho no fim de cada música (<code>!1016</code>)</span>
+            <span>Parar no fim de cada região (<code>!1016</code>)</span>
           </label>
           <label class="flex items-center gap-2 cursor-pointer text-slate-200 font-semibold">
             <input type="checkbox" id="reaper-auto-bpm" checked class="rounded accent-purple-500 w-4 h-4" />
-            <span>Aplicar BPM automático do catálogo</span>
+            <span>Aplicar BPM do catálogo</span>
           </label>
         </div>
-        <div id="reaper-export-status" class="hidden p-3 bg-slate-800 rounded-xl space-y-1 text-slate-300 max-h-48 overflow-y-auto custom-scroll"></div>
+
+        <div id="reaper-export-status" class="hidden p-3 bg-slate-800 rounded-xl space-y-1 text-slate-300 max-h-44 overflow-y-auto custom-scroll"></div>
       </div>
+
       <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
         <button onclick="closeReaperModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Fechar</button>
-        <button onclick="generateReaperRppFile()" id="btn-run-reaper-export" class="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow"><i class="fa-solid fa-download"></i><span>Baixar Projeto .RPP</span></button>
+        <button onclick="generateReaperRppFile()" id="btn-run-reaper-export" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow">
+          <i class="fa-solid fa-download"></i><span>Gerar Projeto .RPP</span>
+        </button>
       </div>
     </div>
   </div>
@@ -1305,125 +1333,388 @@
     }
 
     // ============================================================================
-    // 2. GERADOR DE SESSÃO REAPER (.RPP) — CULTO COMPLETO OU MÚSICA AVULSA
+    // 2. GERADOR DE SESSÃO REAPER (.RPP) — LAYOUT FIXO POR INSTRUMENTO + REGIÕES
     // ============================================================================
-    function openReaperModal(repId) {
+    let localVsRootHandle = null;
+    let localVsSubfolders = []; // [{ nome, handle, files: [{ name, relPath, handle }] }]
+
+    // Ordem exata e cores das Tracks iguais ao layout do Reaper
+    const REAPER_FIXED_SLOTS = [
+      { id: "METRONOME", name: "Metronome", r: 150, g: 58,  b: 198, isClickGuide: true },
+      { id: "GUIA",      name: "Guia",      r: 215, g: 75,  b: 125, isClickGuide: true, optional: true },
+      { id: "VOCALS",    name: "Vocals",    r: 198, g: 132, b: 74,  isClickGuide: false },
+      { id: "OTHERS",    name: "Others",    r: 98,  g: 58,  b: 142, isClickGuide: false },
+      { id: "PIANO",     name: "Piano",     r: 146, g: 112, b: 214, isClickGuide: false },
+      { id: "KEYS",      name: "Keys",      r: 108, g: 186, b: 152, isClickGuide: false },
+      { id: "DRUMS",     name: "Drums",     r: 212, g: 178, b: 122, isClickGuide: false },
+      { id: "GUITAR",    name: "Guitar",    r: 178, g: 116, b: 142, isClickGuide: false },
+      { id: "STRINGS",   name: "Strings",   r: 132, g: 196, b: 64,  isClickGuide: false },
+      { id: "BASS",      name: "Bass",      r: 172, g: 118, b: 92,  isClickGuide: false }
+    ];
+
+    function rgbToReaperNative(r, g, b) {
+      return ((r & 0xff) | ((g & 0xff) << 8) | ((b & 0xff) << 16)) | 0x1000000;
+    }
+
+    // No Reaper, arquivos .m4a / .mp4 / .aac usam obrigatoriamente <SOURCE VIDEO
+    function getReaperSourceTagByFilename(fileName) {
+      const ext = (String(fileName).match(/\.([a-z0-9]+)$/i)?.[1] || "mp3").toLowerCase();
+      if (ext === "m4a" || ext === "mp4" || ext === "aac" || ext === "mov") return "VIDEO";
+      if (ext === "wav" || ext === "aif" || ext === "aiff") return "WAVE";
+      if (ext === "flac") return "FLAC";
+      if (ext === "ogg") return "VORBIS";
+      if (ext === "opus") return "OPUS";
+      return "MP3";
+    }
+
+    // Classifica pelo final do nome do arquivo (evita confundir palavras do título da música, ex: Moises)
+    function classifyTrackSlotForReaper(fileName, folderName = "") {
+      let clean = String(fileName).replace(/\.[a-z0-9]+$/i, "");
+      if (folderName && clean.toLowerCase().startsWith(folderName.toLowerCase())) {
+        clean = clean.slice(folderName.length);
+      }
+      const parts = clean.split(/[-–—_]+/).map(p => p.trim()).filter(Boolean);
+      const tail = parts.length > 0 ? parts[parts.length - 1] : clean;
+
+      const matchToken = (txt) => {
+        const n = txt.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, " ");
+        if (/\b(metronome|metronomo|click|bpm)\b/.test(n)) return "METRONOME";
+        if (/\b(guia|guide|cue|cues|regencia)\b/.test(n)) return "GUIA";
+        if (/\b(vocals|vocal|voz|vozes|back|backing|bgv|choir|coro)\b/.test(n)) return "VOCALS";
+        if (/\b(piano|rhodes|wurli)\b/.test(n)) return "PIANO";
+        if (/\b(keys|key|teclado|pad|pads|synth|organ|orgao)\b/.test(n)) return "KEYS";
+        if (/\b(drums|drum|bateria|batera|perc|percussao|kick|snare|hihat)\b/.test(n)) return "DRUMS";
+        if (/\b(bass|baixo|contrabaixo)\b/.test(n)) return "BASS";
+        if (/\b(strings|string|cordas|violino|cello|orquestra|brass|metais)\b/.test(n)) return "STRINGS";
+        if (/\b(guitar|guitars|guitarra|violao|acoustic|acustico|ag|eg|eg1|eg2|gtr|gt|lead|rhythm)\b/.test(n)) return "GUITAR";
+        if (/\b(others|other|outros|outro|loop|fx|efeito|sub|track)\b/.test(n)) return "OTHERS";
+        return null;
+      };
+
+      return matchToken(tail) || matchToken(clean) || "OTHERS";
+    }
+
+    function cleanTitleForMatch(str) {
+      return String(str || "")
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/\(.*?\)|\[.*?\]/g, " ")
+        .replace(/\b(ao vivo|live|oficial|clipe|playback|vs|multitrack)\b/g, " ")
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+    }
+
+    // Busca inteligente de pasta (ignora "Cantor - ", underlines, "(Ao Vivo)", etc.)
+    function findBestFolderMatch(musica, autor, folderList) {
+      if (!musica || !folderList || !folderList.length) return "";
+      const exactNorm = normalizeSongKey(removeHymnPrefix(musica));
+      const cleanSong = cleanTitleForMatch(removeHymnPrefix(musica));
+      const songWords = cleanSong.split(/\s+/).filter(w => w.length >= 3);
+
+      let bestRef = "", bestScore = 0;
+      for (const f of folderList) {
+        const refVal = f.folderRef || f.nome;
+        const fExact = normalizeSongKey(removeHymnPrefix(f.nome));
+        if (fExact === exactNorm) return refVal;
+
+        const fClean = cleanTitleForMatch(removeHymnPrefix(f.nome));
+        if (cleanSong.length >= 4 && (fClean === cleanSong || fClean.endsWith(" " + cleanSong) || fClean.startsWith(cleanSong + " "))) {
+          if (95 > bestScore) { bestScore = 95; bestRef = refVal; }
+          continue;
+        }
+        if (exactNorm.length >= 5 && (fExact.includes(exactNorm) || exactNorm.includes(fExact))) {
+          if (80 > bestScore) { bestScore = 80; bestRef = refVal; }
+          continue;
+        }
+        if (songWords.length > 0) {
+          const matchedWords = songWords.filter(w => fClean.includes(w)).length;
+          const ratio = matchedWords / songWords.length;
+          if (ratio >= 0.75 && ratio * 70 > bestScore) {
+            bestScore = ratio * 70;
+            bestRef = refVal;
+          }
+        }
+      }
+      return bestScore >= 52 ? bestRef : "";
+    }
+
+    async function scanAudioFilesRecursive(dirHandle, prefix = "") {
+      const results = [];
+      for await (const entry of dirHandle.values()) {
+        if (entry.kind === "file" && /\.(m4a|mp3|wav|ogg|flac|aac)$/i.test(entry.name)) {
+          results.push({ name: entry.name, relPath: prefix ? `${prefix}\\${entry.name}` : entry.name, handle: entry });
+        } else if (entry.kind === "directory") {
+          const sub = await scanAudioFilesRecursive(entry, prefix ? `${prefix}\\${entry.name}` : entry.name);
+          results.push(...sub);
+        }
+      }
+      return results;
+    }
+
+    async function pickLocalVsDirectoryForReaper() {
+      if (!window.showDirectoryPicker) {
+        alert("Use o Chrome ou Edge no computador para ler a pasta local diretamente, ou preencha o caminho completo manualmente abaixo.");
+        return;
+      }
+      try {
+        localVsRootHandle = await window.showDirectoryPicker({ mode: "readwrite" });
+        localVsSubfolders = [];
+        for await (const entry of localVsRootHandle.values()) {
+          if (entry.kind === "directory") {
+            const audioFiles = await scanAudioFilesRecursive(entry, "");
+            if (audioFiles.length > 0) {
+              localVsSubfolders.push({ folderRef: "LOCAL::" + entry.name, nome: entry.name, handle: entry, files: audioFiles });
+            }
+          }
+        }
+        localVsSubfolders.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+        document.getElementById("reaper-local-folder-status").innerHTML = `<span class="text-emerald-400 font-bold">✓ Pasta "${localVsRootHandle.name}" conectada (${localVsSubfolders.length} pastas de músicas lidas do PC). O .RPP será salvo direto dentro dela!</span>`;
+        renderReaperSongMappingList();
+      } catch (e) {}
+    }
+
+    function getAvailableReaperFolderList() {
+      return localVsSubfolders.length > 0 ? localVsSubfolders : vsFolders;
+    }
+
+    function renderReaperSongMappingList() {
+      const listEl = document.getElementById("reaper-song-mapping-list");
+      if (!listEl || !reaperTargetPayload) return;
+      const folderList = getAvailableReaperFolderList();
+
+      listEl.innerHTML = reaperTargetPayload.items.map((it, idx) => {
+        const info = getResolvedSongDetails(it);
+        const preMatched = it.selectedFolderRef !== undefined
+          ? it.selectedFolderRef
+          : (it.forcedFolderRef || findBestFolderMatch(info.musica, info.autor, folderList));
+        it.selectedFolderRef = preMatched;
+
+        const optionsHtml = `<option value="">-- Sem VS (apenas Região guia) --</option>` + folderList.map(f => {
+          const val = f.folderRef || f.nome;
+          return `<option value="${String(val).replace(/"/g, '&quot;')}" ${val === preMatched ? "selected" : ""}>${f.nome}</option>`;
+        }).join("");
+
+        return `
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 bg-slate-900 px-2.5 py-2 rounded-lg border ${preMatched ? 'border-emerald-500/30' : 'border-amber-500/40'}">
+            <span class="font-bold text-white truncate text-xs">${idx + 1}. ${info.musica} <span class="text-amber-400">(${info.tom})</span></span>
+            <select onchange="reaperTargetPayload.items[${idx}].selectedFolderRef=this.value" class="sm:w-64 px-2 py-1 bg-slate-800 border border-slate-700 rounded text-[11px] text-slate-200">
+              ${optionsHtml}
+            </select>
+          </div>`;
+      }).join("");
+    }
+
+    async function openReaperModal(repId) {
       const rep = repertorios.find(r => r.id === Number(repId));
       if (!rep) return;
       reaperTargetPayload = {
         fileName: `Culto_DOXA_${String(rep.dia).replace(/[\\/:]/g, "-")}.rpp`,
         label: `Culto: ${rep.dia} (${rep.culto}) — ${(rep.itens || []).length} músicas`,
-        items: rep.itens || []
+        items: (rep.itens || []).map(x => Object.assign({}, x))
       };
       document.getElementById("reaper-base-path").value = localStorage.getItem("doxa_reaper_base_path") || "";
       document.getElementById("reaper-modal-subtitle").textContent = reaperTargetPayload.label;
       document.getElementById("reaper-export-status").classList.add("hidden");
-      document.getElementById("reaper-modal").classList.remove("hidden"); document.getElementById("reaper-modal").classList.add("flex");
+      document.getElementById("reaper-modal").classList.remove("hidden");
+      document.getElementById("reaper-modal").classList.add("flex");
+      if (vsFolders.length === 0 && localVsSubfolders.length === 0) await loadVsFolders(false);
+      renderReaperSongMappingList();
     }
 
-    function exportCurrentVsSongToReaper() {
+    async function exportCurrentVsSongToReaper() {
       if (!selectedVsFolderRef || !selectedVsFolderName) return;
       const cat = findFullSongByName(selectedVsFolderName) || {};
       reaperTargetPayload = {
         fileName: `VS_DOXA_${selectedVsFolderName.replace(/[\\/:*?"<>|]/g, "")}.rpp`,
         label: `Música avulsa: ${selectedVsFolderName}`,
-        items: [{ momento: "VS", musica: selectedVsFolderName, tom: cat.tom || "-", tempo: cat.tempo || "", forcedFolderRef: selectedVsFolderRef, forcedFolderName: selectedVsFolderName }]
+        items: [{ momento: "VS", musica: selectedVsFolderName, tom: cat.tom || "-", tempo: cat.tempo || "", forcedFolderRef: selectedVsFolderRef }]
       };
       document.getElementById("reaper-base-path").value = localStorage.getItem("doxa_reaper_base_path") || "";
       document.getElementById("reaper-modal-subtitle").textContent = reaperTargetPayload.label;
       document.getElementById("reaper-export-status").classList.add("hidden");
-      document.getElementById("reaper-modal").classList.remove("hidden"); document.getElementById("reaper-modal").classList.add("flex");
+      document.getElementById("reaper-modal").classList.remove("hidden");
+      document.getElementById("reaper-modal").classList.add("flex");
+      renderReaperSongMappingList();
     }
 
     function closeReaperModal() { document.getElementById("reaper-modal").classList.add("hidden"); document.getElementById("reaper-modal").classList.remove("flex"); }
     function abrirReaperAtualPalco() { const sel = document.getElementById("palco-select-repertorio"); if (sel && sel.value) openReaperModal(Number(sel.value)); }
+
+    function getLocalAudioFileDuration(fileHandle) {
+      return new Promise(async (resolve) => {
+        try {
+          const file = await fileHandle.getFile();
+          const url = URL.createObjectURL(file);
+          const a = new Audio();
+          a.preload = "metadata";
+          a.onloadedmetadata = () => { const d = a.duration; URL.revokeObjectURL(url); resolve((d && isFinite(d)) ? d : 0); };
+          a.onerror = () => { URL.revokeObjectURL(url); resolve(0); };
+          a.src = url;
+        } catch (e) { resolve(0); }
+      });
+    }
 
     async function generateReaperRppFile() {
       if (!reaperTargetPayload || !reaperTargetPayload.items.length) return;
       const basePath = document.getElementById("reaper-base-path").value.trim().replace(/[\\/]+$/, "");
       localStorage.setItem("doxa_reaper_base_path", basePath);
       const routing = document.getElementById("reaper-routing-mode").value;
-      const slotSec = Math.max(180, Number(document.getElementById("reaper-slot-sec").value) || 480);
+      const fallbackSec = Math.max(120, Number(document.getElementById("reaper-slot-sec").value) || 270);
       const autoStop = document.getElementById("reaper-auto-stop").checked;
       const autoBpm = document.getElementById("reaper-auto-bpm").checked;
 
       const statusBox = document.getElementById("reaper-export-status"), btn = document.getElementById("btn-run-reaper-export");
       statusBox.classList.remove("hidden"); btn.disabled = true;
-      statusBox.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1 text-purple-400"></i>Montando sessão .RPP...`;
+      statusBox.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1 text-purple-400"></i>Organizando canais por instrumento e regiões...`;
 
       try {
-        if (vsFolders.length === 0) await loadVsFolders(false);
-        const sep = basePath.includes("/") ? "/" : "\\";
-        let markersRpp = "", tracksRpp = "", tempoPoints = "", firstBpm = 120, logHtml = "";
+        // Cria os barramentos fixos de instrumentos (e extras caso alguma música tenha 2 guitarras, etc.)
+        const trackLanes = REAPER_FIXED_SLOTS.map(s => Object.assign({ itemsRpp: [] }, s));
+        const getOrCreateLane = (slotId, usedInThisSong) => {
+          let count = (usedInThisSong[slotId] || 0) + 1;
+          usedInThisSong[slotId] = count;
+          if (count === 1) return trackLanes.find(l => l.id === slotId);
+          const extraId = `${slotId}_${count}`;
+          let extraLane = trackLanes.find(l => l.id === extraId);
+          if (!extraLane) {
+            const baseSlot = trackLanes.find(l => l.id === slotId);
+            const baseIdx = trackLanes.lastIndexOf(baseSlot);
+            extraLane = Object.assign({}, baseSlot, { id: extraId, name: `${baseSlot.name} ${count}`, itemsRpp: [] });
+            trackLanes.splice(baseIdx + 1, 0, extraLane);
+          }
+          return extraLane;
+        };
+
+        let markersRpp = "", tempoPoints = "", firstBpm = 120, cursorSec = 0, logHtml = "";
+        const GAP_SEC = 16;
+        const regionColor = rgbToReaperNative(42, 157, 178);
         const items = reaperTargetPayload.items;
 
         for (let i = 0; i < items.length; i++) {
           const rawIt = items[i];
           const info = getResolvedSongDetails(rawIt);
-          const posSec = i * (slotSec + 15);
+          const chosenRef = rawIt.selectedFolderRef || "";
+          let songLenSec = fallbackSec;
+          let songFiles = []; // [{ displayName, filePath, srcTag, slotId }]
+          let folderNameUsed = "";
+
+          if (chosenRef.startsWith("LOCAL::")) {
+            const localFolder = localVsSubfolders.find(f => f.folderRef === chosenRef);
+            if (localFolder) {
+              folderNameUsed = localFolder.nome;
+              const measured = await getLocalAudioFileDuration(localFolder.files[0].handle);
+              if (measured > 15) songLenSec = Math.ceil(measured);
+              songFiles = localFolder.files.map(f => ({
+                displayName: f.name,
+                filePath: localVsRootHandle ? `${localFolder.nome}\\${f.relPath}` : (basePath ? `${basePath}\\${localFolder.nome}\\${f.relPath}` : `${localFolder.nome}\\${f.relPath}`),
+                srcTag: getReaperSourceTagByFilename(f.name),
+                slotId: classifyTrackSlotForReaper(f.name, localFolder.nome)
+              }));
+            }
+          } else if (chosenRef) {
+            const driveFolder = vsFolders.find(f => f.folderRef === chosenRef);
+            if (driveFolder) {
+              folderNameUsed = driveFolder.nome;
+              let faixasData = await dbGet("catalog", "vsFolder_" + driveFolder.folderRef);
+              const needsFresh = !faixasData || !faixasData.faixas || (faixasData.faixas[0] && !faixasData.faixas[0].nomeArquivo);
+              if (needsFresh && navigator.onLine && scriptUrl) {
+                const r = await fetch(`${scriptUrl}?action=listarFaixasVs&folderRef=${encodeURIComponent(driveFolder.folderRef)}`);
+                faixasData = await r.json();
+                if (faixasData && faixasData.status === "ok") await dbPut("catalog", "vsFolder_" + driveFolder.folderRef, faixasData);
+              }
+              const sep = (!basePath || basePath.includes("\\") || /^[a-zA-Z]:/.test(basePath)) ? "\\" : "/";
+              songFiles = ((faixasData && faixasData.faixas) || []).map(fx => {
+                const realName = fx.nomeArquivo || `${fx.nomeFaixa}.m4a`;
+                return {
+                  displayName: realName,
+                  filePath: basePath ? `${basePath}${sep}${driveFolder.nome}${sep}${realName}` : `${driveFolder.nome}${sep}${realName}`,
+                  srcTag: getReaperSourceTagByFilename(realName),
+                  slotId: classifyTrackSlotForReaper(realName, driveFolder.nome)
+                };
+              });
+            }
+          }
+
           const bpmNum = parseFloat(String(info.tempo || rawIt.tempo || "").replace(",", ".").replace(/[^0-9.]/g, ""));
           if (autoBpm && bpmNum >= 40 && bpmNum <= 240) {
             if (i === 0) firstBpm = bpmNum;
-            tempoPoints += `    PT ${posSec} ${bpmNum} 1\n`;
+            tempoPoints += `    PT ${cursorSec.toFixed(6)} ${bpmNum} 1\n`;
           }
 
-          const cleanTitle = `${i + 1}. ${info.musica} (${info.tom})${bpmNum ? " " + bpmNum + "bpm" : ""}`.replace(/"/g, "'");
-          markersRpp += `  MARKER ${i + 1} ${posSec} "${cleanTitle}" 0 0 1 R\n`;
-          if (autoStop) markersRpp += `  MARKER ${100 + i} ${posSec + slotSec} "!1016" 0 0 1 R\n`;
+          // Cria a REGIÃO azul no topo da timeline (início + fim com flag 1) igual à imagem
+          const regionTitle = `${i + 1}. ${info.musica} (${info.tom})`.replace(/"/g, "'");
+          const endSec = cursorSec + songLenSec;
+          markersRpp += `  MARKER ${i + 1} ${cursorSec.toFixed(6)} "${regionTitle}" 1 ${regionColor} 1 R\n`;
+          markersRpp += `  MARKER ${i + 1} ${endSec.toFixed(6)} "" 1\n`;
+          if (autoStop) markersRpp += `  MARKER ${100 + i} ${endSec.toFixed(6)} "!1016" 0 0 1 R\n`;
 
-          let matchedFolder = null;
-          if (rawIt.forcedFolderRef) {
-            matchedFolder = { folderRef: rawIt.forcedFolderRef, nome: rawIt.forcedFolderName };
+          if (songFiles.length === 0) {
+            logHtml += `<div class="text-amber-300">⚠️ <strong>${info.musica}:</strong> Sem arquivos vinculados (Região ${i + 1} criada)</div>`;
           } else {
-            const songKey = normalizeSongKey(removeHymnPrefix(info.musica));
-            matchedFolder = vsFolders.find(f => {
-              const fk = normalizeSongKey(removeHymnPrefix(f.nome));
-              return fk === songKey || (songKey.length >= 4 && (fk.includes(songKey) || songKey.includes(fk)));
+            const usedSlotsInSong = {};
+            songFiles.forEach(sf => {
+              const lane = getOrCreateLane(sf.slotId, usedSlotsInSong);
+              lane.itemsRpp.push(
+                `    <ITEM\n` +
+                `      POSITION ${cursorSec.toFixed(6)}\n` +
+                `      LENGTH ${songLenSec.toFixed(6)}\n` +
+                `      LOOP 0\n` +
+                `      FADEIN 1 0.01 0 1 0 0 0\n` +
+                `      FADEOUT 1 0.05 0 1 0 0 0\n` +
+                `      NAME "${sf.displayName.replace(/"/g, "'")}"\n` +
+                `      <SOURCE ${sf.srcTag}\n` +
+                `        FILE "${sf.filePath}"\n` +
+                `      >\n` +
+                `    >\n`
+              );
             });
+            logHtml += `<div class="text-emerald-400">✓ <strong>Região ${i + 1} (${info.musica}):</strong> ${songFiles.length} canais distribuídos (${folderNameUsed})</div>`;
           }
 
-          if (!matchedFolder) {
-            logHtml += `<div class="text-amber-300">⚠️ <strong>${info.musica}:</strong> Sem pasta VS (criado Marker + faixa guia vazia)</div>`;
-            tracksRpp += `  <TRACK\n    NAME "${cleanTitle}"\n    VOLPAN 1 0 -1 -1 1\n  >\n`;
-            continue;
-          }
-
-          let faixasData = await dbGet("catalog", "vsFolder_" + matchedFolder.folderRef);
-          if (!faixasData && navigator.onLine && scriptUrl) {
-            const r = await fetch(`${scriptUrl}?action=listarFaixasVs&folderRef=${encodeURIComponent(matchedFolder.folderRef)}`);
-            faixasData = await r.json();
-            if (faixasData && faixasData.status === "ok") await dbPut("catalog", "vsFolder_" + matchedFolder.folderRef, faixasData);
-          }
-
-          const faixas = (faixasData && Array.isArray(faixasData.faixas)) ? faixasData.faixas : [];
-          logHtml += `<div class="text-emerald-400">✓ <strong>${info.musica}:</strong> ${faixas.length} faixas vinculadas (${matchedFolder.nome})</div>`;
-
-          tracksRpp += `  <TRACK\n    NAME "${cleanTitle}"\n    BUSCOMP 1 0 -1 -1 0\n    VOLPAN 1 0 -1 -1 1\n  >\n`;
-
-          faixas.forEach((fx, idxFx) => {
-            const isLast = idxFx === faixas.length - 1;
-            const isClickGuide = fx.categoria === "Click" || fx.categoria === "Guia";
-            const rawFileName = fx.nomeArquivo || `${fx.nomeFaixa}.mp3`;
-            const fullFilePath = basePath ? `${basePath}${sep}${matchedFolder.nome}${sep}${rawFileName}` : `${matchedFolder.nome}/${rawFileName}`;
-            const srcType = fx.reaperSourceType || (/\.wav$/i.test(rawFileName) ? "WAVE" : (/\.flac$/i.test(rawFileName) ? "FLAC" : (/\.ogg$/i.test(rawFileName) ? "VORBIS" : "MP3")));
-            const panVal = routing === "SPLIT_LR" ? (isClickGuide ? -1 : 1) : 0;
-            const routingLines = (routing === "MULTI_OUT" && isClickGuide)
-              ? `    MAINSEND 0 0\n    HWOUT 2 0 1 0 0 0 1 -1:U -1\n`
-              : `    MAINSEND 1 0\n`;
-
-            tracksRpp += `  <TRACK\n    NAME "${fx.nomeFaixa.replace(/"/g, "'")}"\n    VOLPAN 1 ${panVal} -1 -1 1\n${routingLines}    BUSCOMP ${isLast ? "2 -1" : "0 0"} -1 -1 0\n    <ITEM\n      POSITION ${posSec}\n      LENGTH ${slotSec}\n      LOOP 0\n      NAME "${fx.nomeFaixa.replace(/"/g, "'")}"\n      <SOURCE ${srcType}\n        FILE "${fullFilePath}"\n      >\n    >\n  >\n`;
-          });
+          cursorSec = endSec + GAP_SEC;
         }
+
+        // Monta apenas as tracks fixas de instrumentos (ocultando "Guia" se nenhuma música tiver guia separada)
+        let tracksRpp = "";
+        trackLanes.forEach(lane => {
+          if (lane.optional && lane.itemsRpp.length === 0) return;
+          const peakCol = rgbToReaperNative(lane.r, lane.g, lane.b);
+          const panVal = routing === "SPLIT_LR" ? (lane.isClickGuide ? -1 : 1) : 0;
+          const routingLines = (routing === "MULTI_OUT" && lane.isClickGuide)
+            ? `    MAINSEND 0 0\n    HWOUT 2 0 1 0 0 0 1 -1:U -1\n`
+            : `    MAINSEND 1 0\n`;
+
+          tracksRpp +=
+            `  <TRACK\n` +
+            `    NAME "${lane.name}"\n` +
+            `    PEAKCOL ${peakCol}\n` +
+            `    VOLPAN 1 ${panVal} -1 -1 1\n` +
+            `    MUTESOLO 0 0 0\n` +
+            routingLines +
+            lane.itemsRpp.join("") +
+            `  >\n`;
+        });
 
         const tempoEnvBlock = tempoPoints ? `  <TEMPOENVEX\n${tempoPoints}  >\n` : "";
         const rppContent = `<REAPER_PROJECT 0.1 "7.0" 1730000000\n  TEMPO ${firstBpm} 4 4\n${tempoEnvBlock}${markersRpp}${tracksRpp}>\n`;
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(new Blob([rppContent], { type: "application/octet-stream" }));
-        a.download = reaperTargetPayload.fileName;
-        a.click();
-        statusBox.innerHTML = `<p class="font-bold text-white mb-1">Ficheiro .RPP gerado com sucesso!</p>${logHtml}`;
+
+        // Se a pasta local do PC foi conectada, salva o .RPP direto dentro dela!
+        if (localVsRootHandle) {
+          const fileHandle = await localVsRootHandle.getFileHandle(reaperTargetPayload.fileName, { create: true });
+          const writable = await fileHandle.createWritable();
+          await writable.write(rppContent);
+          await writable.close();
+          statusBox.innerHTML = `<p class="font-bold text-emerald-300 mb-1">✅ Salvo direto na sua pasta "${localVsRootHandle.name}\\${reaperTargetPayload.fileName}"! Basta dar 2 cliques nele lá para abrir no Reaper.</p>${logHtml}`;
+        } else {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(new Blob([rppContent], { type: "application/octet-stream" }));
+          a.download = reaperTargetPayload.fileName;
+          a.click();
+          const tip = !basePath ? `<p class="text-amber-300 font-semibold mt-1">💡 Dica: Mova o arquivo .RPP baixado para dentro da sua pasta geral de VS no PC antes de abrir.</p>` : "";
+          statusBox.innerHTML = `<p class="font-bold text-white mb-1">Projeto .RPP baixado!</p>${logHtml}${tip}`;
+        }
       } catch (e) {
-        statusBox.innerHTML = `<div class="text-rose-400">Erro ao gerar projeto do Reaper.</div>`;
+        statusBox.innerHTML = `<div class="text-rose-400">Erro ao gerar projeto: ${e.message || e}</div>`;
       } finally {
         btn.disabled = false;
       }
