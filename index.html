@@ -1791,14 +1791,41 @@
       } catch (e) { return null; }
     }
 
-    // Baixa todos os áudios e MIDIs do Google Drive para uma pasta local no PC com barra de progresso e gera o .RPP 100% offline
+   // Limpa espaços no início/fim e caracteres proibidos pela API de ficheiros do Chrome/Windows
+    function sanitizeFileSystemName(rawName, fallback = "Arquivo_VS", defaultExt = "") {
+      let s = String(rawName || "")
+        .normalize("NFC")
+        .replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\ufeff]/g, "")
+        .replace(/[\\/:*?"<>|~]/g, "_")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/^[.\s]+|[.\s]+$/g, "");
+
+      if (!s) s = fallback;
+      if (defaultExt && !/\.[a-z0-9]{2,4}$/i.test(s)) {
+        s = `${s}.${defaultExt.replace(/^\./, "")}`;
+      }
+
+      const match = s.match(/^(.*)\.([a-z0-9]{2,4})$/i);
+      if (match) {
+        let base = match[1].replace(/^[.\s]+|[.\s]+$/g, "") || fallback;
+        if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(base)) base += "_track";
+        s = `${base}.${match[2].toLowerCase()}`;
+      } else if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(s)) {
+        s += "_pasta";
+      }
+      return s;
+    }
+
     async function downloadVsOfflineAndGenerateReaperRpp() {
       if (!window.showDirectoryPicker) {
-        alert("Para salvar os arquivos de áudio e o projeto .RPP diretamente numa pasta local do seu computador, abra o aplicativo pelo Chrome ou Edge no Windows/Mac.");
+        alert("Para guardar os ficheiros de áudio diretamente numa pasta do portátil, utilize o Chrome ou Edge, ou clique no botão verde 'Gerar Só Arquivo .RPP'.");
         return;
       }
       try {
-        localVsRootHandle = await window.showDirectoryPicker({ mode: "readwrite" });
+        if (!localVsRootHandle) {
+          localVsRootHandle = await window.showDirectoryPicker({ mode: "readwrite" });
+        }
       } catch (e) { return; }
 
       await generateReaperRppFile(true);
@@ -1809,7 +1836,7 @@
       const basePath = document.getElementById("reaper-base-path").value.trim().replace(/[\\/]+$/, "");
       localStorage.setItem("doxa_reaper_base_path", basePath);
       const routing = document.getElementById("reaper-routing-mode").value;
-      const fallbackSec = Math.max(120, Number(document.getElementById("reaper-slot-sec").value) || 300);
+      const fallbackSec = Math.max(120, Number(document.getElementById("reaper-slot-sec").value) || 270);
       const autoStop = document.getElementById("reaper-auto-stop").checked;
       const autoBpm = document.getElementById("reaper-auto-bpm").checked;
 
@@ -1823,7 +1850,7 @@
 
       statusBox.classList.remove("hidden");
       btn.disabled = true; if (btnPack) btnPack.disabled = true;
-      statusBox.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1 text-purple-400"></i>Preparando faixas, medindo duração real e montando regiões...`;
+      statusBox.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1 text-purple-400"></i>A preparar faixas, a medir a duração real e a montar regiões...`;
 
       try {
         const trackLanes = REAPER_FIXED_SLOTS.map(s => Object.assign({ itemsRpp: [] }, s));
@@ -1859,26 +1886,37 @@
             const localFolder = localVsSubfolders.find(f => f.folderRef === chosenRef);
             if (localFolder) {
               folderNameUsed = localFolder.nome;
-              const maxDur = await getMaxDurationFromLocalFiles(localFolder.files);
-              if (maxDur > 15) songLenSec = Math.ceil(maxDur);
+              progWrap?.classList.remove("hidden");
+              let maxDur = 0;
 
-              for (const f of localFolder.files) {
+              for (let fIdx = 0; fIdx < localFolder.files.length; fIdx++) {
+                const f = localFolder.files[fIdx];
+                const overallPct = Math.round((((i) + ((fIdx + 1) / localFolder.files.length)) / items.length) * 100);
+                if (progBar) progBar.style.width = `${overallPct}%`;
+                if (progPct) progPct.textContent = `${overallPct}%`;
+                if (progTxt) progTxt.textContent = `A ler do PC (${i + 1}/${items.length}): ${localFolder.nome} — ${f.name}...`;
+
                 let inlineMidiBlock = null;
-                if (/\.(mid|midi)$/i.test(f.name)) {
-                  try {
-                    const mFile = await f.handle.getFile();
-                    const mBytes = new Uint8Array(await mFile.arrayBuffer());
+                try {
+                  const fileObj = await f.handle.getFile();
+                  if (/\.(mid|midi)$/i.test(f.name)) {
+                    const mBytes = new Uint8Array(await fileObj.arrayBuffer());
                     inlineMidiBlock = parseStandardMidiBytesToReaperSource(mBytes, songLenSec, bpmNum);
-                  } catch (e) {}
-                }
+                  } else {
+                    const d = await measureBlobAudioDuration(fileObj);
+                    if (d > maxDur) maxDur = d;
+                  }
+                } catch (e) {}
+
                 songFiles.push({
                   displayName: f.name,
-                  filePath: localVsRootHandle ? `${localFolder.nome}\\${f.relPath}` : (basePath ? `${basePath}\\${localFolder.nome}\\${f.relPath}` : `${localFolder.nome}\\${f.relPath}`),
+                  filePath: basePath ? `${basePath}\\${localFolder.nome}\\${f.relPath}` : `${localFolder.nome}\\${f.relPath}`,
                   srcTag: getReaperSourceTagByFilename(f.name),
                   slotId: classifyTrackSlotForReaper(f.name, localFolder.nome),
                   inlineMidiBlock
                 });
               }
+              if (maxDur > 15) songLenSec = Math.ceil(maxDur);
             }
           } else if (chosenRef) {
             const driveFolder = vsFolders.find(f => f.folderRef === chosenRef);
@@ -1897,28 +1935,38 @@
               const sep = (!basePath || basePath.includes("\\") || /^[a-zA-Z]:/.test(basePath)) ? "\\" : "/";
 
               if (downloadFromCloudToDisk && localVsRootHandle && faixas.length > 0) {
-                progWrap.classList.remove("hidden");
-                const safeFolderName = driveFolder.nome.replace(/[\\/:*?"<>|]/g, "");
-                const songDirHandle = await localVsRootHandle.getDirectoryHandle(safeFolderName, { create: true });
+                progWrap?.classList.remove("hidden");
+                const safeFolderName = sanitizeFileSystemName(driveFolder.nome, `Musica_${i + 1}`, "");
+                let songDirHandle = null;
+                try {
+                  songDirHandle = await localVsRootHandle.getDirectoryHandle(safeFolderName, { create: true });
+                } catch (eDir) {}
+
                 let maxMeasuredSec = 0;
 
                 for (let fIdx = 0; fIdx < faixas.length; fIdx++) {
                   const fx = faixas[fIdx];
-                  const realName = (fx.nomeArquivo || `${fx.nomeFaixa}.m4a`).replace(/[\\/:*?"<>|]/g, "");
+                  const defaultExt = fx.extensao || "m4a";
+                  const realName = sanitizeFileSystemName(fx.nomeArquivo || fx.nomeFaixa, `Faixa_${fIdx + 1}`, defaultExt);
                   const overallPct = Math.round((((i) + ((fIdx + 1) / faixas.length)) / items.length) * 100);
-                  progBar.style.width = `${overallPct}%`;
-                  progPct.textContent = `${overallPct}%`;
-                  progTxt.textContent = `Música ${i + 1}/${items.length} (${info.musica}): Baixando ${realName} (${fIdx + 1}/${faixas.length})...`;
+                  if (progBar) progBar.style.width = `${overallPct}%`;
+                  if (progPct) progPct.textContent = `${overallPct}%`;
+                  if (progTxt) progTxt.textContent = `Música ${i + 1}/${items.length} (${info.musica}): A transferir ${realName} (${fIdx + 1}/${faixas.length})...`;
 
                   const rawAudio = await fetchTrackCachedOrNetwork(fx.audioRef, true);
                   const fileBytes = base64ToUint8Array(rawAudio.base64);
                   const fileBlob = new Blob([fileBytes], { type: rawAudio.mimeType || "audio/mp4" });
 
-                  // Grava o arquivo fisicamente na subpasta da música no PC
-                  const fHandle = await songDirHandle.getFileHandle(realName, { create: true });
-                  const w = await fHandle.createWritable();
-                  await w.write(fileBlob);
-                  await w.close();
+                  let wroteToDisk = false;
+                  if (songDirHandle) {
+                    try {
+                      const fHandle = await songDirHandle.getFileHandle(realName, { create: true });
+                      const w = await fHandle.createWritable();
+                      await w.write(fileBlob);
+                      await w.close();
+                      wroteToDisk = true;
+                    } catch (eWrite) {}
+                  }
 
                   let inlineMidiBlock = null;
                   if (/\.(mid|midi)$/i.test(realName)) {
@@ -1928,9 +1976,13 @@
                     if (dur > maxMeasuredSec) maxMeasuredSec = dur;
                   }
 
+                  const finalPath = wroteToDisk
+                    ? `${safeFolderName}\\${realName}`
+                    : (basePath ? `${basePath}${sep}${driveFolder.nome}${sep}${fx.nomeArquivo || realName}` : `${driveFolder.nome}${sep}${fx.nomeArquivo || realName}`);
+
                   songFiles.push({
                     displayName: realName,
-                    filePath: `${safeFolderName}\\${realName}`,
+                    filePath: finalPath,
                     srcTag: getReaperSourceTagByFilename(realName),
                     slotId: classifyTrackSlotForReaper(realName, driveFolder.nome),
                     inlineMidiBlock
@@ -1938,13 +1990,14 @@
                 }
                 if (maxMeasuredSec > 15) songLenSec = Math.ceil(maxMeasuredSec);
               } else {
-                // Modo rápido (mede duração de 1 faixa de referência se estiver online para não cortar a música!)
                 const refAudioTrack = faixas.find(fx => !/\.(mid|midi)$/i.test(fx.nomeArquivo || ""));
                 if (refAudioTrack) {
                   try {
-                    progWrap.classList.remove("hidden");
-                    progTxt.textContent = `Medindo duração exata de: ${info.musica}...`;
-                    progBar.style.width = `${Math.round(((i + 0.5) / items.length) * 100)}%`;
+                    progWrap?.classList.remove("hidden");
+                    if (progTxt) progTxt.textContent = `A medir a duração real de: ${info.musica}...`;
+                    const pctVal = Math.round(((i + 0.5) / items.length) * 100);
+                    if (progBar) progBar.style.width = `${pctVal}%`;
+                    if (progPct) progPct.textContent = `${pctVal}%`;
                     const rawRef = await fetchTrackCachedOrNetwork(refAudioTrack.audioRef, false);
                     const refBlob = new Blob([base64ToUint8Array(rawRef.base64)], { type: rawRef.mimeType || "audio/mp4" });
                     const realDur = await measureBlobAudioDuration(refBlob);
@@ -1952,8 +2005,9 @@
                   } catch (e) {}
                 }
 
-                for (const fx of faixas) {
-                  const realName = fx.nomeArquivo || `${fx.nomeFaixa}.m4a`;
+                for (let fIdx = 0; fIdx < faixas.length; fIdx++) {
+                  const fx = faixas[fIdx];
+                  const realName = fx.nomeArquivo || `${fx.nomeFaixa || "Faixa_" + (fIdx + 1)}.m4a`;
                   let inlineMidiBlock = null;
                   if (/\.(mid|midi)$/i.test(realName)) {
                     try {
@@ -1973,7 +2027,6 @@
             }
           }
 
-          // Verifica se o usuário criou um MIDI para esta música na aba "MIDI & Holyrics" do App
           const appMidi = customMidiMemory[normalizeSongKey(info.musica)];
           const alreadyHasMidiInFolder = songFiles.some(sf => sf.slotId === "HOLYRICS_MIDI");
           if (appMidi && appMidi.base64 && !alreadyHasMidiInFolder) {
@@ -1997,12 +2050,18 @@
 
           const regionTitle = `${i + 1}. ${info.musica} (${info.tom})`.replace(/"/g, "'");
           const endSec = cursorSec + songLenSec;
+          const GAP_ENTRE_MUSICAS_SEG = 20; // 20 segundos de silêncio entre cada música na timeline
+
           markersRpp += `  MARKER ${i + 1} ${cursorSec.toFixed(6)} "${regionTitle}" 1 ${regionColor} 1 R\n`;
           markersRpp += `  MARKER ${i + 1} ${endSec.toFixed(6)} "" 1\n`;
-          if (autoStop) markersRpp += `  MARKER ${100 + i} ${(endSec - 0.05).toFixed(6)} "!1016" 0 0 1 R\n`;
+
+          // Coloca o marcador !1016 (Stop) meio segundo após o fim da música, já dentro do silêncio
+          if (autoStop) {
+            markersRpp += `  MARKER ${100 + i} ${(endSec + 0.5).toFixed(6)} "!1016" 0 0 1 R\n`;
+          }
 
           if (songFiles.length === 0) {
-            logHtml += `<div class="text-amber-300">⚠️ <strong>${info.musica}:</strong> Sem arquivos vinculados (Região ${i + 1} criada com ${formatSeconds(songLenSec)})</div>`;
+            logHtml += `<div class="text-amber-300">⚠️ <strong>${info.musica}:</strong> Sem ficheiros associados (Região ${i + 1} criada com ${formatSeconds(songLenSec)})</div>`;
           } else {
             const usedSlotsInSong = {};
             songFiles.forEach(sf => {
@@ -2023,10 +2082,11 @@
                 `    >\n`
               );
             });
-            logHtml += `<div class="text-emerald-400">✓ <strong>Região ${i + 1} (${info.musica}):</strong> ${songFiles.length} faixas • Duração: <strong>${formatSeconds(songLenSec)}</strong></div>`;
+            logHtml += `<div class="text-emerald-400">✓ <strong>Região ${i + 1} (${info.musica}):</strong> ${songFiles.length} faixas • Duração: <strong>${formatSeconds(songLenSec)}</strong> (+${GAP_ENTRE_MUSICAS_SEG}s de intervalo)</div>`;
           }
 
-          cursorSec = endSec;
+          // Avança o cursor para o fim da música + 20 segundos de espaço vazio antes da próxima
+          cursorSec = endSec + GAP_ENTRE_MUSICAS_SEG;
         }
 
         let tracksRpp = "";
@@ -2051,19 +2111,26 @@
 
         const tempoEnvBlock = tempoPoints ? `  <TEMPOENVEX\n${tempoPoints}  >\n` : "";
         const rppContent = `<REAPER_PROJECT 0.1 "7.0" 1730000000\n  TEMPO ${firstBpm} 4 4\n${tempoEnvBlock}${markersRpp}${tracksRpp}>\n`;
+        const safeRppName = sanitizeFileSystemName(reaperTargetPayload.fileName, "Culto_DOXA.rpp", "rpp");
 
+        let savedDirectly = false;
         if (localVsRootHandle) {
-          const fileHandle = await localVsRootHandle.getFileHandle(reaperTargetPayload.fileName, { create: true });
-          const writable = await fileHandle.createWritable();
-          await writable.write(rppContent);
-          await writable.close();
-          statusBox.innerHTML = `<p class="font-bold text-emerald-300 mb-1">✅ Projeto e arquivos salvos em "${localVsRootHandle.name}\\${reaperTargetPayload.fileName}"! Pronto para tocar 100% offline no Reaper.</p>${logHtml}`;
-        } else {
+          try {
+            const fileHandle = await localVsRootHandle.getFileHandle(safeRppName, { create: true });
+            const writable = await fileHandle.createWritable();
+            await writable.write(rppContent);
+            await writable.close();
+            savedDirectly = true;
+            statusBox.innerHTML = `<p class="font-bold text-emerald-300 mb-1">✅ Projeto guardado em "${localVsRootHandle.name}\\${safeRppName}"! Pronto a abrir 100% offline no Reaper.</p>${logHtml}`;
+          } catch (eSaveRpp) {}
+        }
+
+        if (!savedDirectly) {
           const a = document.createElement("a");
           a.href = URL.createObjectURL(new Blob([rppContent], { type: "application/octet-stream" }));
-          a.download = reaperTargetPayload.fileName;
+          a.download = safeRppName;
           a.click();
-          statusBox.innerHTML = `<p class="font-bold text-white mb-1">Projeto .RPP gerado com durações reais!</p>${logHtml}`;
+          statusBox.innerHTML = `<p class="font-bold text-white mb-1">✅ Ficheiro "${safeRppName}" transferido com durações reais!</p>${logHtml}`;
         }
       } catch (e) {
         statusBox.innerHTML = `<div class="text-rose-400">Erro ao gerar projeto: ${e.message || e}</div>`;
@@ -2813,25 +2880,55 @@
     }
 
     // ============================================================================
-    // 4. ESTÚDIO MIDI & HOLYRICS (GABARITO DE SLIDES + GERADOR BINÁRIO .MID)
+    // 4. ESTÚDIO MIDI & HOLYRICS (PLAYER YOUTUBE DIRETO + GABARITO + GERADOR .MID)
     // ============================================================================
     let midiStudioSong = null;
     let midiSlides = []; // [{ text, timeSec, midiNote }]
     let midiTapIndex = 0;
     let ytPlayerInstance = null;
+    let ytDirectCurrentTime = 0;
+    let ytDirectIsPlaying = false;
+    let manualTimerRunning = false;
+    let manualTimerStartMs = 0;
+    let manualTimerAccumSec = 0;
     let midiClockInterval = null;
+
+    // Escuta o tempo exato diretamente do iframe do YouTube (sem travar se a API externa atrasar)
+    window.addEventListener("message", (event) => {
+      if (!event.origin || !event.origin.includes("youtube")) return;
+      try {
+        const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+        if (data && data.event === "infoDelivery" && data.info) {
+          if (typeof data.info.currentTime === "number") {
+            ytDirectCurrentTime = data.info.currentTime;
+          }
+          if (typeof data.info.playerState === "number") {
+            ytDirectIsPlaying = (data.info.playerState === 1);
+          }
+        }
+      } catch (e) {}
+    });
+
+    function pingYoutubeIframeForTime() {
+      const iframe = document.getElementById("midi-yt-iframe-target");
+      if (iframe && iframe.contentWindow) {
+        try {
+          iframe.contentWindow.postMessage(JSON.stringify({ event: "listening", id: 1, channel: "widget" }), "*");
+        } catch (e) {}
+      }
+    }
 
     function filterMidiSongsDropdown() {
       const q = (document.getElementById("midi-song-search")?.value || "").toLowerCase().trim();
       const drop = document.getElementById("dropdown-midi-songs");
       if (!drop) return;
       const matched = songs.filter(s => !q || (s.musica && s.musica.toLowerCase().includes(q)) || (s.autor && s.autor.toLowerCase().includes(q))).slice(0, 40);
-      drop.innerHTML = matched.map(s => `<button type="button" onclick="selectSongForMidiStudio(${s.id})" class="w-full text-left px-3 py-2 text-xs text-white hover:bg-cyan-600/25 flex justify-between"><span><strong>${s.musica}</strong> (${s.autor || "DOXA"})</span><span class="text-amber-400 font-bold">${s.tempo ? s.tempo + " BPM" : s.tom}</span></button>`).join("");
+      drop.innerHTML = matched.map(s => `<button type="button" onclick="selectSongForMidiStudio(${s.id})" class="w-full text-left px-3 py-2 text-xs text-white hover:bg-cyan-600/25 flex justify-between"><span><strong>${s.musica}</strong> (${s.autor || "DOXA"})</span><span class="text-amber-400 font-bold">${s.tempo ? s.tempo + " BPM" : (s.tom || "-")}</span></button>`).join("");
       drop.classList.remove("hidden");
     }
 
     function selectSongForMidiStudio(songId) {
-      const s = songs.find(x => x.id === Number(songId));
+      const s = songs.find(x => Number(x.id) === Number(songId));
       if (!s) return;
       midiStudioSong = getResolvedSongDetails(s);
       document.getElementById("midi-song-search").value = `${midiStudioSong.musica} (${midiStudioSong.autor})`;
@@ -2848,42 +2945,105 @@
         letraBtn.classList.add("inline-flex");
       }
 
-      if (midiStudioSong.audio) {
-        document.getElementById("midi-youtube-url").value = midiStudioSong.audio;
+      const audioUrl = midiStudioSong.audio || s.audio || "";
+      document.getElementById("midi-youtube-url").value = audioUrl;
+      if (audioUrl) {
         loadYoutubeForMidiStudio();
+      } else {
+        document.getElementById("midi-yt-container").innerHTML = `<div class="p-4 text-center text-xs text-amber-300">Esta música ainda não tem link do YouTube na planilha. Cole um link do YouTube acima e clique em <strong>Carregar Vídeo</strong>.</div>`;
       }
     }
 
     function extractYoutubeVideoId(url) {
       if (!url) return "";
-      const m = String(url).match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-      return (m && m[1]) ? m[1] : "";
+      const str = String(url).trim();
+      const mShort = str.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+      if (mShort && mShort[1]) return mShort[1];
+      const mParam = str.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+      if (mParam && mParam[1]) return mParam[1];
+      const mPath = str.match(/\/(?:embed|v|shorts|live)\/([a-zA-Z0-9_-]{11})/);
+      if (mPath && mPath[1]) return mPath[1];
+      if (/^[a-zA-Z0-9_-]{11}$/.test(str)) return str;
+      return "";
     }
 
     function loadYoutubeForMidiStudio() {
       const url = document.getElementById("midi-youtube-url").value.trim();
       const vid = extractYoutubeVideoId(url);
       const wrap = document.getElementById("midi-yt-container");
-      if (!vid) { wrap.innerHTML = `<span class="text-rose-400">Link do YouTube inválido</span>`; return; }
+      if (!vid) {
+        wrap.innerHTML = `<span class="text-rose-400 p-3 text-center">Link do YouTube inválido. Cole um link como https://www.youtube.com/watch?v=...</span>`;
+        return;
+      }
 
-      wrap.innerHTML = `<div id="midi-yt-iframe-target" class="w-full h-full"></div>`;
-      if (!window.YT || !window.YT.Player) {
+      ytDirectCurrentTime = 0;
+      ytDirectIsPlaying = false;
+      resetManualMidiTimer();
+
+      const originParam = window.location.origin.startsWith("http")
+        ? `&origin=${encodeURIComponent(window.location.origin)}`
+        : "";
+      const embedSrc = `https://www.youtube.com/embed/${vid}?enablejsapi=1&playsinline=1&rel=0${originParam}`;
+
+      wrap.innerHTML = `
+        <div class="w-full h-full flex flex-col">
+          <iframe
+            id="midi-yt-iframe-target"
+            src="${embedSrc}"
+            onload="pingYoutubeIframeForTime()"
+            class="w-full flex-1 border-0 bg-black"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerpolicy="strict-origin-when-cross-origin"
+            allowfullscreen>
+          </iframe>
+          <div class="bg-slate-950 px-2.5 py-1.5 flex items-center justify-between gap-2 text-[11px] border-t border-slate-800">
+            <button type="button" onclick="toggleManualMidiTimer()" id="btn-manual-midi-timer" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-emerald-300 font-bold">
+              ⏱️ Iniciar Cronômetro Manual
+            </button>
+            <button type="button" onclick="resetManualMidiTimer()" class="px-2 py-1 rounded bg-slate-900 text-slate-400 hover:text-white">
+              Zerar
+            </button>
+            <a href="https://www.youtube.com/watch?v=${vid}" target="_blank" class="text-rose-400 hover:underline font-semibold ml-auto">
+              Abrir no YouTube ↗
+            </a>
+          </div>
+        </div>`;
+
+      if (!window.YT) {
         const tag = document.createElement("script");
         tag.src = "https://www.youtube.com/iframe_api";
         document.head.appendChild(tag);
-        window.onYouTubeIframeAPIReady = () => createYtPlayer(vid);
+      }
+      setTimeout(() => {
+        pingYoutubeIframeForTime();
+        if (window.YT && window.YT.Player) {
+          try { ytPlayerInstance = new YT.Player("midi-yt-iframe-target"); } catch (e) {}
+        }
+      }, 600);
+
+      startMidiReferenceClock();
+    }
+
+    function toggleManualMidiTimer() {
+      const btn = document.getElementById("btn-manual-midi-timer");
+      if (!manualTimerRunning) {
+        manualTimerStartMs = performance.now();
+        manualTimerRunning = true;
+        if (btn) btn.innerHTML = "⏸️ Pausar Cronômetro";
       } else {
-        createYtPlayer(vid);
+        manualTimerAccumSec += (performance.now() - manualTimerStartMs) / 1000;
+        manualTimerRunning = false;
+        if (btn) btn.innerHTML = "▶️ Continuar Cronômetro";
       }
       startMidiReferenceClock();
     }
 
-    function createYtPlayer(videoId) {
-      try { if (ytPlayerInstance && ytPlayerInstance.destroy) ytPlayerInstance.destroy(); } catch (e) {}
-      ytPlayerInstance = new YT.Player("midi-yt-iframe-target", {
-        width: "100%", height: "100%", videoId: videoId,
-        playerVars: { playsinline: 1, rel: 0 }
-      });
+    function resetManualMidiTimer() {
+      manualTimerRunning = false;
+      manualTimerAccumSec = 0;
+      manualTimerStartMs = 0;
+      const btn = document.getElementById("btn-manual-midi-timer");
+      if (btn) btn.innerHTML = "⏱️ Iniciar Cronômetro Manual";
     }
 
     function loadLocalAudioForMidiStudio(input) {
@@ -2896,19 +3056,28 @@
 
     function getMidiReferenceCurrentTime() {
       const localAudio = document.getElementById("midi-local-audio");
-      if (localAudio && !localAudio.classList.contains("hidden") && !localAudio.paused) {
+      if (localAudio && !localAudio.classList.contains("hidden") && (!localAudio.paused || localAudio.currentTime > 0)) {
         return localAudio.currentTime || 0;
       }
-      if (ytPlayerInstance && typeof ytPlayerInstance.getCurrentTime === "function") {
-        try { return ytPlayerInstance.getCurrentTime() || 0; } catch (e) {}
+      if (manualTimerRunning) {
+        return manualTimerAccumSec + (performance.now() - manualTimerStartMs) / 1000;
       }
-      if (localAudio && localAudio.currentTime > 0) return localAudio.currentTime;
-      return 0;
+      if (manualTimerAccumSec > 0) {
+        return manualTimerAccumSec;
+      }
+      if (ytPlayerInstance && typeof ytPlayerInstance.getCurrentTime === "function") {
+        try {
+          const t = ytPlayerInstance.getCurrentTime();
+          if (typeof t === "number" && t > 0) return t;
+        } catch (e) {}
+      }
+      return ytDirectCurrentTime || 0;
     }
 
     function startMidiReferenceClock() {
       if (midiClockInterval) clearInterval(midiClockInterval);
       midiClockInterval = setInterval(() => {
+        if (!ytDirectIsPlaying) pingYoutubeIframeForTime();
         const t = getMidiReferenceCurrentTime();
         const el = document.getElementById("midi-live-clock");
         if (el) el.textContent = formatTimeWithTenths(t);
