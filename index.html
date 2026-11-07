@@ -663,9 +663,10 @@
         </div>
         <div><label class="block text-xs text-indigo-300 mb-1">Categorias (separadas por vírgula)</label><input type="text" id="song-categoria" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white" /></div>
         <div><label class="block text-xs text-slate-300 mb-1">Referência Bíblica</label><input type="text" id="song-ref" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white" /></div>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
           <div><label class="block text-xs text-slate-300 mb-1">YouTube</label><input type="url" id="song-audio" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white" /></div>
-          <div><label class="block text-xs text-slate-300 mb-1">Cifra Club</label><input type="url" id="song-cifra" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white" /></div>
+          <div><label class="block text-xs text-amber-400 mb-1">Cifra Club</label><input type="url" id="song-cifra" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white" /></div>
+          <div><label class="block text-xs text-cyan-400 mb-1">Letra (Link Direto)</label><input type="url" id="song-letra" placeholder="https://www.letras.mus.br/..." class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white" /></div>
           <div><label class="block text-xs text-emerald-400 mb-1">Cifra Doxa</label><input type="text" id="song-cifra-doxa" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white" /></div>
         </div>
         <div class="flex justify-end gap-2 pt-2">
@@ -1743,7 +1744,7 @@
           const info = getResolvedSongDetails(items[i]);
           const aut = (info.autor && info.autor !== "Autor não informado") ? info.autor : "";
           const rawYt = info.audio || `https://www.youtube.com/results?search_query=${encodeURIComponent(info.musica + " " + aut)}`;
-          const rawLetra = `https://www.letras.mus.br/?q=${encodeURIComponent(info.musica + " " + aut)}`;
+          const rawLetra = info.letra || `https://www.letras.mus.br/?q=${encodeURIComponent(info.musica + " " + aut)}`;
           const [sYt, sLetra] = await Promise.all([shortenUrlFast(rawYt), shortenUrlFast(rawLetra)]);
           text += `${i + 1}. *${info.musica}*${aut ? ` (${aut})` : ""}\n   ▶️ YouTube: ${sYt}\n   📝 Letra: ${sLetra}\n`;
         }
@@ -1897,7 +1898,8 @@
         ref: cat.ref || (item && item.ref) || "",
         audio: cat.audio || (item && item.audio) || "",
         cifra: cat.cifra || (item && item.cifra) || "",
-        hasFile: !!fId, fileId: fId,
+        letra: cat.letra || (item && item.letra) || "",
+	hasFile: !!fId, fileId: fId,
         viewUrl: fId ? `https://drive.google.com/file/d/${fId}/view` : (fixedFolderUrl || "#"),
         previewUrl: fId ? `https://drive.google.com/file/d/${fId}/preview` : ""
       };
@@ -2013,11 +2015,13 @@
       document.getElementById("songs-mobile-cards").innerHTML = pageItems.map(s => {
         const c = getResolvedSongDetails(s), sM = String(c.musica).replace(/'/g, "\\'"), sA = String(c.autor || "").replace(/'/g, "\\'");
         return `<div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 space-y-2">
-          <div class="flex justify-between"><div><h3 class="font-bold text-white text-sm">${s.musica}</h3><p class="text-xs text-slate-400">${s.autor || "DOXA"}</p></div><span class="px-2.5 py-1 rounded-xl bg-slate-800 text-amber-400 font-bold text-xs">${s.tom || "-"}</span></div>
+          <div class="flex justify-between"><div><h3 class="font-bold text-white text-sm">${s.musica}</h3><p class="text-xs text-slate-400">${s.autor || "DOXA"}${s.tempo ? ` • ${/bpm/i.test(s.tempo) ? s.tempo : s.tempo + " BPM"}` : ""}</p></div><span class="px-2.5 py-1 rounded-xl bg-slate-800 text-amber-400 font-bold text-xs">${s.tom || "-"}</span></div>
           <div class="flex items-center justify-between pt-2 border-t border-slate-800">
             <span class="text-xs text-slate-400">${s.vezes || 0}x</span>
-            <div class="flex items-center gap-1.5">
-              ${s.audio ? `<a href="${s.audio}" target="_blank" class="w-8 h-8 rounded-lg bg-rose-500/15 text-rose-400 flex items-center justify-center"><i class="fa-brands fa-youtube"></i></a>` : ""}
+            <div class="flex flex-wrap items-center gap-1.5">
+              ${c.audio ? `<a href="${c.audio}" target="_blank" title="YouTube" class="w-8 h-8 rounded-lg bg-rose-500/15 text-rose-400 flex items-center justify-center"><i class="fa-brands fa-youtube"></i></a>` : ""}
+              ${c.cifra ? `<a href="${c.cifra}" target="_blank" title="Cifra Club" class="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center"><i class="fa-solid fa-guitar"></i></a>` : ""}
+              ${c.letra ? `<a href="${c.letra}" target="_blank" title="Letra da Música" class="w-8 h-8 rounded-lg bg-cyan-500/15 text-cyan-300 flex items-center justify-center"><i class="fa-solid fa-file-lines"></i></a>` : ""}
               ${c.hasFile ? `<a href="${c.viewUrl}" target="_blank" class="px-2.5 h-8 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center text-[11px] font-bold">Ver</a><button onclick="baixarCifraIndividual('${sM}','${sA}','${c.fileId}','${c.viewUrl}')" class="px-2.5 h-8 rounded-lg bg-indigo-600/30 text-indigo-200 flex items-center gap-1 text-[11px] font-bold"><i class="fa-solid fa-download"></i><span>Baixar</span></button>` : ""}
               ${isAdmin ? `<button onclick="openSongModal(${s.id})" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-300"><i class="fa-solid fa-pen text-xs"></i></button>` : ""}
             </div>
@@ -2036,13 +2040,53 @@
           <td class="py-3 px-4 text-xs text-slate-300">${s.ref || "-"}</td>
           <td class="py-3 px-3 text-center text-xs font-bold">${s.vezes || 0}x</td>
           <td class="py-3 px-4 text-right space-x-1 whitespace-nowrap">
-            ${s.audio ? `<a href="${s.audio}" target="_blank" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-rose-500/15 text-rose-400"><i class="fa-brands fa-youtube"></i></a>` : ""}
+            ${c.audio ? `<a href="${c.audio}" target="_blank" title="YouTube" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-rose-500/15 hover:bg-rose-500/30 text-rose-400"><i class="fa-brands fa-youtube"></i></a>` : ""}
+            ${c.cifra ? `<a href="${c.cifra}" target="_blank" title="Cifra Club" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-500/15 hover:bg-amber-500/30 text-amber-400"><i class="fa-solid fa-guitar"></i></a>` : ""}
+            ${c.letra ? `<a href="${c.letra}" target="_blank" title="Letra da Música" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/30 text-cyan-300"><i class="fa-solid fa-file-lines"></i></a>` : ""}
             ${c.hasFile ? `<a href="${c.viewUrl}" target="_blank" class="inline-flex items-center px-2.5 h-8 rounded-lg bg-emerald-500/20 text-emerald-300 text-xs font-bold">Abrir</a><button onclick="baixarCifraIndividual('${sM}','${sA}','${c.fileId}','${c.viewUrl}')" class="inline-flex items-center gap-1 px-2.5 h-8 rounded-lg bg-indigo-600/30 text-indigo-200 text-xs font-bold"><i class="fa-solid fa-download"></i><span>Baixar</span></button>` : ""}
             ${isAdmin ? `<button onclick="openSongModal(${s.id})" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800 text-slate-300"><i class="fa-solid fa-pen"></i></button><button onclick="deleteSong(${s.id})" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800 text-rose-400"><i class="fa-solid fa-trash"></i></button>` : ""}
           </td>
         </tr>`;
       }).join("");
       updateBadges();
+    }
+
+    function openSongModal(id = null) {
+      if (!isAdmin) return;
+      document.getElementById("song-form").reset();
+      if (id) {
+        const s = songs.find(x => x.id === id);
+        if (s) {
+          document.getElementById("song-modal-title").textContent = "Editar Música";
+          document.getElementById("song-id").value = s.id; document.getElementById("song-musica").value = s.musica;
+          document.getElementById("song-autor").value = s.autor || ""; document.getElementById("song-tom").value = s.tom || "";
+          document.getElementById("song-tempo").value = s.tempo || ""; document.getElementById("song-dificuldade").value = s.dificuldade || "";
+          document.getElementById("song-vezes").value = s.vezes || 0; document.getElementById("song-categoria").value = s.categoria || "";
+          document.getElementById("song-ref").value = s.ref || ""; document.getElementById("song-audio").value = s.audio || "";
+          document.getElementById("song-cifra").value = s.cifra || ""; document.getElementById("song-letra").value = s.letra || "";
+          document.getElementById("song-cifra-doxa").value = s.cifraDoxa || "";
+        }
+      } else {
+        document.getElementById("song-modal-title").textContent = "Nova Música";
+        document.getElementById("song-id").value = "";
+      }
+      document.getElementById("song-modal").classList.remove("hidden"); document.getElementById("song-modal").classList.add("flex");
+    }
+    function closeSongModal() { document.getElementById("song-modal").classList.add("hidden"); document.getElementById("song-modal").classList.remove("flex"); }
+    function saveSong(e) {
+      e.preventDefault(); if (!isAdmin) return;
+      const id = document.getElementById("song-id").value;
+      const payload = {
+        id: id ? Number(id) : Date.now(),
+        musica: document.getElementById("song-musica").value.trim(), autor: document.getElementById("song-autor").value.trim(),
+        tom: document.getElementById("song-tom").value.trim(), tempo: document.getElementById("song-tempo").value.trim(),
+        dificuldade: document.getElementById("song-dificuldade").value.trim(), vezes: Number(document.getElementById("song-vezes").value) || 0,
+        categoria: document.getElementById("song-categoria").value.trim(), ref: document.getElementById("song-ref").value.trim(),
+        audio: document.getElementById("song-audio").value.trim(), cifra: document.getElementById("song-cifra").value.trim(),
+        letra: document.getElementById("song-letra").value.trim(), cifraDoxa: document.getElementById("song-cifra-doxa").value.trim()
+      };
+      if (id) { const idx = songs.findIndex(s => s.id === Number(id)); if (idx > -1) songs[idx] = payload; } else songs.unshift(payload);
+      closeSongModal(); renderSongs(); pushToGoogleSheet({ action: "saveSong", song: payload });
     }
 
     function openSongModal(id = null) {
@@ -2172,17 +2216,25 @@
       container.innerHTML = (rep.itens || []).map((it, i) => {
         const info = getResolvedSongDetails(it), key = normalizeSongKey(info.musica), hasOff = offlineSavedChordKeys.has(key);
         const sM = String(info.musica).replace(/'/g, "\\'"), sA = String(info.autor || "").replace(/'/g, "\\'");
+        const tempoStr = info.tempo ? (/bpm/i.test(info.tempo) ? info.tempo : `${info.tempo} BPM`) : "";
         if (hasOff) jobs.push({ musica: info.musica, id: `offline-canvas-wrap-${i}` });
         return `<div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
-          <div class="flex justify-between items-center">
-            <div class="space-y-1">
-              <span class="text-xs font-bold uppercase text-indigo-400">${i + 1}. ${it.momento}</span>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="space-y-1.5 min-w-0 flex-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-xs font-bold uppercase text-indigo-400">${i + 1}. ${it.momento}</span>
+                ${tempoStr ? `<span class="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30"><i class="fa-solid fa-gauge-high mr-1"></i>${tempoStr}</span>` : ""}
+              </div>
               <h4 class="text-xl font-extrabold text-white">${info.musica}</h4>
-              <div class="flex flex-wrap gap-2 pt-1">
+              <p class="text-xs text-slate-400">${info.autor}</p>
+              <div class="flex flex-wrap items-center gap-2 pt-1">
+                ${info.audio ? `<a href="${info.audio}" target="_blank" class="px-3 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-xs font-bold flex items-center gap-1.5"><i class="fa-brands fa-youtube"></i><span>YouTube</span></a>` : ""}
+                ${info.cifra ? `<a href="${info.cifra}" target="_blank" class="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-guitar"></i><span>Cifra Club</span></a>` : ""}
+                ${info.letra ? `<a href="${info.letra}" target="_blank" class="px-3 py-1.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-file-lines"></i><span>Letra</span></a>` : ""}
                 ${info.hasFile ? `<a href="${info.viewUrl}" target="_blank" class="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 text-xs font-bold">Abrir Cifra</a><button onclick="baixarCifraIndividual('${sM}','${sA}','${info.fileId}','${info.viewUrl}')" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-bold"><i class="fa-solid fa-download mr-1"></i>Baixar PDF</button><button onclick="toggleStageChordBox(${i})" class="px-3 py-1.5 rounded-xl bg-slate-800 text-indigo-300 text-xs font-bold">Mostrar/Ocultar</button>` : ""}
               </div>
             </div>
-            <div class="text-center bg-slate-800 border border-amber-500/40 rounded-2xl px-5 py-2.5"><span class="text-[10px] text-slate-400 block">TOM</span><span class="text-2xl font-black text-amber-400">${info.tom}</span></div>
+            <div class="text-center bg-slate-800 border border-amber-500/40 rounded-2xl px-5 py-2.5 shrink-0"><span class="text-[10px] text-slate-400 block">TOM</span><span class="text-2xl font-black text-amber-400">${info.tom}</span></div>
           </div>
           <div id="stage-chord-box-${i}" class="${allStageChordsVisible ? '' : 'hidden'} pt-3 border-t border-slate-800">
             ${hasOff ? `<div id="offline-canvas-wrap-${i}" class="w-full overflow-y-auto max-h-[750px] rounded-xl"></div>` : (info.hasFile ? `<iframe src="${info.previewUrl}" style="height:640px;" class="w-full rounded-xl bg-white"></iframe>` : "")}
