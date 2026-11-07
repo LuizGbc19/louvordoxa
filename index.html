@@ -123,8 +123,9 @@
           <span class="flex items-center gap-3"><i class="fa-solid fa-calendar-days w-5 text-center text-amber-400"></i><span>Repertórios / Cultos</span></span>
           <span id="drawer-badge-repertorios" class="text-xs px-2 py-0.5 rounded-full bg-slate-800">0</span>
         </button>
-        <button onclick="switchTabFromDrawer('palco')" id="drawer-tab-palco" class="w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold flex items-center justify-between text-slate-300 hover:bg-slate-800">
-          <span class="flex items-center gap-3"><i class="fa-solid fa-guitar w-5 text-center text-emerald-400"></i><span>Modo Palco & Cifras</span></span>
+       <button onclick="switchTabFromDrawer('midi')" id="drawer-tab-midi" class="w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold flex items-center justify-between text-slate-300 hover:bg-slate-800">
+          <span class="flex items-center gap-3"><i class="fa-solid fa-wand-magic-sparkles w-5 text-center text-cyan-400"></i><span>MIDI & Holyrics</span></span>
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-900/60 text-cyan-200 font-bold">Novo</span>
         </button>
         <button onclick="switchTabFromDrawer('vs')" id="drawer-tab-vs" class="w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold flex items-center justify-between text-slate-300 hover:bg-slate-800">
           <span class="flex items-center gap-3"><i class="fa-solid fa-sliders w-5 text-center text-purple-400"></i><span>VS / Mixer L-R</span></span>
@@ -177,7 +178,7 @@
       <nav class="hidden xl:flex items-center gap-1 bg-slate-800/90 p-1 rounded-xl border border-slate-700/70">
         <button onclick="switchTab('musicas')" id="tab-musicas" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 bg-indigo-600 text-white shadow"><i class="fa-solid fa-music"></i><span>Músicas</span><span id="badge-total-musicas" class="text-xs px-1.5 py-0.5 rounded-full bg-indigo-800">0</span></button>
         <button onclick="switchTab('repertorios')" id="tab-repertorios" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-calendar-days"></i><span>Repertórios</span><span id="badge-total-repertorios" class="text-xs px-1.5 py-0.5 rounded-full bg-slate-700">0</span></button>
-        <button onclick="switchTab('palco')" id="tab-palco" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-guitar"></i><span>Modo Palco</span></button>
+        <button onclick="switchTab('midi')" id="tab-midi" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-wand-magic-sparkles text-cyan-400"></i><span>MIDI & Holyrics</span></button>
         <button onclick="switchTab('vs')" id="tab-vs" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-sliders"></i><span>VS / Mixer</span><span id="badge-total-vs" class="text-xs px-1.5 py-0.5 rounded-full bg-purple-900/60 text-purple-200">3.2</span></button>
         <button onclick="switchTab('pedidos')" id="tab-pedidos" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-inbox"></i><span>Pedidos</span></button>
         <button onclick="switchTab('relatorios')" id="tab-relatorios" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 text-slate-300 hover:text-white"><i class="fa-solid fa-chart-pie"></i><span>Relatórios</span></button>
@@ -205,12 +206,26 @@
           </div>
           <button onclick="toggleMobileFilters()" class="md:hidden px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5"><i class="fa-solid fa-sliders text-indigo-400"></i><span>Filtros</span></button>
         </div>
-        <div id="filters-panel" class="hidden md:block space-y-2.5">
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+       <div id="filters-panel" class="hidden md:block space-y-2.5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
             <select id="filter-tag" onchange="resetPageAndRenderSongs()" class="w-full px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white"><option value="">Todas as Categorias</option></select>
             <select id="filter-tom" onchange="resetPageAndRenderSongs()" class="w-full px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white"><option value="">Todos os Tons</option></select>
             <select id="filter-dificuldade" onchange="resetPageAndRenderSongs()" class="w-full px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white">
               <option value="">Dificuldade (Todas)</option><option value="Baixa">Baixa</option><option value="Média">Média</option><option value="Alta">Alta</option>
+            </select>
+            <select id="filter-tempo" onchange="resetPageAndRenderSongs()" class="w-full px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white">
+              <option value="">Tempo / BPM (Todos)</option>
+              <option value="LENTA">Lentas (&lt; 75 BPM)</option>
+              <option value="MEDIA">Médias (75 a 110 BPM)</option>
+              <option value="RAPIDA">Rápidas (&gt; 110 BPM)</option>
+            </select>
+            <select id="filter-vezes" onchange="resetPageAndRenderSongs()" class="w-full px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white">
+              <option value="">Vezes Cantadas (Todas)</option>
+              <option value="ORD_DESC">Ordenar: Mais Cantadas ↓</option>
+              <option value="ORD_ASC">Ordenar: Menos Cantadas ↑</option>
+              <option value="ZERO">Nunca Cantadas (0x)</option>
+              <option value="1_A_5">Cantadas de 1x a 5x</option>
+              <option value="MAIS_5">Cantadas mais de 5x</option>
             </select>
           </div>
           <div class="flex items-center gap-2 pt-1 border-t border-slate-800/80">
@@ -247,13 +262,16 @@
       </div>
     </section>
 
-    <!-- ABA 2: REPERTÓRIOS -->
-    <section id="view-repertorios" class="hidden space-y-4">
+    <!-- ABA 2 UNIFICADA: REPERTÓRIOS + MODO PALCO INTEGRADO ABAIXO -->
+    <section id="view-repertorios" class="hidden space-y-5">
+      <!-- PARTE SUPERIOR: CALENDÁRIO + RESUMO DO CULTO EM QUESTÃO -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-lg">
           <div class="flex items-center justify-between">
-            <h3 class="text-sm font-extrabold text-white flex items-center gap-2"><i class="fa-solid fa-calendar-day text-amber-400"></i><span>Calendário</span></h3>
-            <button onclick="resetCalendarFilter()" class="text-xs text-indigo-400 font-semibold">Próximo Culto</button>
+            <h3 class="text-sm font-extrabold text-white flex items-center gap-2"><i class="fa-solid fa-calendar-day text-amber-400"></i><span>Calendário de Cultos</span></h3>
+            <button type="button" onclick="resetCalendarFilter()" class="px-2.5 py-1 rounded-lg bg-indigo-600/25 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 text-xs font-bold transition">
+              <i class="fa-solid fa-forward-step mr-1"></i>Próximo Culto
+            </button>
           </div>
           <div class="flex items-center justify-between bg-slate-800/80 px-3 py-2 rounded-xl border border-slate-700">
             <button onclick="changeCalendarMonth(-1)" class="w-7 h-7 rounded-lg hover:bg-slate-700 text-slate-300 flex items-center justify-center"><i class="fa-solid fa-chevron-left text-xs"></i></button>
@@ -267,6 +285,7 @@
             <span>Total: <strong id="cal-total-reps" class="text-white">0</strong></span>
           </div>
         </div>
+
         <div class="lg:col-span-8 bg-slate-900 border border-indigo-500/40 rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg">
           <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
             <div class="flex items-center gap-2">
@@ -278,32 +297,139 @@
           <div id="featured-rep-body" class="space-y-3"></div>
         </div>
       </div>
-      <div class="space-y-2.5">
-        <div class="flex items-center justify-between">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Histórico de Repertórios</h3>
-          <button onclick="openRepertorioModal(null)" id="btn-new-rep-inline" class="hidden px-3 py-1.5 rounded-xl bg-amber-600 text-white text-xs font-bold items-center gap-1.5"><i class="fa-solid fa-plus"></i><span>Criar Repertório</span></button>
+
+      <!-- PARTE INFERIOR: MODO PALCO & CIFRAS DO CULTO SELECIONADO -->
+      <div id="palco-inline-section" class="space-y-4 pt-2 border-t border-slate-800/80">
+        <div class="bg-slate-900 border border-emerald-500/30 rounded-2xl p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 shadow-lg">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-600/20 border border-emerald-500/40 flex items-center justify-center text-emerald-300 text-lg shrink-0"><i class="fa-solid fa-guitar"></i></div>
+            <div>
+              <h2 class="text-base sm:text-lg font-extrabold text-white">Modo Palco & Cifras do Culto</h2>
+              <p class="text-xs text-slate-400">Selecione qualquer culto no calendário acima ou na lista ao lado para abrir todas as cifras</p>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="palco-select-repertorio" onchange="selectRepertorioFromDropdown(this.value)" class="flex-1 sm:flex-initial px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm text-white font-semibold"></select>
+            <button onclick="toggleAllStageChords()" class="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-indigo-300 text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-eye"></i><span>Mostrar/Ocultar Cifras</span></button>
+            <button onclick="openRepertorioModal(null)" id="btn-new-rep-inline" class="hidden px-3 py-2 rounded-xl bg-amber-600 text-white text-xs font-bold items-center gap-1.5"><i class="fa-solid fa-plus"></i><span>Novo Culto</span></button>
+          </div>
         </div>
-        <div id="repertorios-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
+        <div id="palco-content" class="space-y-5"></div>
       </div>
     </section>
 
-    <!-- ABA 3: MODO PALCO -->
-    <section id="view-palco" class="hidden space-y-4">
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-        <div>
-          <h2 class="text-base sm:text-lg font-bold text-white">Modo Palco & Cifras (Online / Offline)</h2>
-          <p class="text-xs text-slate-400">Baixe as cifras para abrir sem internet ou gere a sessão `.RPP` para o Reaper</p>
+    <!-- NOVA ABA: ESTÚDIO MIDI & HOLYRICS (GABARITO DE SLIDES + GERADOR .MID) -->
+    <section id="view-midi" class="hidden space-y-4">
+      <div class="bg-slate-900 border border-cyan-500/30 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-cyan-600/20 border border-cyan-500/40 flex items-center justify-center text-cyan-300 text-lg"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+          <div>
+            <h2 class="text-base sm:text-lg font-extrabold text-white">Estúdio de Automação MIDI & Gabarito Holyrics</h2>
+            <p class="text-xs text-slate-400">Formate a letra em slides para o Holyrics e marque o tempo ouvindo o YouTube ou áudio local para gerar o arquivo <code>.MID</code></p>
+          </div>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <select id="palco-select-repertorio" onchange="renderPalco()" class="flex-1 sm:flex-initial px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm text-white font-semibold"></select>
-          <button onclick="salvarCultoAtualOfflinePalco()" class="px-3 py-2 rounded-xl bg-teal-600 text-white text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-cloud-arrow-down"></i><span>Baixar Offline</span></button>
-          <button onclick="abrirReaperAtualPalco()" class="px-3 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-sliders"></i><span>Reaper (.RPP)</span></button>
-          <button onclick="toggleAllStageChords()" class="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-indigo-300 text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-eye"></i><span>Cifras</span></button>
-          <button onclick="gerarPdfRepertorioAtualPalco()" class="px-3 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-file-pdf"></i><span>PDF Mesclado</span></button>
-          <button onclick="compartilharWhatsAppPalco()" class="px-3 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5"><i class="fa-brands fa-whatsapp"></i><span>WhatsApp</span></button>
+          <button type="button" onclick="downloadHolyricsMidiFile()" class="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow">
+            <i class="fa-solid fa-download"></i><span>Baixar .MID (Holyrics)</span>
+          </button>
+          <button type="button" onclick="saveHolyricsMidiToAppMemory()" class="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-1.5 shadow" title="Salva no aplicativo para incluir automaticamente no projeto .RPP do Reaper">
+            <i class="fa-solid fa-link"></i><span>Vincular ao Reaper (.RPP)</span>
+          </button>
         </div>
       </div>
-      <div id="palco-content" class="space-y-5"></div>
+
+      <!-- SELEÇÃO DA MÚSICA DO BANCO + CONFIGURAÇÕES MIDI -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-lg">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+          <div class="md:col-span-5 relative">
+            <label class="block text-xs font-bold text-cyan-300 mb-1">1. Escolher Música do Banco (Carrega YouTube, BPM e Letra)</label>
+            <input type="text" id="midi-song-search" autocomplete="off" onfocus="filterMidiSongsDropdown()" oninput="filterMidiSongsDropdown()" placeholder="Digite o nome da música..." class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white" />
+            <div id="dropdown-midi-songs" class="hidden absolute left-0 right-0 mt-1 bg-slate-900 border border-cyan-500/50 rounded-xl shadow-2xl max-h-56 overflow-y-auto z-40 custom-scroll"></div>
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-xs font-semibold text-slate-300 mb-1">BPM (Andamento)</label>
+            <input type="number" id="midi-bpm-input" value="120" min="40" max="240" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white font-bold" />
+          </div>
+          <div class="md:col-span-3">
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Modo de Disparo no Holyrics</label>
+            <select id="midi-trigger-mode" onchange="recalculateMidiSlideNotes()" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white">
+              <option value="SLIDE_NOTE">Nota = Nº do Slide (Nota 1 = Slide 1...)</option>
+              <option value="OFFSET_36">Sequencial a partir de C2 (Nota 36, 37...)</option>
+              <option value="FIXED_60">Nota Fixa C4 (Nota 60 = Próximo Slide)</option>
+            </select>
+          </div>
+          <div class="md:col-span-2 flex gap-1.5">
+            <a id="midi-open-letra-btn" href="#" target="_blank" class="hidden flex-1 py-2 px-3 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 text-xs font-bold items-center justify-center gap-1.5">
+              <i class="fa-solid fa-file-lines"></i><span>Abrir Letra</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <!-- COLUNA ESQUERDA: PLAYER YOUTUBE/ÁUDIO + GABARITO DE LETRA -->
+        <div class="lg:col-span-5 space-y-4">
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-lg">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold uppercase text-rose-400"><i class="fa-brands fa-youtube mr-1.5"></i>Áudio de Referência (YouTube ou Arquivo)</span>
+              <span id="midi-live-clock" class="font-mono text-sm font-black text-emerald-400 bg-slate-800 px-2.5 py-0.5 rounded-lg">00:00.0</span>
+            </div>
+            <div class="flex gap-2">
+              <input type="text" id="midi-youtube-url" placeholder="Cole link do YouTube..." class="flex-1 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white" />
+              <button type="button" onclick="loadYoutubeForMidiStudio()" class="px-3 py-1.5 rounded-xl bg-rose-600 text-white text-xs font-bold">Carregar Vídeo</button>
+            </div>
+            <div id="midi-yt-container" class="w-full aspect-video bg-black rounded-xl overflow-hidden flex items-center justify-center text-xs text-slate-500">
+              Selecione uma música ou cole um link do YouTube
+            </div>
+            <div class="pt-1 border-t border-slate-800 flex items-center justify-between gap-2 text-[11px] text-slate-400">
+              <span>Ou carregue o MP3/M4A do VS:</span>
+              <input type="file" accept="audio/*" onchange="loadLocalAudioForMidiStudio(this)" class="text-[11px] text-slate-300 max-w-[200px]" />
+            </div>
+            <audio id="midi-local-audio" controls class="hidden w-full h-9"></audio>
+          </div>
+
+          <!-- GABARITO HOLYRICS -->
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-lg">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span class="text-xs font-extrabold uppercase text-cyan-300">2. Letra / Gabarito Holyrics</span>
+              <div class="flex items-center gap-1.5">
+                <select id="midi-lines-per-slide" class="px-2 py-1 bg-slate-800 border border-slate-700 rounded-lg text-[11px] text-white">
+                  <option value="2">2 linhas / slide</option>
+                  <option value="4">4 linhas / slide</option>
+                  <option value="1">1 linha / slide</option>
+                  <option value="0">Manter blocos atuais</option>
+                </select>
+                <button type="button" onclick="formatLyricsIntoHolyricsSlides()" class="px-2.5 py-1 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-[11px] font-bold">Gerar Slides</button>
+                <button type="button" onclick="copyHolyricsTemplateText()" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold"><i class="fa-solid fa-copy mr-1"></i>Copiar p/ Holyrics</button>
+              </div>
+            </div>
+            <textarea id="midi-raw-lyrics" rows="10" placeholder="Cole aqui a letra da música e clique em 'Gerar Slides'..." class="w-full p-3 bg-slate-800 border border-slate-700 rounded-xl text-xs text-slate-200 font-mono"></textarea>
+          </div>
+        </div>
+
+        <!-- COLUNA DIREITA: MARCADOR DE TEMPO DOS SLIDES (TAP AO VIVO) -->
+        <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-lg flex flex-col">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+            <div>
+              <h3 class="text-sm font-extrabold text-white">3. Sincronização de Slides (<span id="midi-slides-count">0</span> slides)</h3>
+              <p class="text-[11px] text-slate-400">Dê Play no vídeo/áudio e clique no botão abaixo (ou aperte <strong>Espaço</strong>) no momento de cada slide</p>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button type="button" onclick="addInstrumentalMidiSlide()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-300 text-xs font-bold">+ Slide Vazio / Instrumental</button>
+              <button type="button" onclick="resetMidiTapCursor()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-semibold">Voltar ao Slide 1</button>
+            </div>
+          </div>
+
+          <button type="button" onclick="stampCurrentMidiSlideTime()" id="btn-midi-tap" class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-black text-sm shadow-lg flex items-center justify-center gap-2 transition active:scale-[0.99]">
+            <i class="fa-solid fa-bell"></i>
+            <span id="btn-midi-tap-label">MARCAR TEMPO DO SLIDE ATUAL (OU TECLA ESPAÇO)</span>
+          </button>
+
+          <div id="midi-slides-list" class="flex-1 space-y-2 max-h-[55vh] overflow-y-auto custom-scroll pr-1">
+            <div class="text-center py-10 text-xs text-slate-500">Cole a letra ao lado e clique em "Gerar Slides" para começar a sincronizar.</div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- ABA 4: VS / MIXER TURBO (PC/ANDROID) + MODO ADAPTATIVO IPHONE -->
@@ -550,13 +676,38 @@
           </label>
         </div>
 
+        <!-- BARRA DE PROGRESSO DE DOWNLOAD OFFLINE PARA O REAPER -->
+        <div id="reaper-progress-wrap" class="hidden bg-slate-950 border border-purple-500/40 rounded-xl p-3 space-y-1.5">
+          <div class="flex items-center justify-between text-[11px] font-bold text-purple-300">
+            <span id="reaper-progress-text">Baixando arquivos do VS...</span>
+            <span id="reaper-progress-pct">0%</span>
+          </div>
+          <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+            <div id="reaper-progress-bar" class="h-full bg-gradient-to-r from-purple-500 to-emerald-400 transition-all" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- BARRA DE PROGRESSO DE DOWNLOAD OFFLINE PARA O REAPER -->
+        <div id="reaper-progress-wrap" class="hidden bg-slate-950 border border-purple-500/40 rounded-xl p-3 space-y-1.5">
+          <div class="flex items-center justify-between text-[11px] font-bold text-purple-300">
+            <span id="reaper-progress-text">Baixando arquivos do VS...</span>
+            <span id="reaper-progress-pct">0%</span>
+          </div>
+          <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+            <div id="reaper-progress-bar" class="h-full bg-gradient-to-r from-purple-500 to-emerald-400 transition-all" style="width:0%"></div>
+          </div>
+        </div>
+
         <div id="reaper-export-status" class="hidden p-3 bg-slate-800 rounded-xl space-y-1 text-slate-300 max-h-44 overflow-y-auto custom-scroll"></div>
       </div>
 
-      <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+      <div class="flex flex-wrap justify-end gap-2 pt-2 border-t border-slate-800">
         <button onclick="closeReaperModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Fechar</button>
-        <button onclick="generateReaperRppFile()" id="btn-run-reaper-export" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow">
-          <i class="fa-solid fa-download"></i><span>Gerar Projeto .RPP</span>
+        <button onclick="downloadVsOfflineAndGenerateReaperRpp()" id="btn-download-reaper-pack" class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow" title="Baixa todas as faixas de áudio e MIDI para uma pasta no seu PC, mede a duração exata de cada música e gera o .RPP 100% offline">
+          <i class="fa-solid fa-cloud-arrow-down"></i><span>Baixar VS + MIDI Offline & Gerar .RPP</span>
+        </button>
+        <button onclick="generateReaperRppFile(false)" id="btn-run-reaper-export" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow">
+          <i class="fa-solid fa-sliders"></i><span>Gerar Só Arquivo .RPP</span>
         </button>
       </div>
     </div>
@@ -1334,32 +1485,33 @@
     }
 
     // ============================================================================
-    // 2. GERADOR DE SESSÃO REAPER (.RPP) — LAYOUT FIXO POR INSTRUMENTO + REGIÕES
+    // 2. GERADOR DE SESSÃO REAPER (.RPP) — DURAÇÃO EXATA + MIDI HOLYRICS + OFFLINE
     // ============================================================================
     let localVsRootHandle = null;
-    let localVsSubfolders = []; // [{ nome, handle, files: [{ name, relPath, handle }] }]
+    let localVsSubfolders = [];
+    let customMidiMemory = {}; // chaveMusica -> { bpm, slides, midiBytes, base64 }
 
-    // Ordem exata e cores das Tracks iguais ao layout do Reaper
     const REAPER_FIXED_SLOTS = [
-      { id: "METRONOME", name: "Metronome", r: 150, g: 58,  b: 198, isClickGuide: true },
-      { id: "GUIA",      name: "Guia",      r: 215, g: 75,  b: 125, isClickGuide: true, optional: true },
-      { id: "VOCALS",    name: "Vocals",    r: 198, g: 132, b: 74,  isClickGuide: false },
-      { id: "OTHERS",    name: "Others",    r: 98,  g: 58,  b: 142, isClickGuide: false },
-      { id: "PIANO",     name: "Piano",     r: 146, g: 112, b: 214, isClickGuide: false },
-      { id: "KEYS",      name: "Keys",      r: 108, g: 186, b: 152, isClickGuide: false },
-      { id: "DRUMS",     name: "Drums",     r: 212, g: 178, b: 122, isClickGuide: false },
-      { id: "GUITAR",    name: "Guitar",    r: 178, g: 116, b: 142, isClickGuide: false },
-      { id: "STRINGS",   name: "Strings",   r: 132, g: 196, b: 64,  isClickGuide: false },
-      { id: "BASS",      name: "Bass",      r: 172, g: 118, b: 92,  isClickGuide: false }
+      { id: "HOLYRICS_MIDI", name: "Holyrics MIDI", r: 0,   g: 205, b: 255, isClickGuide: false, isMidi: true, optional: true },
+      { id: "METRONOME",     name: "Metronome",     r: 150, g: 58,  b: 198, isClickGuide: true },
+      { id: "GUIA",          name: "Guia",          r: 215, g: 75,  b: 125, isClickGuide: true, optional: true },
+      { id: "VOCALS",        name: "Vocals",        r: 198, g: 132, b: 74,  isClickGuide: false },
+      { id: "OTHERS",        name: "Others",        r: 98,  g: 58,  b: 142, isClickGuide: false },
+      { id: "PIANO",         name: "Piano",         r: 146, g: 112, b: 214, isClickGuide: false },
+      { id: "KEYS",          name: "Keys",          r: 108, g: 186, b: 152, isClickGuide: false },
+      { id: "DRUMS",         name: "Drums",         r: 212, g: 178, b: 122, isClickGuide: false },
+      { id: "GUITAR",        name: "Guitar",        r: 178, g: 116, b: 142, isClickGuide: false },
+      { id: "STRINGS",       name: "Strings",       r: 132, g: 196, b: 64,  isClickGuide: false },
+      { id: "BASS",          name: "Bass",          r: 172, g: 118, b: 92,  isClickGuide: false }
     ];
 
     function rgbToReaperNative(r, g, b) {
       return ((r & 0xff) | ((g & 0xff) << 8) | ((b & 0xff) << 16)) | 0x1000000;
     }
 
-    // No Reaper, arquivos .m4a / .mp4 / .aac usam obrigatoriamente <SOURCE VIDEO
     function getReaperSourceTagByFilename(fileName) {
       const ext = (String(fileName).match(/\.([a-z0-9]+)$/i)?.[1] || "mp3").toLowerCase();
+      if (ext === "mid" || ext === "midi") return "MIDI";
       if (ext === "m4a" || ext === "mp4" || ext === "aac" || ext === "mov") return "VIDEO";
       if (ext === "wav" || ext === "aif" || ext === "aiff") return "WAVE";
       if (ext === "flac") return "FLAC";
@@ -1368,8 +1520,8 @@
       return "MP3";
     }
 
-    // Classifica pelo final do nome do arquivo (evita confundir palavras do título da música, ex: Moises)
     function classifyTrackSlotForReaper(fileName, folderName = "") {
+      if (/\.(mid|midi)$/i.test(fileName)) return "HOLYRICS_MIDI";
       let clean = String(fileName).replace(/\.[a-z0-9]+$/i, "");
       if (folderName && clean.toLowerCase().startsWith(folderName.toLowerCase())) {
         clean = clean.slice(folderName.length);
@@ -1405,7 +1557,6 @@
         .trim();
     }
 
-    // Busca inteligente de pasta (ignora "Cantor - ", underlines, "(Ao Vivo)", etc.)
     function findBestFolderMatch(musica, autor, folderList) {
       if (!musica || !folderList || !folderList.length) return "";
       const exactNorm = normalizeSongKey(removeHymnPrefix(musica));
@@ -1442,7 +1593,7 @@
     async function scanAudioFilesRecursive(dirHandle, prefix = "") {
       const results = [];
       for await (const entry of dirHandle.values()) {
-        if (entry.kind === "file" && /\.(m4a|mp3|wav|ogg|flac|aac)$/i.test(entry.name)) {
+        if (entry.kind === "file" && /\.(m4a|mp3|wav|ogg|flac|aac|mid|midi)$/i.test(entry.name)) {
           results.push({ name: entry.name, relPath: prefix ? `${prefix}\\${entry.name}` : entry.name, handle: entry });
         } else if (entry.kind === "directory") {
           const sub = await scanAudioFilesRecursive(entry, prefix ? `${prefix}\\${entry.name}` : entry.name);
@@ -1454,7 +1605,7 @@
 
     async function pickLocalVsDirectoryForReaper() {
       if (!window.showDirectoryPicker) {
-        alert("Use o Chrome ou Edge no computador para ler a pasta local diretamente, ou preencha o caminho completo manualmente abaixo.");
+        alert("Use o Chrome ou Edge no computador para ler/salvar na pasta local diretamente.");
         return;
       }
       try {
@@ -1469,7 +1620,7 @@
           }
         }
         localVsSubfolders.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-        document.getElementById("reaper-local-folder-status").innerHTML = `<span class="text-emerald-400 font-bold">✓ Pasta "${localVsRootHandle.name}" conectada (${localVsSubfolders.length} pastas de músicas lidas do PC). O .RPP será salvo direto dentro dela!</span>`;
+        document.getElementById("reaper-local-folder-status").innerHTML = `<span class="text-emerald-400 font-bold">✓ Pasta "${localVsRootHandle.name}" conectada (${localVsSubfolders.length} subpastas locais).</span>`;
         renderReaperSongMappingList();
       } catch (e) {}
     }
@@ -1490,6 +1641,7 @@
           : (it.forcedFolderRef || findBestFolderMatch(info.musica, info.autor, folderList));
         it.selectedFolderRef = preMatched;
 
+        const hasSavedMidi = !!customMidiMemory[normalizeSongKey(info.musica)];
         const optionsHtml = `<option value="">-- Sem VS (apenas Região guia) --</option>` + folderList.map(f => {
           const val = f.folderRef || f.nome;
           return `<option value="${String(val).replace(/"/g, '&quot;')}" ${val === preMatched ? "selected" : ""}>${f.nome}</option>`;
@@ -1497,7 +1649,7 @@
 
         return `
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 bg-slate-900 px-2.5 py-2 rounded-lg border ${preMatched ? 'border-emerald-500/30' : 'border-amber-500/40'}">
-            <span class="font-bold text-white truncate text-xs">${idx + 1}. ${info.musica} <span class="text-amber-400">(${info.tom})</span></span>
+            <span class="font-bold text-white truncate text-xs">${idx + 1}. ${info.musica} <span class="text-amber-400">(${info.tom})</span> ${hasSavedMidi ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 ml-1">MIDI Pronto</span>' : ''}</span>
             <select onchange="reaperTargetPayload.items[${idx}].selectedFolderRef=this.value" class="sm:w-64 px-2 py-1 bg-slate-800 border border-slate-700 rounded text-[11px] text-slate-200">
               ${optionsHtml}
             </select>
@@ -1508,6 +1660,9 @@
     async function openReaperModal(repId) {
       const rep = repertorios.find(r => r.id === Number(repId));
       if (!rep) return;
+      const savedMidis = await dbGet("catalog", "midiAutomations");
+      if (savedMidis) customMidiMemory = savedMidis;
+
       reaperTargetPayload = {
         fileName: `Culto_DOXA_${String(rep.dia).replace(/[\\/:]/g, "-")}.rpp`,
         label: `Culto: ${rep.dia} (${rep.culto}) — ${(rep.itens || []).length} músicas`,
@@ -1516,6 +1671,7 @@
       document.getElementById("reaper-base-path").value = localStorage.getItem("doxa_reaper_base_path") || "";
       document.getElementById("reaper-modal-subtitle").textContent = reaperTargetPayload.label;
       document.getElementById("reaper-export-status").classList.add("hidden");
+      document.getElementById("reaper-progress-wrap")?.classList.add("hidden");
       document.getElementById("reaper-modal").classList.remove("hidden");
       document.getElementById("reaper-modal").classList.add("flex");
       if (vsFolders.length === 0 && localVsSubfolders.length === 0) await loadVsFolders(false);
@@ -1524,6 +1680,9 @@
 
     async function exportCurrentVsSongToReaper() {
       if (!selectedVsFolderRef || !selectedVsFolderName) return;
+      const savedMidis = await dbGet("catalog", "midiAutomations");
+      if (savedMidis) customMidiMemory = savedMidis;
+
       const cat = findFullSongByName(selectedVsFolderName) || {};
       reaperTargetPayload = {
         fileName: `VS_DOXA_${selectedVsFolderName.replace(/[\\/:*?"<>|]/g, "")}.rpp`,
@@ -1533,6 +1692,7 @@
       document.getElementById("reaper-base-path").value = localStorage.getItem("doxa_reaper_base_path") || "";
       document.getElementById("reaper-modal-subtitle").textContent = reaperTargetPayload.label;
       document.getElementById("reaper-export-status").classList.add("hidden");
+      document.getElementById("reaper-progress-wrap")?.classList.add("hidden");
       document.getElementById("reaper-modal").classList.remove("hidden");
       document.getElementById("reaper-modal").classList.add("flex");
       renderReaperSongMappingList();
@@ -1541,11 +1701,10 @@
     function closeReaperModal() { document.getElementById("reaper-modal").classList.add("hidden"); document.getElementById("reaper-modal").classList.remove("flex"); }
     function abrirReaperAtualPalco() { const sel = document.getElementById("palco-select-repertorio"); if (sel && sel.value) openReaperModal(Number(sel.value)); }
 
-    function getLocalAudioFileDuration(fileHandle) {
-      return new Promise(async (resolve) => {
+    function measureBlobAudioDuration(blob) {
+      return new Promise((resolve) => {
         try {
-          const file = await fileHandle.getFile();
-          const url = URL.createObjectURL(file);
+          const url = URL.createObjectURL(blob);
           const a = new Audio();
           a.preload = "metadata";
           a.onloadedmetadata = () => { const d = a.duration; URL.revokeObjectURL(url); resolve((d && isFinite(d)) ? d : 0); };
@@ -1555,21 +1714,118 @@
       });
     }
 
-    async function generateReaperRppFile() {
+    async function getMaxDurationFromLocalFiles(fileEntryList) {
+      const audioEntries = fileEntryList.filter(f => !/\.(mid|midi)$/i.test(f.name));
+      if (audioEntries.length === 0) return 0;
+      const durations = await Promise.all(audioEntries.map(async (entry) => {
+        try {
+          const file = await entry.handle.getFile();
+          return await measureBlobAudioDuration(file);
+        } catch (e) { return 0; }
+      }));
+      return Math.max(0, ...durations);
+    }
+
+    // Converte arquivo .mid binário (ou slides salvos) em bloco nativo <SOURCE MIDI do Reaper (100% embutido no .RPP!)
+    function parseStandardMidiBytesToReaperSource(midiBytes, songLenSec, bpm) {
+      try {
+        const view = new DataView(midiBytes.buffer, midiBytes.byteOffset, midiBytes.byteLength);
+        if (view.getUint32(0) !== 0x4d546864) return null; // "MThd"
+        const headerLen = view.getUint32(4);
+        const numTracks = view.getUint16(10);
+        const division = view.getUint16(12) || 480;
+
+        let offset = 8 + headerLen;
+        let allEvents = []; // { absTicks, b0, b1, b2 }
+
+        for (let t = 0; t < numTracks && offset < view.byteLength; t++) {
+          if (view.getUint32(offset) !== 0x4d54726b) break; // "MTrk"
+          const trkLen = view.getUint32(offset + 4);
+          let pos = offset + 8;
+          const end = pos + trkLen;
+          let absTicks = 0;
+          let runningStatus = 0;
+
+          const readVarLen = () => {
+            let val = 0, b = 0;
+            do { b = view.getUint8(pos++); val = (val << 7) | (b & 0x7f); } while ((b & 0x80) && pos < end);
+            return val;
+          };
+
+          while (pos < end) {
+            absTicks += readVarLen();
+            let status = view.getUint8(pos);
+            if (status < 0x80) { status = runningStatus; } else { pos++; runningStatus = status; }
+
+            if (status === 0xff) {
+              const metaType = view.getUint8(pos++);
+              const len = readVarLen();
+              pos += len;
+            } else if (status === 0xf0 || status === 0xf7) {
+              const len = readVarLen();
+              pos += len;
+            } else {
+              const type = status & 0xf0;
+              const d1 = view.getUint8(pos++);
+              const d2 = (type === 0xc0 || type === 0xd0) ? 0 : view.getUint8(pos++);
+              if (type === 0x80 || type === 0x90 || type === 0xb0 || type === 0xc0) {
+                allEvents.push({ absTicks, status, d1, d2 });
+              }
+            }
+          }
+          offset = end;
+        }
+
+        allEvents.sort((a, b) => a.absTicks - b.absTicks);
+        const totalTicks = Math.ceil((songLenSec * (bpm || 120) / 60) * division);
+        let prevTicks = 0, lines = "";
+        allEvents.forEach(ev => {
+          const delta = Math.max(0, ev.absTicks - prevTicks);
+          prevTicks = ev.absTicks;
+          lines += `        E ${delta} ${ev.status.toString(16).padStart(2, "0")} ${ev.d1.toString(16).padStart(2, "0")} ${ev.d2.toString(16).padStart(2, "0")}\n`;
+        });
+        const remTicks = Math.max(0, totalTicks - prevTicks);
+        lines += `        E ${remTicks} b0 7b 00\n`;
+
+        return `      <SOURCE MIDI\n        HASDATA 1 ${division} QN\n${lines}      >\n`;
+      } catch (e) { return null; }
+    }
+
+    // Baixa todos os áudios e MIDIs do Google Drive para uma pasta local no PC com barra de progresso e gera o .RPP 100% offline
+    async function downloadVsOfflineAndGenerateReaperRpp() {
+      if (!window.showDirectoryPicker) {
+        alert("Para salvar os arquivos de áudio e o projeto .RPP diretamente numa pasta local do seu computador, abra o aplicativo pelo Chrome ou Edge no Windows/Mac.");
+        return;
+      }
+      try {
+        localVsRootHandle = await window.showDirectoryPicker({ mode: "readwrite" });
+      } catch (e) { return; }
+
+      await generateReaperRppFile(true);
+    }
+
+    async function generateReaperRppFile(downloadFromCloudToDisk = false) {
       if (!reaperTargetPayload || !reaperTargetPayload.items.length) return;
       const basePath = document.getElementById("reaper-base-path").value.trim().replace(/[\\/]+$/, "");
       localStorage.setItem("doxa_reaper_base_path", basePath);
       const routing = document.getElementById("reaper-routing-mode").value;
-      const fallbackSec = Math.max(120, Number(document.getElementById("reaper-slot-sec").value) || 270);
+      const fallbackSec = Math.max(120, Number(document.getElementById("reaper-slot-sec").value) || 300);
       const autoStop = document.getElementById("reaper-auto-stop").checked;
       const autoBpm = document.getElementById("reaper-auto-bpm").checked;
 
-      const statusBox = document.getElementById("reaper-export-status"), btn = document.getElementById("btn-run-reaper-export");
-      statusBox.classList.remove("hidden"); btn.disabled = true;
-      statusBox.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1 text-purple-400"></i>Organizando canais por instrumento e regiões...`;
+      const statusBox = document.getElementById("reaper-export-status");
+      const btn = document.getElementById("btn-run-reaper-export");
+      const btnPack = document.getElementById("btn-download-reaper-pack");
+      const progWrap = document.getElementById("reaper-progress-wrap");
+      const progBar = document.getElementById("reaper-progress-bar");
+      const progTxt = document.getElementById("reaper-progress-text");
+      const progPct = document.getElementById("reaper-progress-pct");
+
+      statusBox.classList.remove("hidden");
+      btn.disabled = true; if (btnPack) btnPack.disabled = true;
+      statusBox.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1 text-purple-400"></i>Preparando faixas, medindo duração real e montando regiões...`;
 
       try {
-        // Cria os barramentos fixos de instrumentos (e extras caso alguma música tenha 2 guitarras, etc.)
         const trackLanes = REAPER_FIXED_SLOTS.map(s => Object.assign({ itemsRpp: [] }, s));
         const getOrCreateLane = (slotId, usedInThisSong) => {
           let count = (usedInThisSong[slotId] || 0) + 1;
@@ -1587,7 +1843,6 @@
         };
 
         let markersRpp = "", tempoPoints = "", firstBpm = 120, cursorSec = 0, logHtml = "";
-        const GAP_SEC = 16;
         const regionColor = rgbToReaperNative(42, 157, 178);
         const items = reaperTargetPayload.items;
 
@@ -1595,66 +1850,167 @@
           const rawIt = items[i];
           const info = getResolvedSongDetails(rawIt);
           const chosenRef = rawIt.selectedFolderRef || "";
+          const bpmNum = parseFloat(String(info.tempo || rawIt.tempo || "").replace(",", ".").replace(/[^0-9.]/g, "")) || 120;
           let songLenSec = fallbackSec;
-          let songFiles = []; // [{ displayName, filePath, srcTag, slotId }]
+          let songFiles = [];
           let folderNameUsed = "";
 
           if (chosenRef.startsWith("LOCAL::")) {
             const localFolder = localVsSubfolders.find(f => f.folderRef === chosenRef);
             if (localFolder) {
               folderNameUsed = localFolder.nome;
-              const measured = await getLocalAudioFileDuration(localFolder.files[0].handle);
-              if (measured > 15) songLenSec = Math.ceil(measured);
-              songFiles = localFolder.files.map(f => ({
-                displayName: f.name,
-                filePath: localVsRootHandle ? `${localFolder.nome}\\${f.relPath}` : (basePath ? `${basePath}\\${localFolder.nome}\\${f.relPath}` : `${localFolder.nome}\\${f.relPath}`),
-                srcTag: getReaperSourceTagByFilename(f.name),
-                slotId: classifyTrackSlotForReaper(f.name, localFolder.nome)
-              }));
+              const maxDur = await getMaxDurationFromLocalFiles(localFolder.files);
+              if (maxDur > 15) songLenSec = Math.ceil(maxDur);
+
+              for (const f of localFolder.files) {
+                let inlineMidiBlock = null;
+                if (/\.(mid|midi)$/i.test(f.name)) {
+                  try {
+                    const mFile = await f.handle.getFile();
+                    const mBytes = new Uint8Array(await mFile.arrayBuffer());
+                    inlineMidiBlock = parseStandardMidiBytesToReaperSource(mBytes, songLenSec, bpmNum);
+                  } catch (e) {}
+                }
+                songFiles.push({
+                  displayName: f.name,
+                  filePath: localVsRootHandle ? `${localFolder.nome}\\${f.relPath}` : (basePath ? `${basePath}\\${localFolder.nome}\\${f.relPath}` : `${localFolder.nome}\\${f.relPath}`),
+                  srcTag: getReaperSourceTagByFilename(f.name),
+                  slotId: classifyTrackSlotForReaper(f.name, localFolder.nome),
+                  inlineMidiBlock
+                });
+              }
             }
           } else if (chosenRef) {
             const driveFolder = vsFolders.find(f => f.folderRef === chosenRef);
             if (driveFolder) {
               folderNameUsed = driveFolder.nome;
               let faixasData = await dbGet("catalog", "vsFolder_" + driveFolder.folderRef);
-              const needsFresh = !faixasData || !faixasData.faixas || (faixasData.faixas[0] && !faixasData.faixas[0].nomeArquivo);
-              if (needsFresh && navigator.onLine && scriptUrl) {
-                const r = await fetch(`${scriptUrl}?action=listarFaixasVs&folderRef=${encodeURIComponent(driveFolder.folderRef)}`);
-                faixasData = await r.json();
-                if (faixasData && faixasData.status === "ok") await dbPut("catalog", "vsFolder_" + driveFolder.folderRef, faixasData);
+              if (!faixasData || !faixasData.faixas || navigator.onLine) {
+                try {
+                  const r = await fetch(`${scriptUrl}?action=listarFaixasVs&folderRef=${encodeURIComponent(driveFolder.folderRef)}`);
+                  const fresh = await r.json();
+                  if (fresh && fresh.status === "ok") { faixasData = fresh; await dbPut("catalog", "vsFolder_" + driveFolder.folderRef, fresh); }
+                } catch (e) {}
               }
+
+              const faixas = (faixasData && faixasData.faixas) || [];
               const sep = (!basePath || basePath.includes("\\") || /^[a-zA-Z]:/.test(basePath)) ? "\\" : "/";
-              songFiles = ((faixasData && faixasData.faixas) || []).map(fx => {
-                const realName = fx.nomeArquivo || `${fx.nomeFaixa}.m4a`;
-                return {
-                  displayName: realName,
-                  filePath: basePath ? `${basePath}${sep}${driveFolder.nome}${sep}${realName}` : `${driveFolder.nome}${sep}${realName}`,
-                  srcTag: getReaperSourceTagByFilename(realName),
-                  slotId: classifyTrackSlotForReaper(realName, driveFolder.nome)
-                };
+
+              if (downloadFromCloudToDisk && localVsRootHandle && faixas.length > 0) {
+                progWrap.classList.remove("hidden");
+                const safeFolderName = driveFolder.nome.replace(/[\\/:*?"<>|]/g, "");
+                const songDirHandle = await localVsRootHandle.getDirectoryHandle(safeFolderName, { create: true });
+                let maxMeasuredSec = 0;
+
+                for (let fIdx = 0; fIdx < faixas.length; fIdx++) {
+                  const fx = faixas[fIdx];
+                  const realName = (fx.nomeArquivo || `${fx.nomeFaixa}.m4a`).replace(/[\\/:*?"<>|]/g, "");
+                  const overallPct = Math.round((((i) + ((fIdx + 1) / faixas.length)) / items.length) * 100);
+                  progBar.style.width = `${overallPct}%`;
+                  progPct.textContent = `${overallPct}%`;
+                  progTxt.textContent = `Música ${i + 1}/${items.length} (${info.musica}): Baixando ${realName} (${fIdx + 1}/${faixas.length})...`;
+
+                  const rawAudio = await fetchTrackCachedOrNetwork(fx.audioRef, true);
+                  const fileBytes = base64ToUint8Array(rawAudio.base64);
+                  const fileBlob = new Blob([fileBytes], { type: rawAudio.mimeType || "audio/mp4" });
+
+                  // Grava o arquivo fisicamente na subpasta da música no PC
+                  const fHandle = await songDirHandle.getFileHandle(realName, { create: true });
+                  const w = await fHandle.createWritable();
+                  await w.write(fileBlob);
+                  await w.close();
+
+                  let inlineMidiBlock = null;
+                  if (/\.(mid|midi)$/i.test(realName)) {
+                    inlineMidiBlock = parseStandardMidiBytesToReaperSource(fileBytes, fallbackSec, bpmNum);
+                  } else {
+                    const dur = await measureBlobAudioDuration(fileBlob);
+                    if (dur > maxMeasuredSec) maxMeasuredSec = dur;
+                  }
+
+                  songFiles.push({
+                    displayName: realName,
+                    filePath: `${safeFolderName}\\${realName}`,
+                    srcTag: getReaperSourceTagByFilename(realName),
+                    slotId: classifyTrackSlotForReaper(realName, driveFolder.nome),
+                    inlineMidiBlock
+                  });
+                }
+                if (maxMeasuredSec > 15) songLenSec = Math.ceil(maxMeasuredSec);
+              } else {
+                // Modo rápido (mede duração de 1 faixa de referência se estiver online para não cortar a música!)
+                const refAudioTrack = faixas.find(fx => !/\.(mid|midi)$/i.test(fx.nomeArquivo || ""));
+                if (refAudioTrack) {
+                  try {
+                    progWrap.classList.remove("hidden");
+                    progTxt.textContent = `Medindo duração exata de: ${info.musica}...`;
+                    progBar.style.width = `${Math.round(((i + 0.5) / items.length) * 100)}%`;
+                    const rawRef = await fetchTrackCachedOrNetwork(refAudioTrack.audioRef, false);
+                    const refBlob = new Blob([base64ToUint8Array(rawRef.base64)], { type: rawRef.mimeType || "audio/mp4" });
+                    const realDur = await measureBlobAudioDuration(refBlob);
+                    if (realDur > 15) songLenSec = Math.ceil(realDur);
+                  } catch (e) {}
+                }
+
+                for (const fx of faixas) {
+                  const realName = fx.nomeArquivo || `${fx.nomeFaixa}.m4a`;
+                  let inlineMidiBlock = null;
+                  if (/\.(mid|midi)$/i.test(realName)) {
+                    try {
+                      const rawMidi = await fetchTrackCachedOrNetwork(fx.audioRef, true);
+                      inlineMidiBlock = parseStandardMidiBytesToReaperSource(base64ToUint8Array(rawMidi.base64), songLenSec, bpmNum);
+                    } catch (e) {}
+                  }
+                  songFiles.push({
+                    displayName: realName,
+                    filePath: basePath ? `${basePath}${sep}${driveFolder.nome}${sep}${realName}` : `${driveFolder.nome}${sep}${realName}`,
+                    srcTag: getReaperSourceTagByFilename(realName),
+                    slotId: classifyTrackSlotForReaper(realName, driveFolder.nome),
+                    inlineMidiBlock
+                  });
+                }
+              }
+            }
+          }
+
+          // Verifica se o usuário criou um MIDI para esta música na aba "MIDI & Holyrics" do App
+          const appMidi = customMidiMemory[normalizeSongKey(info.musica)];
+          const alreadyHasMidiInFolder = songFiles.some(sf => sf.slotId === "HOLYRICS_MIDI");
+          if (appMidi && appMidi.base64 && !alreadyHasMidiInFolder) {
+            const mBytes = base64ToUint8Array(appMidi.base64);
+            const inlineMidiBlock = parseStandardMidiBytesToReaperSource(mBytes, songLenSec, bpmNum);
+            if (inlineMidiBlock) {
+              songFiles.unshift({
+                displayName: `${info.musica}_Holyrics.mid`,
+                filePath: "",
+                srcTag: "MIDI",
+                slotId: "HOLYRICS_MIDI",
+                inlineMidiBlock
               });
             }
           }
 
-          const bpmNum = parseFloat(String(info.tempo || rawIt.tempo || "").replace(",", ".").replace(/[^0-9.]/g, ""));
           if (autoBpm && bpmNum >= 40 && bpmNum <= 240) {
             if (i === 0) firstBpm = bpmNum;
             tempoPoints += `    PT ${cursorSec.toFixed(6)} ${bpmNum} 1\n`;
           }
 
-          // Cria a REGIÃO azul no topo da timeline (início + fim com flag 1) igual à imagem
           const regionTitle = `${i + 1}. ${info.musica} (${info.tom})`.replace(/"/g, "'");
           const endSec = cursorSec + songLenSec;
           markersRpp += `  MARKER ${i + 1} ${cursorSec.toFixed(6)} "${regionTitle}" 1 ${regionColor} 1 R\n`;
           markersRpp += `  MARKER ${i + 1} ${endSec.toFixed(6)} "" 1\n`;
-          if (autoStop) markersRpp += `  MARKER ${100 + i} ${endSec.toFixed(6)} "!1016" 0 0 1 R\n`;
+          if (autoStop) markersRpp += `  MARKER ${100 + i} ${(endSec - 0.05).toFixed(6)} "!1016" 0 0 1 R\n`;
 
           if (songFiles.length === 0) {
-            logHtml += `<div class="text-amber-300">⚠️ <strong>${info.musica}:</strong> Sem arquivos vinculados (Região ${i + 1} criada)</div>`;
+            logHtml += `<div class="text-amber-300">⚠️ <strong>${info.musica}:</strong> Sem arquivos vinculados (Região ${i + 1} criada com ${formatSeconds(songLenSec)})</div>`;
           } else {
             const usedSlotsInSong = {};
             songFiles.forEach(sf => {
               const lane = getOrCreateLane(sf.slotId, usedSlotsInSong);
+              const sourceBlock = sf.inlineMidiBlock
+                ? sf.inlineMidiBlock
+                : `      <SOURCE ${sf.srcTag}\n        FILE "${sf.filePath}"\n      >\n`;
+
               lane.itemsRpp.push(
                 `    <ITEM\n` +
                 `      POSITION ${cursorSec.toFixed(6)}\n` +
@@ -1663,24 +2019,21 @@
                 `      FADEIN 1 0.01 0 1 0 0 0\n` +
                 `      FADEOUT 1 0.05 0 1 0 0 0\n` +
                 `      NAME "${sf.displayName.replace(/"/g, "'")}"\n` +
-                `      <SOURCE ${sf.srcTag}\n` +
-                `        FILE "${sf.filePath}"\n` +
-                `      >\n` +
+                sourceBlock +
                 `    >\n`
               );
             });
-            logHtml += `<div class="text-emerald-400">✓ <strong>Região ${i + 1} (${info.musica}):</strong> ${songFiles.length} canais distribuídos (${folderNameUsed})</div>`;
+            logHtml += `<div class="text-emerald-400">✓ <strong>Região ${i + 1} (${info.musica}):</strong> ${songFiles.length} faixas • Duração: <strong>${formatSeconds(songLenSec)}</strong></div>`;
           }
 
-          cursorSec = endSec + GAP_SEC;
+          cursorSec = endSec;
         }
 
-        // Monta apenas as tracks fixas de instrumentos (ocultando "Guia" se nenhuma música tiver guia separada)
         let tracksRpp = "";
         trackLanes.forEach(lane => {
           if (lane.optional && lane.itemsRpp.length === 0) return;
           const peakCol = rgbToReaperNative(lane.r, lane.g, lane.b);
-          const panVal = routing === "SPLIT_LR" ? (lane.isClickGuide ? -1 : 1) : 0;
+          const panVal = (routing === "SPLIT_LR" && !lane.isMidi) ? (lane.isClickGuide ? -1 : 1) : 0;
           const routingLines = (routing === "MULTI_OUT" && lane.isClickGuide)
             ? `    MAINSEND 0 0\n    HWOUT 2 0 1 0 0 0 1 -1:U -1\n`
             : `    MAINSEND 1 0\n`;
@@ -1699,25 +2052,24 @@
         const tempoEnvBlock = tempoPoints ? `  <TEMPOENVEX\n${tempoPoints}  >\n` : "";
         const rppContent = `<REAPER_PROJECT 0.1 "7.0" 1730000000\n  TEMPO ${firstBpm} 4 4\n${tempoEnvBlock}${markersRpp}${tracksRpp}>\n`;
 
-        // Se a pasta local do PC foi conectada, salva o .RPP direto dentro dela!
         if (localVsRootHandle) {
           const fileHandle = await localVsRootHandle.getFileHandle(reaperTargetPayload.fileName, { create: true });
           const writable = await fileHandle.createWritable();
           await writable.write(rppContent);
           await writable.close();
-          statusBox.innerHTML = `<p class="font-bold text-emerald-300 mb-1">✅ Salvo direto na sua pasta "${localVsRootHandle.name}\\${reaperTargetPayload.fileName}"! Basta dar 2 cliques nele lá para abrir no Reaper.</p>${logHtml}`;
+          statusBox.innerHTML = `<p class="font-bold text-emerald-300 mb-1">✅ Projeto e arquivos salvos em "${localVsRootHandle.name}\\${reaperTargetPayload.fileName}"! Pronto para tocar 100% offline no Reaper.</p>${logHtml}`;
         } else {
           const a = document.createElement("a");
           a.href = URL.createObjectURL(new Blob([rppContent], { type: "application/octet-stream" }));
           a.download = reaperTargetPayload.fileName;
           a.click();
-          const tip = !basePath ? `<p class="text-amber-300 font-semibold mt-1">💡 Dica: Mova o arquivo .RPP baixado para dentro da sua pasta geral de VS no PC antes de abrir.</p>` : "";
-          statusBox.innerHTML = `<p class="font-bold text-white mb-1">Projeto .RPP baixado!</p>${logHtml}${tip}`;
+          statusBox.innerHTML = `<p class="font-bold text-white mb-1">Projeto .RPP gerado com durações reais!</p>${logHtml}`;
         }
       } catch (e) {
         statusBox.innerHTML = `<div class="text-rose-400">Erro ao gerar projeto: ${e.message || e}</div>`;
       } finally {
-        btn.disabled = false;
+        progWrap?.classList.add("hidden");
+        btn.disabled = false; if (btnPack) btnPack.disabled = false;
       }
     }
 
@@ -1869,7 +2221,7 @@
       } catch (e) {}
     }
 
-    // CATÁLOGO, ADMIN E SINCRONIZAÇÃO
+    // CATÁLOGO, FILTROS DE MÚSICAS (TEMPO + VEZES), ADMIN E SINCRONIZAÇÃO
     function toggleMobileFilters() { document.getElementById("filters-panel").classList.toggle("hidden"); }
     function parseTags(str) { return str ? String(str).split(/[,;/]+/).map(t => t.trim()).filter(Boolean) : []; }
     function normalizeSongKey(str) { return str ? String(str).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "") : ""; }
@@ -1899,7 +2251,7 @@
         audio: cat.audio || (item && item.audio) || "",
         cifra: cat.cifra || (item && item.cifra) || "",
         letra: cat.letra || (item && item.letra) || "",
-	hasFile: !!fId, fileId: fId,
+        hasFile: !!fId, fileId: fId,
         viewUrl: fId ? `https://drive.google.com/file/d/${fId}/view` : (fixedFolderUrl || "#"),
         previewUrl: fId ? `https://drive.google.com/file/d/${fId}/preview` : ""
       };
@@ -1979,18 +2331,42 @@
       await syncFromGoogleSheet(true);
     }
 
+    function extractNumericBpm(tempoStr) {
+      if (!tempoStr) return 0;
+      const m = String(tempoStr).replace(",", ".").match(/(\d+(\.\d+)?)/);
+      return m ? parseFloat(m[1]) : 0;
+    }
+
     function populateFilterOptions() {
-      const tagSet = new Set(sheetConstants.categorias || []), tomSet = new Set(["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B", "Cm", "Dm", "Em", "Fm", "Gm", "Am", "Bm"]);
-      songs.forEach(s => { parseTags(s.categoria).forEach(t => tagSet.add(t)); if (s.tom) tomSet.add(s.tom.trim()); });
+      const tagSet = new Set(sheetConstants.categorias || []), tomSet = new Set(["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B", "Cm", "Dm", "Em", "Fm", "Gm", "Am", "Bm"]), tempoSet = new Set();
+      songs.forEach(s => {
+        parseTags(s.categoria).forEach(t => tagSet.add(t));
+        if (s.tom) tomSet.add(s.tom.trim());
+        if (s.tempo && String(s.tempo).trim()) tempoSet.add(String(s.tempo).trim());
+      });
       const tags = Array.from(tagSet).sort(), curTag = document.getElementById("filter-tag").value, curTom = document.getElementById("filter-tom").value;
       document.getElementById("filter-tag").innerHTML = `<option value="">Todas as Categorias (${tags.length})</option>` + tags.map(t => `<option value="${t}">${t}</option>`).join("");
       document.getElementById("filter-tag").value = curTag;
       document.getElementById("filter-tom").innerHTML = `<option value="">Todos os Tons</option>` + Array.from(tomSet).sort().map(t => `<option value="${t}">Tom: ${t}</option>`).join("");
       document.getElementById("filter-tom").value = curTom;
+
+      const tempoSel = document.getElementById("filter-tempo");
+      if (tempoSel) {
+        const curTempo = tempoSel.value;
+        const sortedTempos = Array.from(tempoSet).sort((a, b) => extractNumericBpm(a) - extractNumericBpm(b));
+        tempoSel.innerHTML =
+          `<option value="">Tempo / BPM (Todos)</option>` +
+          `<option value="LENTA">Lentas (&lt; 75 BPM)</option>` +
+          `<option value="MEDIA">Médias (75 a 110 BPM)</option>` +
+          `<option value="RAPIDA">Rápidas (&gt; 110 BPM)</option>` +
+          sortedTempos.map(tp => `<option value="EXACT::${tp}">${/bpm/i.test(tp) ? tp : tp + " BPM"}</option>`).join("");
+        tempoSel.value = curTempo;
+      }
+
       document.getElementById("tag-cloud").innerHTML = tags.map(t => `<button onclick="selectTagFilter('${t.replace(/'/g, "\\'")}')" class="shrink-0 text-xs px-2.5 py-0.5 rounded-full border ${curTag === t ? "bg-indigo-600 text-white" : "bg-slate-800 text-slate-300 border-slate-700"}">${t}</button>`).join("");
     }
     function selectTagFilter(t) { const el = document.getElementById("filter-tag"); el.value = el.value === t ? "" : t; resetPageAndRenderSongs(); }
-    function clearFilters() { ["search-input", "filter-tag", "filter-tom", "filter-dificuldade"].forEach(id => document.getElementById(id).value = ""); resetPageAndRenderSongs(); }
+    function clearFilters() { ["search-input", "filter-tag", "filter-tom", "filter-dificuldade", "filter-tempo", "filter-vezes"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; }); resetPageAndRenderSongs(); }
     function resetPageAndRenderSongs() { currentPage = 1; renderSongs(); }
     function changePage(d) { currentPage += d; renderSongs(); window.scrollTo({ top: 0 }); }
     function changePageSize() { pageSize = Number(document.getElementById("page-size-select").value) || 40; currentPage = 1; renderSongs(); }
@@ -1999,11 +2375,33 @@
       populateFilterOptions();
       const q = document.getElementById("search-input").value.toLowerCase().trim();
       const tag = document.getElementById("filter-tag").value, tom = document.getElementById("filter-tom").value, dif = document.getElementById("filter-dificuldade").value;
-      const filtered = songs.filter(s => {
+      const tempoFilter = document.getElementById("filter-tempo")?.value || "";
+      const vezesFilter = document.getElementById("filter-vezes")?.value || "";
+
+      let filtered = songs.filter(s => {
         const tags = parseTags(s.categoria);
-        return (!q || (s.musica && s.musica.toLowerCase().includes(q)) || (s.autor && s.autor.toLowerCase().includes(q)) || (s.ref && s.ref.toLowerCase().includes(q))) &&
-               (!tag || tags.includes(tag)) && (!tom || s.tom === tom) && (!dif || s.dificuldade === dif);
+        const matchText = (!q || (s.musica && s.musica.toLowerCase().includes(q)) || (s.autor && s.autor.toLowerCase().includes(q)) || (s.ref && s.ref.toLowerCase().includes(q)));
+        if (!matchText || (tag && !tags.includes(tag)) || (tom && s.tom !== tom) || (dif && s.dificuldade !== dif)) return false;
+
+        if (tempoFilter) {
+          const bpm = extractNumericBpm(s.tempo);
+          const tLower = String(s.tempo || "").toLowerCase();
+          if (tempoFilter === "LENTA" && !( (bpm > 0 && bpm < 75) || tLower.includes("lent") )) return false;
+          if (tempoFilter === "MEDIA" && !( (bpm >= 75 && bpm <= 110) || tLower.includes("med") || tLower.includes("méd") )) return false;
+          if (tempoFilter === "RAPIDA" && !( bpm > 110 || tLower.includes("rap") || tLower.includes("ráp") )) return false;
+          if (tempoFilter.startsWith("EXACT::") && String(s.tempo || "").trim() !== tempoFilter.slice(7)) return false;
+        }
+
+        const vz = Number(s.vezes) || 0;
+        if (vezesFilter === "ZERO" && vz !== 0) return false;
+        if (vezesFilter === "1_A_5" && (vz < 1 || vz > 5)) return false;
+        if (vezesFilter === "MAIS_5" && vz <= 5) return false;
+        return true;
       });
+
+      if (vezesFilter === "ORD_DESC") filtered.sort((a, b) => (Number(b.vezes) || 0) - (Number(a.vezes) || 0));
+      else if (vezesFilter === "ORD_ASC") filtered.sort((a, b) => (Number(a.vezes) || 0) - (Number(b.vezes) || 0));
+
       const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
       currentPage = Math.min(Math.max(1, currentPage), totalPages);
       const pageItems = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -2063,7 +2461,8 @@
           document.getElementById("song-tempo").value = s.tempo || ""; document.getElementById("song-dificuldade").value = s.dificuldade || "";
           document.getElementById("song-vezes").value = s.vezes || 0; document.getElementById("song-categoria").value = s.categoria || "";
           document.getElementById("song-ref").value = s.ref || ""; document.getElementById("song-audio").value = s.audio || "";
-          document.getElementById("song-cifra").value = s.cifra || ""; document.getElementById("song-letra").value = s.letra || "";
+          document.getElementById("song-cifra").value = s.cifra || "";
+          const elLetra = document.getElementById("song-letra"); if (elLetra) elLetra.value = s.letra || "";
           document.getElementById("song-cifra-doxa").value = s.cifraDoxa || "";
         }
       } else {
@@ -2076,6 +2475,7 @@
     function saveSong(e) {
       e.preventDefault(); if (!isAdmin) return;
       const id = document.getElementById("song-id").value;
+      const elLetra = document.getElementById("song-letra");
       const payload = {
         id: id ? Number(id) : Date.now(),
         musica: document.getElementById("song-musica").value.trim(), autor: document.getElementById("song-autor").value.trim(),
@@ -2083,44 +2483,7 @@
         dificuldade: document.getElementById("song-dificuldade").value.trim(), vezes: Number(document.getElementById("song-vezes").value) || 0,
         categoria: document.getElementById("song-categoria").value.trim(), ref: document.getElementById("song-ref").value.trim(),
         audio: document.getElementById("song-audio").value.trim(), cifra: document.getElementById("song-cifra").value.trim(),
-        letra: document.getElementById("song-letra").value.trim(), cifraDoxa: document.getElementById("song-cifra-doxa").value.trim()
-      };
-      if (id) { const idx = songs.findIndex(s => s.id === Number(id)); if (idx > -1) songs[idx] = payload; } else songs.unshift(payload);
-      closeSongModal(); renderSongs(); pushToGoogleSheet({ action: "saveSong", song: payload });
-    }
-
-    function openSongModal(id = null) {
-      if (!isAdmin) return;
-      document.getElementById("song-form").reset();
-      if (id) {
-        const s = songs.find(x => x.id === id);
-        if (s) {
-          document.getElementById("song-modal-title").textContent = "Editar Música";
-          document.getElementById("song-id").value = s.id; document.getElementById("song-musica").value = s.musica;
-          document.getElementById("song-autor").value = s.autor || ""; document.getElementById("song-tom").value = s.tom || "";
-          document.getElementById("song-tempo").value = s.tempo || ""; document.getElementById("song-dificuldade").value = s.dificuldade || "";
-          document.getElementById("song-vezes").value = s.vezes || 0; document.getElementById("song-categoria").value = s.categoria || "";
-          document.getElementById("song-ref").value = s.ref || ""; document.getElementById("song-audio").value = s.audio || "";
-          document.getElementById("song-cifra").value = s.cifra || ""; document.getElementById("song-cifra-doxa").value = s.cifraDoxa || "";
-        }
-      } else {
-        document.getElementById("song-modal-title").textContent = "Nova Música";
-        document.getElementById("song-id").value = "";
-      }
-      document.getElementById("song-modal").classList.remove("hidden"); document.getElementById("song-modal").classList.add("flex");
-    }
-    function closeSongModal() { document.getElementById("song-modal").classList.add("hidden"); document.getElementById("song-modal").classList.remove("flex"); }
-    function saveSong(e) {
-      e.preventDefault(); if (!isAdmin) return;
-      const id = document.getElementById("song-id").value;
-      const payload = {
-        id: id ? Number(id) : Date.now(),
-        musica: document.getElementById("song-musica").value.trim(), autor: document.getElementById("song-autor").value.trim(),
-        tom: document.getElementById("song-tom").value.trim(), tempo: document.getElementById("song-tempo").value.trim(),
-        dificuldade: document.getElementById("song-dificuldade").value.trim(), vezes: Number(document.getElementById("song-vezes").value) || 0,
-        categoria: document.getElementById("song-categoria").value.trim(), ref: document.getElementById("song-ref").value.trim(),
-        audio: document.getElementById("song-audio").value.trim(), cifra: document.getElementById("song-cifra").value.trim(),
-        cifraDoxa: document.getElementById("song-cifra-doxa").value.trim()
+        letra: elLetra ? elLetra.value.trim() : "", cifraDoxa: document.getElementById("song-cifra-doxa").value.trim()
       };
       if (id) { const idx = songs.findIndex(s => s.id === Number(id)); if (idx > -1) songs[idx] = payload; } else songs.unshift(payload);
       closeSongModal(); renderSongs(); pushToGoogleSheet({ action: "saveSong", song: payload });
@@ -2132,75 +2495,143 @@
     }
 
     // ============================================================================
-    // 3. REPERTÓRIOS (COM CRIAR, EDITAR, REORDENAR E EXCLUIR) & MODO PALCO
+    // 3. REPERTÓRIOS + MODO PALCO UNIFICADOS (COM BOTÃO PRÓXIMO CULTO CORRIGIDO)
     // ============================================================================
     function parseRepDate(dStr) {
       if (!dStr) return null;
-      const p = String(dStr).trim().split(/[\/\-]/);
+      const clean = String(dStr).trim().split(/\s+/)[0];
+      const p = clean.split(/[\/\-]/);
       if (p.length !== 3) return null;
-      let y = parseInt(p[2], 10); if (y < 100) y += 2000;
-      const d = new Date(y, parseInt(p[1], 10) - 1, parseInt(p[0], 10));
+      let day, month, year;
+      if (p[0].length === 4) {
+        year = parseInt(p[0], 10); month = parseInt(p[1], 10) - 1; day = parseInt(p[2], 10);
+      } else {
+        day = parseInt(p[0], 10); month = parseInt(p[1], 10) - 1; year = parseInt(p[2], 10);
+        if (year < 100) year += 2000;
+        if (month > 11 && day <= 12) { const tmp = day; day = month + 1; month = tmp - 1; }
+      }
+      const d = new Date(year, month, day, 12, 0, 0);
       return isNaN(d.getTime()) ? null : d;
     }
     function formatDatePtBr(d) { return d ? `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}` : ""; }
+
     function findNextUpcomingRepertorio() {
       if (repertorios.length === 0) return null;
       const today = new Date(); today.setHours(0, 0, 0, 0);
-      const valid = repertorios.map(r => ({ r, d: parseRepDate(r.dia) })).filter(x => x.d);
-      const up = valid.filter(x => x.d >= today).sort((a, b) => a.d - b.d);
-      return up.length > 0 ? up[0].r : (valid.sort((a, b) => b.d - a.d)[0]?.r || repertorios[0]);
+      const valid = repertorios.map(r => ({ r, d: parseRepDate(r.dia) })).filter(x => x.d !== null);
+      const upcoming = valid.filter(x => x.d.getTime() >= today.getTime()).sort((a, b) => a.d - b.d);
+      if (upcoming.length > 0) return upcoming[0].r;
+      const past = valid.sort((a, b) => b.d - a.d);
+      return past.length > 0 ? past[0].r : repertorios[0];
     }
-    function changeCalendarMonth(d) { calendarCurrentDate = new Date(calendarCurrentDate.getFullYear(), calendarCurrentDate.getMonth() + d, 1); renderCalendar(); }
+
+    function changeCalendarMonth(d) {
+      calendarCurrentDate = new Date(calendarCurrentDate.getFullYear(), calendarCurrentDate.getMonth() + d, 1);
+      renderCalendar();
+    }
+
     function resetCalendarFilter() {
       const next = findNextUpcomingRepertorio();
-      if (next) { selectedRepertorioId = next.id; const d = parseRepDate(next.dia); if (d) calendarCurrentDate = new Date(d.getFullYear(), d.getMonth(), 1); }
-      renderCalendar(); renderFeaturedRepertorio();
+      if (!next) return;
+      selectedRepertorioId = next.id;
+      const d = parseRepDate(next.dia);
+      if (d) calendarCurrentDate = new Date(d.getFullYear(), d.getMonth(), 1);
+      renderCalendar();
+      renderFeaturedRepertorio(true);
+      populatePalcoSelect();
     }
+
+    function selectRepertorioById(repId, isNext = false) {
+      selectedRepertorioId = Number(repId);
+      const rep = repertorios.find(r => r.id === selectedRepertorioId);
+      if (rep) {
+        const d = parseRepDate(rep.dia);
+        if (d) calendarCurrentDate = new Date(d.getFullYear(), d.getMonth(), 1);
+      }
+      renderCalendar();
+      renderFeaturedRepertorio(isNext);
+      populatePalcoSelect();
+    }
+
+    function selectRepertorioFromDropdown(val) {
+      if (!val) return;
+      selectRepertorioById(Number(val), false);
+    }
+
     function renderCalendar() {
       const y = calendarCurrentDate.getFullYear(), m = calendarCurrentDate.getMonth();
       document.getElementById("calendar-month-label").textContent = new Date(y, m, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
       document.getElementById("cal-total-reps").textContent = repertorios.length;
       const first = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate(), map = {};
       repertorios.forEach(r => { const d = parseRepDate(r.dia); if (d && d.getFullYear() === y && d.getMonth() === m) map[d.getDate()] = r; });
-      let html = ""; for (let i = 0; i < first; i++) html += `<div class="h-8"></div>`;
+
+      const selRep = repertorios.find(r => r.id === selectedRepertorioId);
+      const selDate = selRep ? parseRepDate(selRep.dia) : null;
+
+      let html = "";
+      for (let i = 0; i < first; i++) html += `<div class="h-8"></div>`;
       for (let day = 1; day <= days; day++) {
         const rep = map[day];
-        html += rep ? `<button onclick="selectedRepertorioId=${rep.id};renderCalendar();renderFeaturedRepertorio();" class="h-8 rounded-xl bg-slate-800 text-amber-300 border border-amber-500/40 font-bold">${day}</button>` : `<div class="h-8 flex items-center justify-center text-slate-500">${day}</div>`;
+        const isSelected = selDate && selDate.getFullYear() === y && selDate.getMonth() === m && selDate.getDate() === day;
+        html += rep
+          ? `<button type="button" onclick="selectRepertorioById(${rep.id}, false)" class="h-8 rounded-xl font-bold transition flex flex-col items-center justify-center ${isSelected ? 'bg-indigo-600 text-white shadow ring-2 ring-amber-400' : 'bg-slate-800 text-amber-300 border border-amber-500/40 hover:bg-slate-700'}"><span>${day}</span><span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span></button>`
+          : `<div class="h-8 flex items-center justify-center text-slate-500">${day}</div>`;
       }
       document.getElementById("calendar-days-grid").innerHTML = html;
     }
 
-    function renderFeaturedRepertorio() {
-      const rep = repertorios.find(r => r.id === selectedRepertorioId) || findNextUpcomingRepertorio();
+    function renderFeaturedRepertorio(isNextBadge = false) {
+      const nextRep = findNextUpcomingRepertorio();
+      const rep = repertorios.find(r => r.id === selectedRepertorioId) || nextRep;
       if (!rep) return;
       selectedRepertorioId = rep.id;
       const dObj = parseRepDate(rep.dia);
+      const badgeEl = document.getElementById("featured-rep-badge");
+      if (badgeEl) badgeEl.textContent = (isNextBadge || (nextRep && nextRep.id === rep.id)) ? "Próximo Repertório" : "Culto Selecionado";
       document.getElementById("featured-rep-date").textContent = `${dObj ? formatDatePtBr(dObj) : rep.dia} • ${rep.culto}`;
       document.getElementById("featured-rep-actions").innerHTML = `
-        <button onclick="openStageWithRepertorio(${rep.id})" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-bold">Palco</button>
+        <button onclick="scrollToPalcoInline()" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-bold"><i class="fa-solid fa-guitar mr-1"></i>Ver Cifras Abaixo</button>
         <button onclick="salvarCultoOffline(${rep.id})" class="px-3 py-1.5 rounded-xl bg-teal-600 text-white text-xs font-bold">Baixar Offline</button>
         <button onclick="openReaperModal(${rep.id})" class="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold"><i class="fa-solid fa-sliders mr-1"></i>Reaper (.RPP)</button>
         <button onclick="mesclarEBaixarPdfRepertorio(${rep.id})" class="px-3 py-1.5 rounded-xl bg-rose-600 text-white text-xs font-bold">PDF Mesclado</button>
         <button onclick="openWhatsAppModal(${rep.id}, 'equipe')" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold">WA Equipe</button>
         <button onclick="openWhatsAppModal(${rep.id}, 'igreja')" class="px-3 py-1.5 rounded-xl bg-emerald-800 text-emerald-200 text-xs font-bold">WA Igreja</button>
-        ${isAdmin ? `<button onclick="openRepertorioModal(${rep.id})" class="px-3 py-1.5 rounded-xl bg-amber-600 text-white text-xs font-bold"><i class="fa-solid fa-pen mr-1"></i>Editar</button>` : ""}`;
+        ${isAdmin ? `<button onclick="openRepertorioModal(${rep.id})" class="px-3 py-1.5 rounded-xl bg-amber-600 text-white text-xs font-bold"><i class="fa-solid fa-pen mr-1"></i>Editar</button><button onclick="deleteRepertorio(${rep.id})" class="px-2.5 py-1.5 rounded-xl bg-rose-600/20 text-rose-400 text-xs font-bold" title="Excluir Culto"><i class="fa-solid fa-trash"></i></button>` : ""}`;
       document.getElementById("featured-rep-body").innerHTML = `<h3 class="text-base font-extrabold text-white">${rep.tema}</h3><div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${(rep.itens || []).map((it, i) => {
         const info = getResolvedSongDetails(it), sM = String(info.musica).replace(/'/g, "\\'"), sA = String(info.autor || "").replace(/'/g, "\\'");
         return `<div class="flex items-center justify-between bg-slate-800/70 px-3 py-2 rounded-xl border border-slate-700"><div class="min-w-0"><span class="text-[10px] font-bold uppercase text-indigo-400 block">${i + 1}. ${it.momento}</span><span class="text-xs font-bold text-white truncate block">${info.musica}</span></div><div class="flex items-center gap-1">${info.hasFile ? `<button onclick="baixarCifraIndividual('${sM}','${sA}','${info.fileId}','${info.viewUrl}')" class="px-2 py-1 rounded bg-indigo-600/30 text-indigo-200 text-xs"><i class="fa-solid fa-download"></i></button>` : ""}<span class="px-2 py-1 rounded bg-slate-900 text-amber-400 font-bold text-xs">${info.tom}</span></div></div>`;
       }).join("")}</div>`;
     }
 
-    function openStageWithRepertorio(id) { switchTab("palco"); document.getElementById("palco-select-repertorio").value = id; renderPalco(); }
+    function scrollToPalcoInline() {
+      document.getElementById("palco-inline-section")?.scrollIntoView({ behavior: "smooth" });
+    }
+
+    function openStageWithRepertorio(id) {
+      switchTab("repertorios");
+      selectRepertorioById(id, false);
+      setTimeout(scrollToPalcoInline, 150);
+    }
+
     function renderRepertorios() {
-      if (!selectedRepertorioId) { const n = findNextUpcomingRepertorio(); if (n) selectedRepertorioId = n.id; }
-      renderCalendar(); renderFeaturedRepertorio();
-      document.getElementById("repertorios-grid").innerHTML = repertorios.map(rep => `<div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-2"><div class="flex justify-between items-start border-b border-slate-800 pb-2"><div><span class="text-xs font-bold text-amber-300">${rep.dia} • ${rep.culto}</span><h3 class="text-sm font-bold text-white">${rep.tema}</h3></div><div class="flex flex-wrap gap-1"><button onclick="openStageWithRepertorio(${rep.id})" class="px-2 py-1 rounded bg-indigo-600/20 text-indigo-300 text-xs">Palco</button><button onclick="openReaperModal(${rep.id})" class="px-2 py-1 rounded bg-purple-600/20 text-purple-300 text-xs" title="Exportar Reaper .RPP">RPP</button><button onclick="openWhatsAppModal(${rep.id},'equipe')" class="px-2 py-1 rounded bg-emerald-600/20 text-emerald-300 text-xs"><i class="fa-brands fa-whatsapp"></i></button>${isAdmin ? `<button onclick="openRepertorioModal(${rep.id})" class="px-2 py-1 rounded bg-amber-600/25 text-amber-300 text-xs" title="Editar Repertório"><i class="fa-solid fa-pen"></i></button><button onclick="deleteRepertorio(${rep.id})" class="px-2 py-1 rounded bg-rose-600/20 text-rose-400 text-xs" title="Excluir Repertório"><i class="fa-solid fa-trash"></i></button>` : ""}</div></div></div>`).join("");
-      populatePalcoSelect(); updateBadges();
+      if (!selectedRepertorioId) {
+        const n = findNextUpcomingRepertorio();
+        if (n) {
+          selectedRepertorioId = n.id;
+          const d = parseRepDate(n.dia);
+          if (d) calendarCurrentDate = new Date(d.getFullYear(), d.getMonth(), 1);
+        }
+      }
+      renderCalendar();
+      renderFeaturedRepertorio();
+      populatePalcoSelect();
+      updateBadges();
     }
 
     function populatePalcoSelect() {
       const sel = document.getElementById("palco-select-repertorio");
-      sel.innerHTML = repertorios.map(r => `<option value="${r.id}">${r.dia} - ${r.tema}</option>`).join("");
+      if (!sel) return;
+      sel.innerHTML = repertorios.map(r => `<option value="${r.id}">${r.dia} (${r.culto}) — ${r.tema}</option>`).join("");
       if (selectedRepertorioId) sel.value = selectedRepertorioId;
       renderPalco();
     }
@@ -2209,16 +2640,16 @@
 
     function renderPalco() {
       const sel = document.getElementById("palco-select-repertorio");
-      const rep = repertorios.find(r => r.id === Number(sel.value)) || findNextUpcomingRepertorio();
+      const rep = repertorios.find(r => r.id === Number(sel?.value || selectedRepertorioId)) || findNextUpcomingRepertorio();
       const container = document.getElementById("palco-content");
-      if (!rep) return;
+      if (!rep || !container) return;
       const jobs = [];
       container.innerHTML = (rep.itens || []).map((it, i) => {
         const info = getResolvedSongDetails(it), key = normalizeSongKey(info.musica), hasOff = offlineSavedChordKeys.has(key);
         const sM = String(info.musica).replace(/'/g, "\\'"), sA = String(info.autor || "").replace(/'/g, "\\'");
         const tempoStr = info.tempo ? (/bpm/i.test(info.tempo) ? info.tempo : `${info.tempo} BPM`) : "";
         if (hasOff) jobs.push({ musica: info.musica, id: `offline-canvas-wrap-${i}` });
-        return `<div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+        return `<div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-lg">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div class="space-y-1.5 min-w-0 flex-1">
               <div class="flex flex-wrap items-center gap-2">
@@ -2248,6 +2679,12 @@
       const bin = atob(b64), bytes = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
       return bytes;
+    }
+
+    function uint8ArrayToBase64(bytes) {
+      let binary = "";
+      for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+      return btoa(binary);
     }
 
     async function mesclarEBaixarPdfRepertorio(repId) {
@@ -2333,14 +2770,14 @@
         <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900 px-3 py-2 rounded-lg text-xs border border-slate-800">
           <div class="flex items-center gap-2 flex-1 min-w-[180px]">
             <span class="text-amber-400 font-bold">${i + 1}.</span>
-            <input type="text" value="${(it.momento || '').replace(/"/g, '&quot;')}" onchange="draftRepertorioItems[${i}].momento=this.value" class="w-28 px-2 py-1 bg-slate-800 border border-slate-700 rounded text-amber-300 font-semibold text-xs" title="Momento Litúrgico" />
+            <input type="text" value="${(it.momento || '').replace(/"/g, '&quot;')}" onchange="draftRepertorioItems[${i}].momento=this.value" class="w-28 px-2 py-1 bg-slate-800 border border-slate-700 rounded text-amber-300 font-semibold text-xs" />
             <span class="font-bold text-white truncate flex-1">${it.musica}</span>
-            <input type="text" value="${(it.tom || '').replace(/"/g, '&quot;')}" onchange="draftRepertorioItems[${i}].tom=this.value" placeholder="Tom" class="w-12 px-1.5 py-1 bg-slate-800 border border-slate-700 rounded text-center text-amber-400 font-bold text-xs" title="Tom neste culto" />
+            <input type="text" value="${(it.tom || '').replace(/"/g, '&quot;')}" onchange="draftRepertorioItems[${i}].tom=this.value" placeholder="Tom" class="w-12 px-1.5 py-1 bg-slate-800 border border-slate-700 rounded text-center text-amber-400 font-bold text-xs" />
           </div>
           <div class="flex items-center gap-1">
-            <button type="button" onclick="moveDraftItem(${i},-1)" class="w-6 h-6 rounded bg-slate-800 text-slate-300 hover:text-white" title="Subir">↑</button>
-            <button type="button" onclick="moveDraftItem(${i},1)" class="w-6 h-6 rounded bg-slate-800 text-slate-300 hover:text-white" title="Descer">↓</button>
-            <button type="button" onclick="draftRepertorioItems.splice(${i},1);renderDraftRepertorioItems();" class="w-6 h-6 rounded bg-rose-600/20 text-rose-400" title="Remover">×</button>
+            <button type="button" onclick="moveDraftItem(${i},-1)" class="w-6 h-6 rounded bg-slate-800 text-slate-300 hover:text-white">↑</button>
+            <button type="button" onclick="moveDraftItem(${i},1)" class="w-6 h-6 rounded bg-slate-800 text-slate-300 hover:text-white">↓</button>
+            <button type="button" onclick="draftRepertorioItems.splice(${i},1);renderDraftRepertorioItems();" class="w-6 h-6 rounded bg-rose-600/20 text-rose-400">×</button>
           </div>
         </div>`).join("");
     }
@@ -2366,7 +2803,7 @@
       pushToGoogleSheet({ action: editId ? "updateRepertorio" : "saveRepertorio", original: editingOriginalRepMeta, repertorio: payload });
     }
     async function deleteRepertorio(repId) {
-      if (!isAdmin || !confirm("Deseja realmente excluir este repertório da folha de cálculo?")) return;
+      if (!isAdmin || !confirm("Deseja realmente excluir este repertório da planilha?")) return;
       const target = repertorios.find(r => r.id === Number(repId)); if (!target) return;
       repertorios = repertorios.filter(r => r.id !== Number(repId));
       if (selectedRepertorioId === Number(repId)) selectedRepertorioId = null;
@@ -2374,6 +2811,315 @@
       renderRepertorios();
       pushToGoogleSheet({ action: "deleteRepertorio", original: { dia: target.dia, tema: target.tema, culto: target.culto }, repertorio: target });
     }
+
+    // ============================================================================
+    // 4. ESTÚDIO MIDI & HOLYRICS (GABARITO DE SLIDES + GERADOR BINÁRIO .MID)
+    // ============================================================================
+    let midiStudioSong = null;
+    let midiSlides = []; // [{ text, timeSec, midiNote }]
+    let midiTapIndex = 0;
+    let ytPlayerInstance = null;
+    let midiClockInterval = null;
+
+    function filterMidiSongsDropdown() {
+      const q = (document.getElementById("midi-song-search")?.value || "").toLowerCase().trim();
+      const drop = document.getElementById("dropdown-midi-songs");
+      if (!drop) return;
+      const matched = songs.filter(s => !q || (s.musica && s.musica.toLowerCase().includes(q)) || (s.autor && s.autor.toLowerCase().includes(q))).slice(0, 40);
+      drop.innerHTML = matched.map(s => `<button type="button" onclick="selectSongForMidiStudio(${s.id})" class="w-full text-left px-3 py-2 text-xs text-white hover:bg-cyan-600/25 flex justify-between"><span><strong>${s.musica}</strong> (${s.autor || "DOXA"})</span><span class="text-amber-400 font-bold">${s.tempo ? s.tempo + " BPM" : s.tom}</span></button>`).join("");
+      drop.classList.remove("hidden");
+    }
+
+    function selectSongForMidiStudio(songId) {
+      const s = songs.find(x => x.id === Number(songId));
+      if (!s) return;
+      midiStudioSong = getResolvedSongDetails(s);
+      document.getElementById("midi-song-search").value = `${midiStudioSong.musica} (${midiStudioSong.autor})`;
+      document.getElementById("dropdown-midi-songs").classList.add("hidden");
+
+      const bpm = extractNumericBpm(midiStudioSong.tempo);
+      if (bpm >= 40 && bpm <= 240) document.getElementById("midi-bpm-input").value = bpm;
+
+      const letraBtn = document.getElementById("midi-open-letra-btn");
+      const rawLetraUrl = midiStudioSong.letra || `https://www.letras.mus.br/?q=${encodeURIComponent(midiStudioSong.musica + " " + midiStudioSong.autor)}`;
+      if (letraBtn) {
+        letraBtn.href = rawLetraUrl;
+        letraBtn.classList.remove("hidden");
+        letraBtn.classList.add("inline-flex");
+      }
+
+      if (midiStudioSong.audio) {
+        document.getElementById("midi-youtube-url").value = midiStudioSong.audio;
+        loadYoutubeForMidiStudio();
+      }
+    }
+
+    function extractYoutubeVideoId(url) {
+      if (!url) return "";
+      const m = String(url).match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+      return (m && m[1]) ? m[1] : "";
+    }
+
+    function loadYoutubeForMidiStudio() {
+      const url = document.getElementById("midi-youtube-url").value.trim();
+      const vid = extractYoutubeVideoId(url);
+      const wrap = document.getElementById("midi-yt-container");
+      if (!vid) { wrap.innerHTML = `<span class="text-rose-400">Link do YouTube inválido</span>`; return; }
+
+      wrap.innerHTML = `<div id="midi-yt-iframe-target" class="w-full h-full"></div>`;
+      if (!window.YT || !window.YT.Player) {
+        const tag = document.createElement("script");
+        tag.src = "https://www.youtube.com/iframe_api";
+        document.head.appendChild(tag);
+        window.onYouTubeIframeAPIReady = () => createYtPlayer(vid);
+      } else {
+        createYtPlayer(vid);
+      }
+      startMidiReferenceClock();
+    }
+
+    function createYtPlayer(videoId) {
+      try { if (ytPlayerInstance && ytPlayerInstance.destroy) ytPlayerInstance.destroy(); } catch (e) {}
+      ytPlayerInstance = new YT.Player("midi-yt-iframe-target", {
+        width: "100%", height: "100%", videoId: videoId,
+        playerVars: { playsinline: 1, rel: 0 }
+      });
+    }
+
+    function loadLocalAudioForMidiStudio(input) {
+      if (!input.files || !input.files[0]) return;
+      const audioEl = document.getElementById("midi-local-audio");
+      audioEl.src = URL.createObjectURL(input.files[0]);
+      audioEl.classList.remove("hidden");
+      startMidiReferenceClock();
+    }
+
+    function getMidiReferenceCurrentTime() {
+      const localAudio = document.getElementById("midi-local-audio");
+      if (localAudio && !localAudio.classList.contains("hidden") && !localAudio.paused) {
+        return localAudio.currentTime || 0;
+      }
+      if (ytPlayerInstance && typeof ytPlayerInstance.getCurrentTime === "function") {
+        try { return ytPlayerInstance.getCurrentTime() || 0; } catch (e) {}
+      }
+      if (localAudio && localAudio.currentTime > 0) return localAudio.currentTime;
+      return 0;
+    }
+
+    function startMidiReferenceClock() {
+      if (midiClockInterval) clearInterval(midiClockInterval);
+      midiClockInterval = setInterval(() => {
+        const t = getMidiReferenceCurrentTime();
+        const el = document.getElementById("midi-live-clock");
+        if (el) el.textContent = formatTimeWithTenths(t);
+      }, 100);
+    }
+
+    function formatTimeWithTenths(sec) {
+      if (!sec || isNaN(sec) || sec < 0) return "00:00.0";
+      const m = Math.floor(sec / 60);
+      const s = (sec % 60).toFixed(1).padStart(4, "0");
+      return `${String(m).padStart(2, "0")}:${s}`;
+    }
+
+    function parseTimeWithTenths(str) {
+      if (!str) return 0;
+      const clean = String(str).trim();
+      if (clean.includes(":")) {
+        const [m, s] = clean.split(":");
+        return (parseInt(m, 10) || 0) * 60 + (parseFloat(s.replace(",", ".")) || 0);
+      }
+      return parseFloat(clean.replace(",", ".")) || 0;
+    }
+
+    function computeMidiNoteForSlide(slideIdx) {
+      const mode = document.getElementById("midi-trigger-mode")?.value || "SLIDE_NOTE";
+      if (mode === "FIXED_60") return 60;
+      if (mode === "OFFSET_36") return Math.min(127, 36 + slideIdx);
+      return Math.min(127, slideIdx + 1);
+    }
+
+    function formatLyricsIntoHolyricsSlides() {
+      const raw = (document.getElementById("midi-raw-lyrics")?.value || "").replace(/\r\n/g, "\n").trim();
+      if (!raw) return;
+      const linesPerSlide = parseInt(document.getElementById("midi-lines-per-slide")?.value || "2", 10);
+      let blocks = [];
+
+      if (linesPerSlide === 0) {
+        blocks = raw.split(/\n\s*\n/).map(b => b.trim()).filter(Boolean);
+      } else {
+        const paragraphs = raw.split(/\n\s*\n/);
+        paragraphs.forEach(p => {
+          const lines = p.split("\n").map(l => l.trim()).filter(Boolean);
+          for (let i = 0; i < lines.length; i += linesPerSlide) {
+            blocks.push(lines.slice(i, i + linesPerSlide).join("\n"));
+          }
+        });
+      }
+
+      document.getElementById("midi-raw-lyrics").value = blocks.join("\n\n");
+      midiSlides = blocks.map((txt, idx) => ({
+        text: txt,
+        timeSec: idx === 0 ? 0.5 : 0,
+        midiNote: computeMidiNoteForSlide(idx)
+      }));
+      midiTapIndex = 0;
+      renderMidiSlidesList();
+    }
+
+    function recalculateMidiSlideNotes() {
+      midiSlides.forEach((sl, idx) => { sl.midiNote = computeMidiNoteForSlide(idx); });
+      renderMidiSlidesList();
+    }
+
+    function copyHolyricsTemplateText() {
+      const ta = document.getElementById("midi-raw-lyrics");
+      if (!ta || !ta.value.trim()) return;
+      ta.select();
+      try { document.execCommand("copy"); } catch (e) {}
+      if (navigator.clipboard) navigator.clipboard.writeText(ta.value).catch(() => {});
+      alert("Gabarito formatado copiado! Basta colar na criação de música do Holyrics.");
+    }
+
+    function addInstrumentalMidiSlide() {
+      const insertAt = Math.min(midiSlides.length, midiTapIndex);
+      midiSlides.splice(insertAt, 0, {
+        text: "[ Instrumental ]",
+        timeSec: getMidiReferenceCurrentTime(),
+        midiNote: computeMidiNoteForSlide(insertAt)
+      });
+      recalculateMidiSlideNotes();
+    }
+
+    function resetMidiTapCursor() {
+      midiTapIndex = 0;
+      renderMidiSlidesList();
+    }
+
+    function stampCurrentMidiSlideTime() {
+      if (midiSlides.length === 0) return;
+      if (midiTapIndex >= midiSlides.length) midiTapIndex = 0;
+      const nowSec = getMidiReferenceCurrentTime();
+      midiSlides[midiTapIndex].timeSec = Math.max(0.1, Math.round(nowSec * 10) / 10);
+      midiTapIndex = Math.min(midiSlides.length - 1, midiTapIndex + 1);
+      renderMidiSlidesList();
+      const activeRow = document.getElementById(`midi-slide-row-${midiTapIndex}`);
+      activeRow?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function renderMidiSlidesList() {
+      const listEl = document.getElementById("midi-slides-list");
+      const countEl = document.getElementById("midi-slides-count");
+      const tapLbl = document.getElementById("btn-midi-tap-label");
+      if (!listEl) return;
+      if (countEl) countEl.textContent = midiSlides.length;
+      if (tapLbl) tapLbl.textContent = midiSlides.length > 0 ? `MARCAR SLIDE ${midiTapIndex + 1} DE ${midiSlides.length} (OU ESPAÇO)` : `MARCAR TEMPO DO SLIDE ATUAL`;
+
+      if (midiSlides.length === 0) {
+        listEl.innerHTML = `<div class="text-center py-10 text-xs text-slate-500">Cole a letra ao lado e clique em "Gerar Slides".</div>`;
+        return;
+      }
+
+      listEl.innerHTML = midiSlides.map((sl, idx) => {
+        const isCurrent = idx === midiTapIndex;
+        return `
+          <div id="midi-slide-row-${idx}" onclick="midiTapIndex=${idx};renderMidiSlidesList();" class="p-2.5 rounded-xl border transition cursor-pointer flex items-center justify-between gap-2 ${isCurrent ? 'bg-cyan-950/50 border-cyan-400 ring-1 ring-cyan-400' : 'bg-slate-800/70 border-slate-800 hover:bg-slate-800'}">
+            <div class="flex items-center gap-2.5 min-w-0 flex-1">
+              <span class="w-7 h-7 rounded-lg ${isCurrent ? 'bg-cyan-500 text-black' : 'bg-slate-900 text-slate-400'} font-black text-xs flex items-center justify-center shrink-0">${idx + 1}</span>
+              <div class="text-xs text-white whitespace-pre-line leading-snug truncate">${sl.text}</div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0" onclick="event.stopPropagation()">
+              <span class="text-[10px] px-2 py-1 rounded bg-slate-900 text-purple-300 font-mono">Nota ${sl.midiNote}</span>
+              <input type="text" value="${formatTimeWithTenths(sl.timeSec)}" onchange="midiSlides[${idx}].timeSec=parseTimeWithTenths(this.value);renderMidiSlidesList();" class="w-20 px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-center font-mono text-xs text-emerald-400 font-bold" />
+              <button type="button" onclick="midiSlides.splice(${idx},1);recalculateMidiSlideNotes();" class="w-7 h-7 rounded-lg bg-rose-600/20 text-rose-400 text-xs">×</button>
+            </div>
+          </div>`;
+      }).join("");
+    }
+
+    // Constrói um arquivo binário Standard MIDI File (.mid Formato 0) compatível com Reaper e Holyrics
+    function buildHolyricsStandardMidiBytes() {
+      const bpm = Math.max(40, Math.min(240, Number(document.getElementById("midi-bpm-input")?.value) || 120));
+      const division = 480;
+      const mpqn = Math.round(60000000 / bpm);
+
+      const writeVarLen = (val) => {
+        let buffer = val & 0x7f;
+        const out = [];
+        while ((val >>= 7)) { buffer <<= 8; buffer |= ((val & 0x7f) | 0x80); }
+        while (true) { out.push(buffer & 0xff); if (buffer & 0x80) buffer >>= 8; else break; }
+        return out;
+      };
+
+      const rawEvents = [];
+      midiSlides.forEach(sl => {
+        const startTick = Math.max(0, Math.round((sl.timeSec * bpm / 60) * division));
+        const endTick = startTick + Math.round(division * 0.25);
+        const note = Math.max(1, Math.min(127, sl.midiNote || 60));
+        rawEvents.push({ tick: startTick, bytes: [0x90, note, 100] });
+        rawEvents.push({ tick: endTick,   bytes: [0x80, note, 0] });
+      });
+      rawEvents.sort((a, b) => a.tick - b.tick);
+
+      const trackBytes = [
+        0x00, 0xff, 0x51, 0x03, (mpqn >> 16) & 0xff, (mpqn >> 8) & 0xff, mpqn & 0xff
+      ];
+
+      let lastTick = 0;
+      rawEvents.forEach(ev => {
+        const delta = Math.max(0, ev.tick - lastTick);
+        lastTick = ev.tick;
+        trackBytes.push(...writeVarLen(delta), ...ev.bytes);
+      });
+      trackBytes.push(0x00, 0xff, 0x2f, 0x00); // Fim da Track
+
+      const tLen = trackBytes.length;
+      const header = [
+        0x4d, 0x54, 0x68, 0x64, 0x00, 0x00, 0x00, 0x06,
+        0x00, 0x00, 0x00, 0x01, (division >> 8) & 0xff, division & 0xff,
+        0x4d, 0x54, 0x72, 0x6b, (tLen >> 24) & 0xff, (tLen >> 16) & 0xff, (tLen >> 8) & 0xff, tLen & 0xff
+      ];
+
+      return new Uint8Array([...header, ...trackBytes]);
+    }
+
+    function downloadHolyricsMidiFile() {
+      if (midiSlides.length === 0) { alert("Gere os slides e marque os tempos primeiro."); return; }
+      const bytes = buildHolyricsStandardMidiBytes();
+      const songTitle = (midiStudioSong ? midiStudioSong.musica : "Automacao_Holyrics").replace(/[\\/:*?"<>|]/g, "");
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([bytes], { type: "audio/midi" }));
+      a.download = `${songTitle}_Holyrics.mid`;
+      a.click();
+    }
+
+    async function saveHolyricsMidiToAppMemory() {
+      if (midiSlides.length === 0) { alert("Gere os slides primeiro."); return; }
+      const title = midiStudioSong ? midiStudioSong.musica : prompt("Digite o nome exato da música para vincular:");
+      if (!title) return;
+      const key = normalizeSongKey(title);
+      const bytes = buildHolyricsStandardMidiBytes();
+      const saved = (await dbGet("catalog", "midiAutomations")) || {};
+      saved[key] = {
+        musica: title,
+        bpm: Number(document.getElementById("midi-bpm-input")?.value) || 120,
+        base64: uint8ArrayToBase64(bytes),
+        updatedAt: Date.now()
+      };
+      await dbPut("catalog", "midiAutomations", saved);
+      customMidiMemory = saved;
+      alert(`Automação MIDI vinculada à música "${title}"! Quando você gerar o projeto .RPP do Reaper, a track 'Holyrics MIDI' já entrará automaticamente.`);
+    }
+
+    document.addEventListener("keydown", (e) => {
+      const midiView = document.getElementById("view-midi");
+      if (!midiView || midiView.classList.contains("hidden")) return;
+      const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
+      if (e.code === "Space" && tag !== "textarea" && tag !== "input") {
+        e.preventDefault();
+        stampCurrentMidiSlideTime();
+      }
+    });
 
     function renderRelatorios() {
       const aMap = {}, tMap = {}; let vz = 0;
@@ -2394,15 +3140,19 @@
     function showLandingScreen() { const l = document.getElementById("landing-screen"); l.classList.remove("hidden", "opacity-0", "pointer-events-none"); }
 
     function switchTab(tab) {
-      const labels = { musicas: "Músicas", repertorios: "Repertórios", palco: "Modo Palco", vs: "VS / Mixer L-R", pedidos: "Pedidos", relatorios: "Relatórios" };
+      if (tab === "palco") {
+        switchTab("repertorios");
+        setTimeout(scrollToPalcoInline, 120);
+        return;
+      }
+      const labels = { musicas: "Músicas", repertorios: "Repertórios & Palco", midi: "MIDI & Holyrics", vs: "VS / Mixer L-R", pedidos: "Pedidos", relatorios: "Relatórios" };
       document.getElementById("active-tab-pill").textContent = labels[tab] || "DOXA";
-      ["musicas", "repertorios", "palco", "vs", "pedidos", "relatorios"].forEach(t => {
+      ["musicas", "repertorios", "midi", "vs", "pedidos", "relatorios"].forEach(t => {
         document.getElementById(`view-${t}`)?.classList.toggle("hidden", t !== tab);
       });
       window.scrollTo({ top: 0 });
       if (tab === "repertorios") renderRepertorios();
       if (tab === "relatorios") renderRelatorios();
-      if (tab === "palco") populatePalcoSelect();
       if (tab === "vs") { setVsEngineMode(vsEngineMode); loadVsFolders(false); }
       if (tab === "pedidos") initPedidosTab();
     }
@@ -2415,8 +3165,10 @@
     }
 
     document.addEventListener("click", (e) => {
-      const inp = document.getElementById("rep-item-song-search"), drop = document.getElementById("dropdown-rep-songs");
-      if (inp && drop && !inp.contains(e.target) && !drop.contains(e.target)) drop.classList.add("hidden");
+      [["rep-item-song-search", "dropdown-rep-songs"], ["midi-song-search", "dropdown-midi-songs"]].forEach(([iId, dId]) => {
+        const inp = document.getElementById(iId), drop = document.getElementById(dId);
+        if (inp && drop && !inp.contains(e.target) && !drop.contains(e.target)) drop.classList.add("hidden");
+      });
     });
 
     updateAdminUI();
