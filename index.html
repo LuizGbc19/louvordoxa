@@ -3404,43 +3404,316 @@
     updateAdminUI();
     syncFromGoogleSheet(false);
 // ============================================================================
-    // 5. RECURSOS PRO DE PALCO (OLED, AUTO-SCROLL, PEDAL, METRÔNOMO & TRANSPOSIÇÃO)
+    // 5. PALCO PRO v3.6: LEITOR ESTILO CIFRA CLUB (TRANSPOSIÇÃO REAL DE ACORDES)
+    //    + TELA CHEIA 100% NA CIFRA + AUTO-SCROLL INTERNO + PEDAL BLUETOOTH
     // ============================================================================
-    let stageOledActive = false;
     let stageAutoScrollTimer = null;
     let stageScrollSpeed = 2;
     let stageCurrentSongIndex = 0;
     let stageMetroTimer = null;
     let stageMetroBpm = 120;
-    let stageToneOffsets = {}; // idx -> semitons (-11 a +11)
+    let stageToneOffsets = {};       // idx -> semitons (-11 a +11)
+    let stageRawChordTexts = {};     // idx -> texto puro original da cifra
+    let stageInteractiveActive = {}; // idx -> boolean (true = modo Cifra Club ativo)
+    let stageFontSizePx = 15;
+    let stageTwoColumns = false;
+    let currentFullscreenSongIdx = null;
 
-    const CHROMATIC_SHARP = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-    const CHROMATIC_FLAT  = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+    const NOTES_SHARP = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    const NOTES_FLAT  = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+    const ENHARMONIC_MAP = { "B#": "C", "E#": "F", "Cb": "B", "Fb": "E" };
 
-    function transposeMusicalKey(keyStr, semitones) {
-      if (!keyStr || keyStr === "-" || !semitones) return keyStr || "-";
-      return String(keyStr).replace(/([A-G])(#|b)?/g, (match, note, acc) => {
-        const full = note + (acc || "");
-        let idx = CHROMATIC_SHARP.indexOf(full);
-        if (idx === -1) idx = CHROMATIC_FLAT.indexOf(full);
-        if (idx === -1) return match;
-        const nextIdx = (idx + semitones + 120) % 12;
-        const preferFlat = acc === "b" || [1, 3, 8, 10].includes(nextIdx);
-        return preferFlat ? CHROMATIC_FLAT[nextIdx] : CHROMATIC_SHARP[nextIdx];
+    function noteToIndex(noteStr) {
+      const clean = ENHARMONIC_MAP[noteStr] || noteStr;
+      let idx = NOTES_SHARP.indexOf(clean);
+      if (idx === -1) idx = NOTES_FLAT.indexOf(clean);
+      return idx;
+    }
+
+    function transposeSingleNote(noteStr, semitones, forceFlat = false) {
+      const idx = noteToIndex(noteStr);
+      if (idx === -1) return noteStr;
+      const nextIdx = (idx + (semitones % 12) + 12) % 12;
+      const useFlat = forceFlat || noteStr.includes("b") || [1, 3, 8, 10].includes(nextIdx);
+      return useFlat ? NOTES_FLAT[nextIdx] : NOTES_SHARP[nextIdx];
+    }
+
+    // Transpõe tanto o Tom geral quanto um acorde complexo inteiro (ex: C#m7(b5)/G# -> Dm7(b5)/A)
+    function transposeChordToken(token, semitones) {
+      if (!token || !semitones) return token;
+      return String(token).replace(/^([A-G][#b]?)(.*?)(\/[A-G][#b]?)?$/, (full, root, suffix, bass) => {
+        const newRoot = transposeSingleNote(root, semitones);
+        const newBass = bass ? "/" + transposeSingleNote(bass.slice(1), semitones) : "";
+        return newRoot + (suffix || "") + newBass;
       });
     }
 
-    function shiftStageSongKey(idx, baseKey, delta) {
-      stageToneOffsets[idx] = (stageToneOffsets[idx] || 0) + delta;
-      const newKey = transposeMusicalKey(baseKey, stageToneOffsets[idx]);
-      const badge = document.getElementById(`stage-tom-val-${idx}`);
-      if (badge) badge.textContent = newKey;
+    // Identifica se uma palavra isolada é um acorde musical válido
+    function isMusicalChordToken(word) {
+      if (!word) return false;
+      const clean = word.replace(/^[(\[]+|[)\],.;:]+$/g, "");
+      return /^[A-G][#b]?(?:m|maj|min|dim|aug|sus|add|M|\+|°|º)?(?:2|4|5|6|7|9|11|13|M|\+|-)*?(?:\([#b+-]?\d+(?:\/[#b+-]?\d+)*\))?(?:\/[A-G][#b]?)?$/.test(clean);
     }
 
-    // Injeta os botões de Transposição (- / +) e "Tocar Click neste BPM" nos cards do Modo Palco
+    // Verifica se uma linha inteira é uma linha de cifras (como no Cifra Club)
+    function isChordLine(line) {
+      const trimmed = line.trim();
+      if (!trimmed) return false;
+      // Remove marcadores de seção como [Intro], [Refrão], (2x)
+      const withoutSections = trimmed.replace(/\[.*?\]|\(.*?x\)/gi, " ").trim();
+      if (!withoutSections) return true;
+      const tokens = withoutSections.split(/\s+/).filter(Boolean);
+      if (tokens.length === 0) return false;
+      const chordCount = tokens.filter(t => isMusicalChordToken(t)).length;
+      return (chordCount / tokens.length) >= 0.6;
+    }
+
+    // Renderiza o texto puro da cifra com acordes transpostos e coloridos (estilo Cifra Club)
+    function renderTransposedChordHtml(rawText, semitones) {
+      if (!rawText) return "";
+      const lines = String(rawText).replace(/\r\n/g, "\n").split("\n");
+      return lines.map(line => {
+        const escaped = line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        if (/^\s*\[.*?\]\s*$/.test(line) || /^\s*(intro|introducao|introdução|verso|estribilho|refrao|refrão|ponte|pre-refrao|pré-refrão|instrumental|solo|final)\s*:?\s*$/i.test(line.trim())) {
+          return `<span class="text-emerald-400 font-extrabold uppercase tracking-wider block mt-3">${escaped}</span>`;
+        }
+        if (isChordLine(line)) {
+          const transposedLine = escaped.replace(/\b([A-G][#b]?(?:m|maj|min|dim|aug|sus|add|M|\+|°|º)?(?:2|4|5|6|7|9|11|13|M|\+|-)*?(?:\([#b+-]?\d+(?:\/[#b+-]?\d+)*\))?(?:\/[A-G][#b]?)?)(?=\s|$|[)\],])/g, (match) => {
+            if (!isMusicalChordToken(match)) return match;
+            const tr = transposeChordToken(match, semitones);
+            return `<strong class="text-amber-400 font-extrabold">${tr}</strong>`;
+          });
+          return `<span class="block leading-tight">${transposedLine}</span>`;
+        }
+        return `<span class="text-zinc-100 block leading-snug">${escaped || "&nbsp;"}</span>`;
+      }).join("");
+    }
+
+    // Busca o texto puro da cifra no Drive (ou usa o cache offline) e ativa o Modo Cifra Club
+    async function activateInteractiveChordMode(idx, forceOpenEditor = false) {
+      const sel = document.getElementById("palco-select-repertorio");
+      const rep = repertorios.find(r => r.id === Number(sel?.value || selectedRepertorioId)) || findNextUpcomingRepertorio();
+      if (!rep || !rep.itens[idx]) return;
+      const info = getResolvedSongDetails(rep.itens[idx]);
+      const cacheKey = "chordText_" + normalizeSongKey(info.musica);
+
+      const box = document.getElementById(`stage-chord-box-${idx}`);
+      if (!box) return;
+      box.classList.remove("hidden");
+
+      if (!stageRawChordTexts[idx]) {
+        const cachedTxt = await dbGet("chords", cacheKey);
+        if (cachedTxt) {
+          stageRawChordTexts[idx] = cachedTxt;
+        } else if (navigator.onLine && scriptUrl) {
+          box.innerHTML = `<div class="p-8 text-center text-sm text-amber-300 bg-black rounded-2xl border border-amber-500/30"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Extraindo cifra editável do arquivo Drive para transposição automática...</div>`;
+          try {
+            const res = await fetch(`${scriptUrl}?action=obterTextoCifra&fileId=${encodeURIComponent(info.fileId || "")}&musica=${encodeURIComponent(info.musica)}`);
+            const data = await res.json();
+            if (data && data.status === "ok" && data.texto) {
+              stageRawChordTexts[idx] = data.texto;
+              await dbPut("chords", cacheKey, data.texto);
+            }
+          } catch (e) {}
+        }
+      }
+
+      if (!stageRawChordTexts[idx] || forceOpenEditor) {
+        const currentTxt = stageRawChordTexts[idx] || "";
+        box.innerHTML = `
+          <div class="bg-zinc-950 border border-amber-500/40 rounded-2xl p-4 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span class="text-xs font-extrabold text-amber-300"><i class="fa-solid fa-paste mr-1.5"></i>Cole ou edite a cifra em texto (do Cifra Club ou Doc) para transpor o Tom na hora:</span>
+              <div class="flex gap-2">
+                <button type="button" onclick="saveManualChordText(${idx})" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-extrabold">Salvar e Ativar Transposição</button>
+              </div>
+            </div>
+            <textarea id="manual-chord-textarea-${idx}" rows="14" placeholder="Cole aqui a letra com os acordes acima das sílabas..." class="w-full p-3 bg-black border border-zinc-700 rounded-xl text-xs text-white font-mono">${currentTxt}</textarea>
+          </div>`;
+        return;
+      }
+
+      stageInteractiveActive[idx] = true;
+      renderInteractiveChordBox(idx);
+    }
+
+    async function saveManualChordText(idx) {
+      const ta = document.getElementById(`manual-chord-textarea-${idx}`);
+      if (!ta || !ta.value.trim()) return;
+      const sel = document.getElementById("palco-select-repertorio");
+      const rep = repertorios.find(r => r.id === Number(sel?.value || selectedRepertorioId)) || findNextUpcomingRepertorio();
+      const info = getResolvedSongDetails(rep.itens[idx]);
+      const cacheKey = "chordText_" + normalizeSongKey(info.musica);
+
+      stageRawChordTexts[idx] = ta.value;
+      await dbPut("chords", cacheKey, ta.value);
+      stageInteractiveActive[idx] = true;
+      renderInteractiveChordBox(idx);
+    }
+
+    function renderInteractiveChordBox(idx) {
+      const box = document.getElementById(`stage-chord-box-${idx}`);
+      if (!box || !stageRawChordTexts[idx]) return;
+      const semitones = stageToneOffsets[idx] || 0;
+      const htmlContent = renderTransposedChordHtml(stageRawChordTexts[idx], semitones);
+
+      box.innerHTML = `
+        <div class="bg-black border border-zinc-800 rounded-2xl p-4 sm:p-6 space-y-3 shadow-inner">
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-zinc-800 text-xs">
+            <span class="text-emerald-400 font-bold"><i class="fa-solid fa-bolt mr-1"></i>Modo Cifra Club Ativo ${semitones !== 0 ? `(Transposto: ${semitones > 0 ? "+" + semitones : semitones} st)` : "(Tom Original)"}</span>
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button type="button" onclick="changeStageFontSize(-1, ${idx})" class="px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-700 text-white font-bold">A-</button>
+              <button type="button" onclick="changeStageFontSize(1, ${idx})" class="px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-700 text-white font-bold">A+</button>
+              <button type="button" onclick="toggleStageTwoColumns(${idx})" class="px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-700 text-indigo-300 font-bold"><i class="fa-solid fa-columns mr-1"></i>${stageTwoColumns ? "1 Coluna" : "2 Colunas"}</button>
+              <button type="button" onclick="activateInteractiveChordMode(${idx}, true)" class="px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-700 text-amber-300 font-semibold">Editar Texto</button>
+              <button type="button" onclick="stageInteractiveActive[${idx}]=false;renderPalco();" class="px-2.5 py-1 rounded-lg bg-zinc-900 text-zinc-400">Ver PDF Original</button>
+            </div>
+          </div>
+          <pre id="interactive-chord-pre-${idx}" style="font-size:${stageFontSizePx}px; ${stageTwoColumns ? 'column-count: 2; column-gap: 2.5rem;' : ''}" class="font-mono whitespace-pre-wrap overflow-x-auto select-text">${htmlContent}</pre>
+        </div>`;
+
+      // Se o modal de tela cheia estiver aberto nesta música, atualiza lá também!
+      const fsBody = document.getElementById("fullscreen-chord-modal-body");
+      if (currentFullscreenSongIdx === idx && fsBody) {
+        fsBody.innerHTML = `<pre style="font-size:${stageFontSizePx + 2}px; ${stageTwoColumns ? 'column-count: 2; column-gap: 3rem;' : ''}" class="font-mono whitespace-pre-wrap p-4 sm:p-8">${htmlContent}</pre>`;
+      }
+    }
+
+    function changeStageFontSize(delta, idx) {
+      stageFontSizePx = Math.max(11, Math.min(28, stageFontSizePx + delta));
+      renderInteractiveChordBox(idx);
+    }
+
+    function toggleStageTwoColumns(idx) {
+      stageTwoColumns = !stageTwoColumns;
+      renderInteractiveChordBox(idx);
+    }
+
+    // Quando clica em "-" ou "+" no Tom: muda o Tom exibido E já transpõe os acordes da cifra!
+    async function shiftStageSongKey(idx, baseKey, delta) {
+      stageToneOffsets[idx] = (stageToneOffsets[idx] || 0) + delta;
+      const newKey = transposeChordToken(baseKey, stageToneOffsets[idx]);
+      const badge = document.getElementById(`stage-tom-val-${idx}`);
+      if (badge) badge.textContent = newKey;
+      const fsBadge = document.getElementById("fs-modal-tom-badge");
+      if (currentFullscreenSongIdx === idx && fsBadge) fsBadge.textContent = `Tom: ${newKey}`;
+
+      if (!stageInteractiveActive[idx]) {
+        await activateInteractiveChordMode(idx, false);
+      } else {
+        renderInteractiveChordBox(idx);
+      }
+    }
+
+    // MODAL DE TELA CHEIA 100% REAL FOCADO NA CIFRA (FUNCIONA PARA MODO CIFRA CLUB E PARA PDF)
+    function ensureFullscreenChordModalExists() {
+      if (document.getElementById("fullscreen-chord-modal")) return;
+      const m = document.createElement("div");
+      m.id = "fullscreen-chord-modal";
+      m.className = "fixed inset-0 z-50 bg-black hidden flex-col";
+      m.innerHTML = `
+        <div class="bg-zinc-950 border-b border-zinc-800 px-3 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0">
+          <div class="flex items-center gap-2 min-w-0">
+            <button type="button" onclick="stepFullscreenSong(-1)" class="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-700 text-white font-bold" title="Música Anterior">◀</button>
+            <div class="min-w-0">
+              <h3 id="fs-modal-song-title" class="text-sm sm:text-base font-black text-white truncate">-</h3>
+            </div>
+            <button type="button" onclick="stepFullscreenSong(1)" class="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-700 text-white font-bold" title="Próxima Música">▶</button>
+          </div>
+          <div class="flex flex-wrap items-center gap-1.5">
+            <div class="flex items-center bg-zinc-900 border border-amber-500/40 rounded-xl px-2 py-1 gap-1.5">
+              <button type="button" onclick="shiftCurrentFullscreenKey(-1)" class="w-6 h-6 rounded bg-black text-white font-black text-xs">-</button>
+              <span id="fs-modal-tom-badge" class="text-xs font-black text-amber-400 px-1">Tom: -</span>
+              <button type="button" onclick="shiftCurrentFullscreenKey(1)" class="w-6 h-6 rounded bg-black text-white font-black text-xs">+</button>
+            </div>
+            <button type="button" onclick="toggleCurrentFullscreenInteractive()" class="px-2.5 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold">⚡ Transpor Cifra</button>
+            <button type="button" onclick="toggleStageAutoScroll()" id="btn-fs-autoscroll" class="px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-700 text-slate-200 text-xs font-bold">Auto-Scroll</button>
+            <button type="button" onclick="closeFullscreenChordModal()" class="px-3 py-1.5 rounded-xl bg-rose-600 text-white text-xs font-extrabold">✕ Sair Tela Cheia</button>
+          </div>
+        </div>
+        <div id="fullscreen-chord-modal-body" class="flex-1 w-full overflow-y-auto custom-scroll bg-black"></div>
+      `;
+      document.body.appendChild(m);
+    }
+
+    async function openSongChordFullscreen(idx) {
+      ensureFullscreenChordModalExists();
+      const sel = document.getElementById("palco-select-repertorio");
+      const rep = repertorios.find(r => r.id === Number(sel?.value || selectedRepertorioId)) || findNextUpcomingRepertorio();
+      if (!rep || !rep.itens[idx]) return;
+
+      currentFullscreenSongIdx = idx;
+      stageCurrentSongIndex = idx;
+      const it = rep.itens[idx];
+      const info = getResolvedSongDetails(it);
+      const curTom = transposeChordToken(info.tom || "-", stageToneOffsets[idx] || 0);
+
+      document.getElementById("fs-modal-song-title").textContent = `${idx + 1}. ${info.musica} (${info.autor})`;
+      document.getElementById("fs-modal-tom-badge").textContent = `Tom: ${curTom}`;
+
+      const modal = document.getElementById("fullscreen-chord-modal");
+      const body = document.getElementById("fullscreen-chord-modal-body");
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+
+      if (stageInteractiveActive[idx] && stageRawChordTexts[idx]) {
+        renderInteractiveChordBox(idx);
+      } else if (offlineSavedChordKeys.has(normalizeSongKey(info.musica))) {
+        body.innerHTML = `<div id="fs-offline-canvas-container" class="max-w-4xl mx-auto p-2"></div>`;
+        await renderOfflinePdfInCanvasContainer(info.musica, "fs-offline-canvas-container");
+      } else if (info.hasFile) {
+        body.innerHTML = `<iframe src="${info.previewUrl}" class="w-full h-full border-0 bg-white"></iframe>`;
+      } else {
+        await activateInteractiveChordMode(idx, true);
+        body.innerHTML = document.getElementById(`stage-chord-box-${idx}`)?.innerHTML || "";
+      }
+    }
+
+    function closeFullscreenChordModal() {
+      currentFullscreenSongIdx = null;
+      const modal = document.getElementById("fullscreen-chord-modal");
+      if (modal) { modal.classList.add("hidden"); modal.classList.remove("flex"); }
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    function stepFullscreenSong(dir) {
+      const sel = document.getElementById("palco-select-repertorio");
+      const rep = repertorios.find(r => r.id === Number(sel?.value || selectedRepertorioId)) || findNextUpcomingRepertorio();
+      if (!rep || !rep.itens.length) return;
+      const nextIdx = Math.max(0, Math.min(rep.itens.length - 1, (currentFullscreenSongIdx || 0) + dir));
+      openSongChordFullscreen(nextIdx);
+    }
+
+    function shiftCurrentFullscreenKey(delta) {
+      if (currentFullscreenSongIdx === null) return;
+      const sel = document.getElementById("palco-select-repertorio");
+      const rep = repertorios.find(r => r.id === Number(sel?.value || selectedRepertorioId)) || findNextUpcomingRepertorio();
+      if (!rep || !rep.itens[currentFullscreenSongIdx]) return;
+      const info = getResolvedSongDetails(rep.itens[currentFullscreenSongIdx]);
+      shiftStageSongKey(currentFullscreenSongIdx, info.tom || "-", delta);
+    }
+
+    async function toggleCurrentFullscreenInteractive() {
+      if (currentFullscreenSongIdx === null) return;
+      await activateInteractiveChordMode(currentFullscreenSongIdx, false);
+      openSongChordFullscreen(currentFullscreenSongIdx);
+    }
+
+    function toggleStageOledFullscreen() {
+      openSongChordFullscreen(stageCurrentSongIndex || 0);
+    }
+
+    // Injeta os botões "⛶ Tela Cheia Cifra", "⚡ Modo Cifra Club (Transpor)" e "- / +" em cada card do Palco
     const _origRenderPalco = renderPalco;
     renderPalco = function() {
       stageToneOffsets = {};
+      stageInteractiveActive = {};
       _origRenderPalco();
       document.getElementById("stage-pro-toolbar")?.classList.remove("hidden");
 
@@ -3457,6 +3730,24 @@
         const bpmVal = extractNumericBpm(info.tempo) || 120;
         const safeTom = String(info.tom || "-").replace(/'/g, "\\'");
 
+        // Adiciona botões "⛶ Tela Cheia" e "⚡ Modo Cifra Club" na barra de botões da música
+        const btnRow = card.querySelector("div.flex.flex-wrap.items-center.gap-2.pt-1");
+        if (btnRow && !btnRow.querySelector(".btn-interactive-chord")) {
+          const btnFs = document.createElement("button");
+          btnFs.type = "button";
+          btnFs.onclick = () => openSongChordFullscreen(i);
+          btnFs.className = "px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow";
+          btnFs.innerHTML = `<i class="fa-solid fa-expand"></i><span>Tela Cheia</span>`;
+          btnRow.appendChild(btnFs);
+
+          const btnCc = document.createElement("button");
+          btnCc.type = "button";
+          btnCc.onclick = () => activateInteractiveChordMode(i, false);
+          btnCc.className = "btn-interactive-chord px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-extrabold flex items-center gap-1.5";
+          btnCc.innerHTML = `<i class="fa-solid fa-bolt"></i><span>Modo Interativo (Transpor Tom)</span>`;
+          btnRow.appendChild(btnCc);
+        }
+
         const tomBoxes = card.querySelectorAll("span.text-2xl");
         if (tomBoxes[0]) {
           tomBoxes[0].id = `stage-tom-val-${i}`;
@@ -3465,9 +3756,9 @@
             const ctrl = document.createElement("div");
             ctrl.className = "tom-shift-controls flex items-center justify-center gap-1 mt-1.5 pt-1 border-t border-slate-700";
             ctrl.innerHTML = `
-              <button type="button" onclick="shiftStageSongKey(${i}, '${safeTom}', -1)" class="w-6 h-6 rounded bg-slate-900 hover:bg-slate-700 text-slate-300 text-xs font-black" title="Baixar meio tom (-1)">-</button>
-              <button type="button" onclick="startStageMetronomeAt(${bpmVal})" class="px-2 h-6 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-extrabold" title="Disparar Metrônomo neste BPM">🥁 ${bpmVal}</button>
-              <button type="button" onclick="shiftStageSongKey(${i}, '${safeTom}', 1)" class="w-6 h-6 rounded bg-slate-900 hover:bg-slate-700 text-slate-300 text-xs font-black" title="Subir meio tom (+1)">+</button>
+              <button type="button" onclick="shiftStageSongKey(${i}, '${safeTom}', -1)" class="w-7 h-6 rounded bg-slate-900 hover:bg-amber-500 hover:text-black text-slate-200 text-xs font-black" title="Baixar meio tom (-1) na cifra inteira">-</button>
+              <button type="button" onclick="startStageMetronomeAt(${bpmVal})" class="px-2 h-6 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-extrabold" title="Tocar Metrônomo neste BPM">🥁 ${bpmVal}</button>
+              <button type="button" onclick="shiftStageSongKey(${i}, '${safeTom}', 1)" class="w-7 h-6 rounded bg-slate-900 hover:bg-amber-500 hover:text-black text-slate-200 text-xs font-black" title="Subir meio tom (+1) na cifra inteira">+</button>
             `;
             parentBox.appendChild(ctrl);
           }
@@ -3475,45 +3766,29 @@
       });
     };
 
-    function toggleStageOledFullscreen() {
-      stageOledActive = !stageOledActive;
-      const header = document.querySelector("header");
-      const topGrid = document.querySelector("#view-repertorios > div:first-child");
-      const btn = document.getElementById("btn-stage-oled");
-
-      if (stageOledActive) {
-        header?.classList.add("hidden");
-        topGrid?.classList.add("hidden");
-        document.body.style.backgroundColor = "#000000";
-        if (btn) btn.innerHTML = `<i class="fa-solid fa-compress text-amber-400"></i><span>Sair Tela Cheia</span>`;
-        if (document.documentElement.requestFullscreen) {
-          document.documentElement.requestFullscreen().catch(() => {});
-        }
-      } else {
-        header?.classList.remove("hidden");
-        topGrid?.classList.remove("hidden");
-        document.body.style.backgroundColor = "#05070e";
-        if (btn) btn.innerHTML = `<i class="fa-solid fa-expand text-emerald-400"></i><span>Tela Cheia Palco</span>`;
-        if (document.fullscreenElement && document.exitFullscreen) {
-          document.exitFullscreen().catch(() => {});
-        }
-      }
-    }
-
     function toggleStageAutoScroll() {
       const lbl = document.getElementById("lbl-stage-autoscroll");
       const btn = document.getElementById("btn-stage-autoscroll");
+      const fsBtn = document.getElementById("btn-fs-autoscroll");
       if (stageAutoScrollTimer) {
         clearInterval(stageAutoScrollTimer);
         stageAutoScrollTimer = null;
         if (lbl) lbl.textContent = "Auto-Scroll: Off";
         btn?.classList.remove("border-emerald-500", "text-emerald-300");
+        fsBtn?.classList.remove("bg-emerald-600", "text-white");
       } else {
         stageAutoScrollTimer = setInterval(() => {
-          window.scrollBy({ top: stageScrollSpeed, behavior: "auto" });
+          const fsModal = document.getElementById("fullscreen-chord-modal");
+          const fsBody = document.getElementById("fullscreen-chord-modal-body");
+          if (fsModal && !fsModal.classList.contains("hidden") && fsBody) {
+            fsBody.scrollBy({ top: stageScrollSpeed, behavior: "auto" });
+          } else {
+            window.scrollBy({ top: stageScrollSpeed, behavior: "auto" });
+          }
         }, 45);
         if (lbl) lbl.textContent = "Auto-Scroll: ON";
         btn?.classList.add("border-emerald-500", "text-emerald-300");
+        fsBtn?.classList.add("bg-emerald-600", "text-white");
       }
     }
 
@@ -3522,13 +3797,16 @@
     }
 
     function stepStageSong(dir) {
+      if (currentFullscreenSongIdx !== null) {
+        stepFullscreenSong(dir);
+        return;
+      }
       const cards = document.querySelectorAll("[id^='stage-song-card-']");
       if (!cards.length) return;
       stageCurrentSongIndex = Math.max(0, Math.min(cards.length - 1, stageCurrentSongIndex + dir));
       cards[stageCurrentSongIndex].scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
-    // Metrônomo de Palco (Síntese de Click precisa via Web Audio API)
     function playStageClickBeep(isDownbeat = false) {
       const ctx = ensureAudioContext();
       if (!ctx) return;
@@ -3581,7 +3859,6 @@
       if (stageMetroTimer) startStageMetronomeAt(stageMetroBpm);
     }
 
-    // Suporte a Pedal Bluetooth Passador de Páginas (PageDown, PageUp, Setas) no Modo Palco
     document.addEventListener("keydown", (e) => {
       const repView = document.getElementById("view-repertorios");
       if (!repView || repView.classList.contains("hidden")) return;
@@ -3594,10 +3871,11 @@
       } else if (e.key === "PageUp" || e.key === "ArrowLeft") {
         e.preventDefault();
         stepStageSong(-1);
+      } else if (e.key === "Escape" && currentFullscreenSongIdx !== null) {
+        closeFullscreenChordModal();
       }
     });
 
-    // Atualiza a Barra Inferior Mobile e o Mini-Player Flutuante de VS
     const _origSwitchTab = switchTab;
     switchTab = function(tab) {
       _origSwitchTab(tab);
@@ -3611,20 +3889,7 @@
         }
       });
       document.getElementById("stage-pro-toolbar")?.classList.toggle("hidden", activeTab !== "repertorios");
-      updateFloatingMiniPlayerVisibility(activeTab);
     };
-
-    function updateFloatingMiniPlayerVisibility(currentTab) {
-      const mp = document.getElementById("floating-vs-miniplayer");
-      if (!mp) return;
-      const vsViewHidden = document.getElementById("view-vs")?.classList.contains("hidden");
-      if (vsIsPlaying && vsViewHidden) {
-        mp.classList.remove("hidden");
-        document.getElementById("miniplayer-song-title").textContent = selectedVsFolderName || "VS Ativo";
-      } else {
-        mp.classList.add("hidden");
-      }
-    }
 
     setInterval(() => {
       const mp = document.getElementById("floating-vs-miniplayer");
