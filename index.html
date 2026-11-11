@@ -3468,34 +3468,115 @@
       return (chordCount / tokens.length) >= 0.6;
     }
 
-    // Renderiza o texto puro da cifra com acordes transpostos e coloridos (estilo Cifra Club)
+// Extrai o texto direto do PDF no navegador (mantendo o espaçamento exato dos acordes acima da letra!)
+    async function extractChordTextFromPdfBase64Client(pdfBase64) {
+      if (!pdfBase64 || !window.pdfjsLib) return "";
+      try {
+        const pdfDoc = await window.pdfjsLib.getDocument({ data: base64ToUint8Array(pdfBase64) }).promise;
+        let fullText = "";
+
+        for (let p = 1; p <= pdfDoc.numPages; p++) {
+          const page = await pdfDoc.getPage(p);
+          const textContent = await page.getTextContent();
+          const rows = [];
+
+          textContent.items.forEach(item => {
+            const str = item.str;
+            if (!str) return;
+            const x = item.transform[4];
+            const y = item.transform[5];
+            let row = rows.find(r => Math.abs(r.y - y) < 4.5);
+            if (!row) {
+              row = { y, items: [] };
+              rows.push(row);
+            }
+            row.items.push({ x, str, width: item.width || (str.length * 5.2) });
+          });
+
+          // Ordena de cima para baixo
+          rows.sort((a, b) => b.y - a.y);
+
+          let prevY = null;
+          rows.forEach(row => {
+            if (prevY !== null && (prevY - row.y) > 22) fullText += "\n";
+            prevY = row.y;
+            row.items.sort((a, b) => a.x - b.x);
+
+            let lineStr = "";
+            let cursorX = row.items[0] ? Math.min(35, row.items[0].x) : 0;
+            row.items.forEach((it, idx) => {
+              if (idx > 0) {
+                const gap = it.x - cursorX;
+                if (gap > 3.5) {
+                  const spaces = Math.min(45, Math.max(1, Math.round(gap / 5.2)));
+                  lineStr += " ".repeat(spaces);
+                }
+              }
+              lineStr += it.str;
+              cursorX = it.x + it.width;
+            });
+            fullText += lineStr.replace(/\s+$/, "") + "\n";
+          });
+
+          if (p < pdfDoc.numPages) fullText += "\n";
+        }
+        return fullText.trim();
+      } catch (e) {
+        return "";
+      }
+    }
+
+    // Transpõe todos os acordes dentro de um trecho (inclusive sequências como "D  A/C#  Bm7  G")
+    function transposeAllChordsInSegment(segment, semitones) {
+      return String(segment).replace(/([A-G][#b]?(?:m|maj|min|dim|aug|sus|add|M|\+|°|º)?(?:2|4|5|6|7|9|11|13|M|\+|-)*?(?:\([#b+-]?\d+(?:\/[#b+-]?\d+)*\))?(?:\/[A-G][#b]?)?)(?=\s|$|[)\],/|-])/g, (match) => {
+        if (!isMusicalChordToken(match)) return match;
+        const tr = transposeChordToken(match, semitones);
+        return `<strong class="text-red-500 font-black">${tr}</strong>`;
+      });
+    }
+
+    // Renderiza a cifra com acordes em VERMELHO E NEGRITO (reconhecendo a marcação {{C:...}} ou linhas de acordes)
     function renderTransposedChordHtml(rawText, semitones) {
       if (!rawText) return "";
       const lines = String(rawText).replace(/\r\n/g, "\n").split("\n");
       return lines.map(line => {
-        const escaped = line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        if (/^\s*\[.*?\]\s*$/.test(line) || /^\s*(intro|introducao|introdução|verso|estribilho|refrao|refrão|ponte|pre-refrao|pré-refrão|instrumental|solo|final)\s*:?\s*$/i.test(line.trim())) {
-          return `<span class="text-emerald-400 font-extrabold uppercase tracking-wider block mt-3">${escaped}</span>`;
-        }
-        if (isChordLine(line)) {
-          const transposedLine = escaped.replace(/\b([A-G][#b]?(?:m|maj|min|dim|aug|sus|add|M|\+|°|º)?(?:2|4|5|6|7|9|11|13|M|\+|-)*?(?:\([#b+-]?\d+(?:\/[#b+-]?\d+)*\))?(?:\/[A-G][#b]?)?)(?=\s|$|[)\],])/g, (match) => {
-            if (!isMusicalChordToken(match)) return match;
-            const tr = transposeChordToken(match, semitones);
-            return `<strong class="text-amber-400 font-extrabold">${tr}</strong>`;
+        let escaped = line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+        // 1. Se veio com marcação {{C:...}} do extrator de vermelho/negrito do Drive:
+        if (escaped.includes("{{C:")) {
+          escaped = escaped.replace(/\{\{C:([\s\S]*?)\}\}/g, (_, inner) => {
+            return transposeAllChordsInSegment(inner, semitones);
           });
-          return `<span class="block leading-tight">${transposedLine}</span>`;
+          if (isChordLine(line.replace(/\{\{C:|\}\}/g, ""))) {
+            escaped = transposeAllChordsInSegment(escaped, semitones);
+          }
+          return `<span class="block leading-snug">${escaped || "&nbsp;"}</span>`;
         }
+
+        // 2. Linhas com [Intro], [Refrão], etc. que podem ter acordes na frente (ex: "[Intro] D  A  Bm  G")
+        if (/^\s*(\[.*?\]|(?:intro|introducao|introdução|verso|refrão|refrao|ponte|pré-refrão|pre-refrao|instrumental|solo|final)\s*:?)(.*)$/i.test(escaped)) {
+          return escaped.replace(/^(\s*(?:\[.*?\]|(?:intro|introducao|introdução|verso|refrão|refrao|ponte|pré-refrão|pre-refrao|instrumental|solo|final)\s*:?))(.*)$/i, (_, sec, rest) => {
+            return `<span class="block mt-2"><strong class="text-emerald-400 font-extrabold uppercase">${sec}</strong>${transposeAllChordsInSegment(rest, semitones)}</span>`;
+          });
+        }
+
+        // 3. Linha de acordes padrão (extraída do PDF ou texto)
+        if (isChordLine(line)) {
+          return `<span class="block leading-tight">${transposeAllChordsInSegment(escaped, semitones)}</span>`;
+        }
+
         return `<span class="text-zinc-100 block leading-snug">${escaped || "&nbsp;"}</span>`;
       }).join("");
     }
 
-    // Busca o texto puro da cifra no Drive (ou usa o cache offline) e ativa o Modo Cifra Club
+    // Busca automaticamente a cifra (via extrator de vermelho/negrito OU direto do PDF via pdf.js)
     async function activateInteractiveChordMode(idx, forceOpenEditor = false) {
       const sel = document.getElementById("palco-select-repertorio");
       const rep = repertorios.find(r => r.id === Number(sel?.value || selectedRepertorioId)) || findNextUpcomingRepertorio();
       if (!rep || !rep.itens[idx]) return;
       const info = getResolvedSongDetails(rep.itens[idx]);
-      const cacheKey = "chordText_" + normalizeSongKey(info.musica);
+      const songKey = normalizeSongKey(info.musica);
+      const cacheKey = "chordText_v2_" + songKey;
 
       const box = document.getElementById(`stage-chord-box-${idx}`);
       if (!box) return;
@@ -3505,16 +3586,44 @@
         const cachedTxt = await dbGet("chords", cacheKey);
         if (cachedTxt) {
           stageRawChordTexts[idx] = cachedTxt;
-        } else if (navigator.onLine && scriptUrl) {
-          box.innerHTML = `<div class="p-8 text-center text-sm text-amber-300 bg-black rounded-2xl border border-amber-500/30"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Extraindo cifra editável do arquivo Drive para transposição automática...</div>`;
-          try {
-            const res = await fetch(`${scriptUrl}?action=obterTextoCifra&fileId=${encodeURIComponent(info.fileId || "")}&musica=${encodeURIComponent(info.musica)}`);
-            const data = await res.json();
-            if (data && data.status === "ok" && data.texto) {
-              stageRawChordTexts[idx] = data.texto;
-              await dbPut("chords", cacheKey, data.texto);
-            }
-          } catch (e) {}
+        } else {
+          box.innerHTML = `<div class="p-8 text-center text-sm text-amber-300 bg-black rounded-2xl border border-amber-500/30"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Lendo acordes da cifra "${info.musica}" para transposição automática...</div>`;
+
+          // Tentativa A: Extrator de HTML (vermelho/negrito) do Código.gs
+          if (navigator.onLine && scriptUrl) {
+            try {
+              const res = await fetch(`${scriptUrl}?action=obterTextoCifra&fileId=${encodeURIComponent(info.fileId || "")}&musica=${encodeURIComponent(info.musica)}`);
+              const data = await res.json();
+              if (data && data.texto && data.texto.trim()) {
+                stageRawChordTexts[idx] = data.texto;
+              } else if (data && data.pdfBase64) {
+                stageRawChordTexts[idx] = await extractChordTextFromPdfBase64Client(data.pdfBase64);
+              }
+            } catch (e) {}
+          }
+
+          // Tentativa B (Fallback Infalível): Puxa do PDF salvo offline ou da rota obterPdfsRepertorio e extrai via pdf.js no navegador!
+          if (!stageRawChordTexts[idx]) {
+            try {
+              let pdfB64 = await dbGet("chords", songKey);
+              if (!pdfB64 && navigator.onLine && scriptUrl) {
+                const itemPayload = [{ musica: info.musica, autor: info.autor || "", fileId: info.fileId || "", cifraDoxa: info.viewUrl || "" }];
+                const resPdf = await fetch(`${scriptUrl}?action=obterPdfsRepertorio&itens=${encodeURIComponent(JSON.stringify(itemPayload))}`);
+                const dataPdf = await resPdf.json();
+                if (dataPdf && dataPdf.arquivos && dataPdf.arquivos[0] && dataPdf.arquivos[0].pdfBase64) {
+                  pdfB64 = dataPdf.arquivos[0].pdfBase64;
+                  await dbPut("chords", songKey, pdfB64);
+                }
+              }
+              if (pdfB64) {
+                stageRawChordTexts[idx] = await extractChordTextFromPdfBase64Client(pdfB64);
+              }
+            } catch (e2) {}
+          }
+
+          if (stageRawChordTexts[idx]) {
+            await dbPut("chords", cacheKey, stageRawChordTexts[idx]);
+          }
         }
       }
 
@@ -3536,7 +3645,6 @@
       stageInteractiveActive[idx] = true;
       renderInteractiveChordBox(idx);
     }
-
     async function saveManualChordText(idx) {
       const ta = document.getElementById(`manual-chord-textarea-${idx}`);
       if (!ta || !ta.value.trim()) return;
