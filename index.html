@@ -5715,6 +5715,328 @@
         renderFeaturedRepertorio();
       }
     });
+// ============================================================================
+    // 9. MOTOR DE VOZ HUMANA REAL PARA A FAIXA GUIA.WAV (TTS PT-BR + VOZ PRÓPRIA)
+    // ============================================================================
+    let guideVoiceBankBuffers = {}; // cueKey -> AudioBuffer decodificado em memória
+
+    const GUIDE_VOICE_DICTIONARY = {
+      INTRO:        "Introdução",
+      VERSO:        "Verso",
+      PRE_REFRAO:   "Pré refrão",
+      REFRAO:       "Refrão",
+      INSTRUMENTAL: "Instrumental",
+      PONTE:        "Ponte",
+      SUBIR:        "Sobe dinâmica",
+      DESCE:        "Desce",
+      FINAL:        "Final",
+      COUNT_1:      "Um",
+      COUNT_2:      "Dois",
+      COUNT_3:      "Três",
+      COUNT_4:      "Quatro"
+    };
+
+    // Busca o áudio falado no cache local (IndexedDB) ou baixa automaticamente via Código.gs
+    async function getOrFetchSpokenCueBuffer(cueKey) {
+      if (guideVoiceBankBuffers[cueKey]) return guideVoiceBankBuffers[cueKey];
+      const ctx = ensureAudioContext();
+      if (!ctx) return null;
+
+      const dbKey = "voiceCue_ptBR_" + cueKey;
+      let savedB64 = await dbGet("catalog", dbKey);
+
+      if (!savedB64 && navigator.onLine && scriptUrl) {
+        const phrase = GUIDE_VOICE_DICTIONARY[cueKey] || cueKey;
+        try {
+          const res = await fetch(`${scriptUrl}?action=obterVozGuiaTts&texto=${encodeURIComponent(phrase)}`);
+          const data = await res.json();
+          if (data && data.status === "ok" && data.base64) {
+            savedB64 = data.base64;
+            await dbPut("catalog", dbKey, savedB64);
+          }
+        } catch (e) {}
+      }
+
+      if (savedB64) {
+        try {
+          const cleanB64 = String(savedB64).replace(/^data:[^;]+;base64,/, "");
+          const bytes = base64ToUint8Array(cleanB64);
+          const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+          const decoded = await decodeBufferCrossBrowser(ctx, ab);
+          guideVoiceBankBuffers[cueKey] = decoded;
+          return decoded;
+        } catch (errDec) {}
+      }
+      return null;
+    }
+
+    // Copia um AudioBuffer de voz para dentro da timeline do arquivo Guia.wav (com reamostragem automática)
+    function mixSpokenBufferIntoPcm(targetPcm, targetSampleRate, audioBuf, insertTimeSec, gain = 1.15, maxDurSec = 1.4) {
+      if (!audioBuf || insertTimeSec < 0) return;
+      const srcData = audioBuf.getChannelData(0);
+      const srcRate = audioBuf.sampleRate;
+      const ratio = srcRate / targetSampleRate;
+
+      // Remove pequeno silêncio inicial comum em arquivos MP3 de TTS
+      let trimStart = 0;
+      while (trimStart < srcData.length && Math.abs(srcData[trimStart]) < 0.015) {
+        trimStart++;
+      }
+
+      const availableSrcLen = Math.max(0, srcData.length - trimStart);
+      const outSamples = Math.min(
+        Math.floor(maxDurSec * targetSampleRate),
+        Math.floor(availableSrcLen / ratio)
+      );
+      const startOffset = Math.floor(insertTimeSec * targetSampleRate);
+
+      for (let i = 0; i < outSamples && (startOffset + i) < targetPcm.length; i++) {
+        const srcIdx = trimStart + Math.min(availableSrcLen - 1, Math.floor(i * ratio));
+        // Fade-out suave nos últimos 10% para nunca estalar
+        const fade = i > outSamples * 0.9 ? (outSamples - i) / (outSamples * 0.1) : 1.0;
+        targetPcm[startOffset + i] += srcData[srcIdx] * gain * fade;
+      }
+    }
+
+    // Sobrescreve o gerador de Guia.wav para incluir VOZ FALADA REAL + Contagem "Dois, Três, Quatro" + Click de apoio!
+    downloadAndSaveAutoGuideWav = async function() {
+      if (midiSlides.length === 0) {
+        alert("Gere os slides e marque os tempos primeiro para criar a faixa Guia.wav falada.");
+        return;
+      }
+
+      const btn = document.getElementById("btn-generate-guide-wav");
+      const origHtml = btn ? btn.innerHTML : "";
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Sintetizando Vozes em Português...</span>`;
+      }
+
+      try {
+        const bpm = Math.max(40, Math.min(240, Number(document.getElementById("midi-bpm-input")?.value) || 120));
+        const songTitle = midiStudioSong ? midiStudioSong.musica : (prompt("Nome da música para a faixa Guia:") || "Musica_DOXA");
+        const beatSec = 60 / bpm;
+
+        const cues = midiSlides.filter(s => s.cueType && s.timeSec > 0);
+        if (cues.length === 0 && midiSlides.length > 0) {
+          cues.push({ timeSec: midiSlides[0].timeSec || (beatSec * 4), cueType: "INTRO" });
+        }
+
+        // 1. Baixa/carrega os áudios das palavras necessárias + contagem ("Dois", "Três", "Quatro")
+        const neededKeys = new Set(["COUNT_1", "COUNT_2", "COUNT_3", "COUNT_4"]);
+        cues.forEach(c => neededKeys.add(c.cueType));
+
+        await Promise.all(Array.from(neededKeys).map(k => getOrFetchSpokenCueBuffer(k)));
+
+        // 2. Monta a timeline do arquivo WAV (22050 Hz Mono 16-bit)
+        const sampleRate = 22050;
+        const maxSlideSec = midiSlides.reduce((acc, s) => Math.max(acc, Number(s.timeSec) || 0), 0);
+        const durationSec = Math.max(maxSlideSec + 8, 30);
+        const totalSamples = Math.ceil(durationSec * sampleRate);
+        const pcmFloat = new Float32Array(totalSamples);
+
+        // Click discreto de apoio junto com a voz nos 4 tempos antes da entrada
+        const addClickTick = (startSec, freqHz, amp = 0.25) => {
+          if (startSec < 0 || startSec >= durationSec) return;
+          const startIdx = Math.floor(startSec * sampleRate);
+          const len = Math.floor(0.045 * sampleRate);
+          for (let i = 0; i < len && (startIdx + i) < totalSamples; i++) {
+            const env = Math.pow(1 - (i / len), 2.2);
+            pcmFloat[startIdx + i] += Math.sin(2 * Math.PI * freqHz * (i / sampleRate)) * amp * env;
+          }
+        };
+
+        cues.forEach(cue => {
+          const enterSec = Number(cue.timeSec) || 0;
+          const countStartSec = enterSec - (4 * beatSec); // Exatamente 1 compasso (4 tempos) antes da seção entrar!
+
+          // Tempo 1 do compasso de aviso: Fala o nome da Seção ("Refrão!", "Ponte!", "Verso!")
+          const sectionVoiceBuf = guideVoiceBankBuffers[cue.cueType];
+          const speakStartSec = Math.max(0, countStartSec);
+          if (sectionVoiceBuf) {
+            mixSpokenBufferIntoPcm(pcmFloat, sampleRate, sectionVoiceBuf, speakStartSec, 1.25, beatSec * 1.85);
+          }
+
+          // Tempos 1, 2, 3 e 4: Click de referência + Voz contando "Dois, Três, Quatro!" nos tempos 2, 3 e 4
+          const countKeys = ["COUNT_1", "COUNT_2", "COUNT_3", "COUNT_4"];
+          for (let b = 0; b < 4; b++) {
+            const tickSec = countStartSec + (b * beatSec);
+            if (tickSec >= 0) {
+              addClickTick(tickSec, b === 0 ? 1200 : 880, 0.28);
+              // Se for Tempo 2, 3 ou 4 (ou Tempo 1 caso a fala da seção seja curta), fala o número da contagem!
+              if (b >= 1) {
+                const numBuf = guideVoiceBankBuffers[countKeys[b]];
+                if (numBuf) {
+                  mixSpokenBufferIntoPcm(pcmFloat, sampleRate, numBuf, tickSec, 1.10, beatSec * 0.95);
+                }
+              }
+            }
+          }
+        });
+
+        // Normaliza para evitar distorção (clipping) e exporta para WAV 16-bit
+        let peak = 0;
+        for (let i = 0; i < totalSamples; i++) {
+          const a = Math.abs(pcmFloat[i]);
+          if (a > peak) peak = a;
+        }
+        const norm = peak > 0.98 ? (0.95 / peak) : 1.0;
+
+        const dataSize = totalSamples * 2;
+        const buf = new ArrayBuffer(44 + dataSize);
+        const view = new DataView(buf);
+        const writeStr = (off, s) => { for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); };
+        writeStr(0, "RIFF"); view.setUint32(4, 36 + dataSize, true); writeStr(8, "WAVE");
+        writeStr(12, "fmt "); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
+        view.setUint32(24, sampleRate, true); view.setUint32(28, sampleRate * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true);
+        writeStr(36, "data"); view.setUint32(40, dataSize, true);
+        const pcm16 = new Int16Array(buf, 44);
+        for (let i = 0; i < totalSamples; i++) {
+          const s = Math.max(-1, Math.min(1, pcmFloat[i] * norm));
+          pcm16[i] = s < 0 ? s * 32768 : s * 32767;
+        }
+
+        const wavBytes = new Uint8Array(buf);
+        const safeTitle = songTitle.replace(/[\\/:*?"<>|]/g, "");
+        const blob = new Blob([wavBytes], { type: "audio/wav" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `${safeTitle} - Guia.wav`;
+        a.click();
+
+        // Salva na memória para embutir automaticamente no projeto .RPP do Reaper
+        const key = normalizeSongKey(songTitle);
+        const savedGuides = (await dbGet("catalog", "guideAutomations")) || {};
+        savedGuides[key] = {
+          musica: songTitle,
+          bpm,
+          wavBase64: uint8ArrayToBase64(wavBytes),
+          cues: cues.map(s => ({ cueType: s.cueType, timeSec: s.timeSec })),
+          updatedAt: Date.now()
+        };
+        await dbPut("catalog", "guideAutomations", savedGuides);
+        customGuideMemory = savedGuides;
+
+        alert(`✅ Faixa "${safeTitle} - Guia.wav" gerada COM VOZ EM PORTUGUÊS ("Refrão, Dois, Três, Quatro") e vinculada ao Reaper!`);
+      } catch (err) {
+        alert("Erro ao gerar Guia falada: " + (err.message || err));
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = origHtml;
+        }
+      }
+    };
+
+    // Botão extra para gravar a sua própria voz nas palavras da Guia se desejar!
+    function injectCustomVoiceModalButton() {
+      const midiTopHeader = document.querySelector("#view-midi > div:first-child > div:last-child");
+      if (midiTopHeader && !document.getElementById("btn-custom-voice-bank")) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.id = "btn-custom-voice-bank";
+        b.onclick = () => openCustomGuideVoiceModal();
+        b.className = "px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5";
+        b.innerHTML = `<i class="fa-solid fa-microphone text-rose-400"></i><span>Gravar Minha Voz</span>`;
+        midiTopHeader.appendChild(b);
+      }
+    }
+
+    let customVoiceRec = null;
+    let customVoiceChunks = [];
+
+    function openCustomGuideVoiceModal() {
+      let m = document.getElementById("custom-voice-bank-modal");
+      if (!m) {
+        m = document.createElement("div");
+        m.id = "custom-voice-bank-modal";
+        m.className = "fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4";
+        document.body.appendChild(m);
+      }
+      const rowsHtml = Object.entries(GUIDE_VOICE_DICTIONARY).map(([k, phrase]) => `
+        <div class="flex items-center justify-between bg-slate-800/80 px-3 py-2 rounded-xl border border-slate-700 text-xs">
+          <div>
+            <strong class="text-white">${phrase}</strong>
+            <span class="text-[10px] text-slate-400 ml-1">(${k})</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button type="button" onclick="previewSingleGuideWord('${k}')" class="px-2.5 py-1 rounded-lg bg-slate-900 text-emerald-400 font-bold">▶️ Ouvir</button>
+            <button type="button" id="btn-vrec-${k}" onclick="recordCustomGuideWord('${k}')" class="px-2.5 py-1 rounded-lg bg-rose-600/25 border border-rose-500/40 text-rose-300 font-bold">🎙️ Gravar</button>
+          </div>
+        </div>`).join("");
+
+      m.innerHTML = `
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-5 space-y-3 max-h-[88vh] overflow-y-auto custom-scroll">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <div>
+              <h3 class="text-base font-extrabold text-white">Banco de Vozes da Faixa Guia</h3>
+              <p class="text-xs text-slate-400">Por padrão usamos a voz em Português do Google. Se quiser, grave a sua própria voz abaixo!</p>
+            </div>
+            <button type="button" onclick="document.getElementById('custom-voice-bank-modal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <div class="space-y-1.5">${rowsHtml}</div>
+          <div class="flex justify-between pt-2 border-t border-slate-800">
+            <button type="button" onclick="resetGuideVoicesToGoogleTts()" class="px-3 py-1.5 rounded-xl bg-slate-800 text-amber-300 text-xs font-bold">Restaurar Voz Google</button>
+            <button type="button" onclick="document.getElementById('custom-voice-bank-modal').classList.add('hidden')" class="px-4 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-bold">Concluir</button>
+          </div>
+        </div>`;
+      m.classList.remove("hidden");
+    }
+
+    async function previewSingleGuideWord(cueKey) {
+      const buf = await getOrFetchSpokenCueBuffer(cueKey);
+      const ctx = ensureAudioContext();
+      if (!buf || !ctx) {
+        alert("Atualize a implantação do Código.gs (obterVozGuiaTts) ou grave sua voz no botão ao lado!");
+        return;
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(ctx.destination);
+      src.start(0);
+    }
+
+    async function recordCustomGuideWord(cueKey) {
+      const btn = document.getElementById(`btn-vrec-${cueKey}`);
+      if (customVoiceRec && customVoiceRec.state === "recording") {
+        customVoiceRec.stop();
+        if (btn) btn.textContent = "🎙️ Gravar";
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        customVoiceChunks = [];
+        customVoiceRec = new MediaRecorder(stream);
+        customVoiceRec.ondataavailable = e => { if (e.data.size > 0) customVoiceChunks.push(e.data); };
+        customVoiceRec.onstop = () => {
+          const blob = new Blob(customVoiceChunks, { type: "audio/webm" });
+          const reader = new FileReader();
+          reader.onload = async (ev) => {
+            const b64 = ev.target.result;
+            await dbPut("catalog", "voiceCue_ptBR_" + cueKey, b64);
+            delete guideVoiceBankBuffers[cueKey];
+            await getOrFetchSpokenCueBuffer(cueKey);
+            previewSingleGuideWord(cueKey);
+          };
+          reader.readAsDataURL(blob);
+          stream.getTracks().forEach(t => t.stop());
+        };
+        customVoiceRec.start();
+        if (btn) btn.textContent = "⏹️ Parar (Fale agora!)";
+      } catch (e) {
+        alert("Permita o uso do microfone para gravar sua voz.");
+      }
+    }
+
+    async function resetGuideVoicesToGoogleTts() {
+      for (const k of Object.keys(GUIDE_VOICE_DICTIONARY)) {
+        await dbPut("catalog", "voiceCue_ptBR_" + k, null);
+        delete guideVoiceBankBuffers[k];
+      }
+      alert("Vozes restauradas para a voz padrão em Português do Google!");
+    }
+
+    injectCustomVoiceModalButton();
   </script>
 </body>
 </html>
