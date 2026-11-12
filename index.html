@@ -2799,13 +2799,22 @@
       const rep = repertorios.find(r => r.id === Number(sel?.value || selectedRepertorioId)) || findNextUpcomingRepertorio();
       const container = document.getElementById("palco-content");
       if (!rep || !container) return;
+
+      const repView = document.getElementById("view-repertorios");
+      if (repView && !repView.classList.contains("hidden")) {
+        document.getElementById("stage-pro-toolbar")?.classList.remove("hidden");
+      }
+
       const jobs = [];
       container.innerHTML = (rep.itens || []).map((it, i) => {
         const info = getResolvedSongDetails(it), key = normalizeSongKey(info.musica), hasOff = offlineSavedChordKeys.has(key);
         const sM = String(info.musica).replace(/'/g, "\\'"), sA = String(info.autor || "").replace(/'/g, "\\'");
+        const safeTom = String(info.tom || "-").replace(/'/g, "\\'");
+        const bpmVal = extractNumericBpm(info.tempo) || 120;
         const tempoStr = info.tempo ? (/bpm/i.test(info.tempo) ? info.tempo : `${info.tempo} BPM`) : "";
         if (hasOff) jobs.push({ musica: info.musica, id: `offline-canvas-wrap-${i}` });
-        return `<div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-lg">
+
+        return `<div id="stage-song-card-${i}" class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-lg">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div class="space-y-1.5 min-w-0 flex-1">
               <div class="flex flex-wrap items-center gap-2">
@@ -2819,9 +2828,19 @@
                 ${info.cifra ? `<a href="${info.cifra}" target="_blank" class="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-guitar"></i><span>Cifra Club</span></a>` : ""}
                 ${info.letra ? `<a href="${info.letra}" target="_blank" class="px-3 py-1.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-file-lines"></i><span>Letra</span></a>` : ""}
                 ${info.hasFile ? `<a href="${info.viewUrl}" target="_blank" class="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 text-xs font-bold">Abrir Cifra</a><button onclick="baixarCifraIndividual('${sM}','${sA}','${info.fileId}','${info.viewUrl}')" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-bold"><i class="fa-solid fa-download mr-1"></i>Baixar PDF</button><button onclick="toggleStageChordBox(${i})" class="px-3 py-1.5 rounded-xl bg-slate-800 text-indigo-300 text-xs font-bold">Mostrar/Ocultar</button>` : ""}
+                <button type="button" onclick="openSongChordFullscreen(${i})" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow"><i class="fa-solid fa-expand"></i><span>Tela Cheia</span></button>
+                <button type="button" onclick="activateInteractiveChordMode(${i}, false)" class="btn-interactive-chord px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-extrabold flex items-center gap-1.5"><i class="fa-solid fa-bolt"></i><span>Modo Interativo (Transpor Tom)</span></button>
               </div>
             </div>
-            <div class="text-center bg-slate-800 border border-amber-500/40 rounded-2xl px-5 py-2.5 shrink-0"><span class="text-[10px] text-slate-400 block">TOM</span><span class="text-2xl font-black text-amber-400">${info.tom}</span></div>
+            <div class="text-center bg-slate-800 border border-amber-500/40 rounded-2xl px-5 py-2.5 shrink-0">
+              <span class="text-[10px] text-slate-400 block">TOM</span>
+              <span id="stage-tom-val-${i}" class="text-2xl font-black text-amber-400">${info.tom}</span>
+              <div class="tom-shift-controls flex items-center justify-center gap-1 mt-1.5 pt-1 border-t border-slate-700">
+                <button type="button" onclick="shiftStageSongKey(${i}, '${safeTom}', -1)" class="w-7 h-6 rounded bg-slate-900 hover:bg-amber-500 hover:text-black text-slate-200 text-xs font-black" title="Baixar meio tom (-1) na cifra inteira">-</button>
+                <button type="button" onclick="startStageMetronomeAt(${bpmVal})" class="px-2 h-6 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-extrabold" title="Tocar Metrônomo neste BPM">🥁 ${bpmVal}</button>
+                <button type="button" onclick="shiftStageSongKey(${i}, '${safeTom}', 1)" class="w-7 h-6 rounded bg-slate-900 hover:bg-amber-500 hover:text-black text-slate-200 text-xs font-black" title="Subir meio tom (+1) na cifra inteira">+</button>
+              </div>
+            </div>
           </div>
           <div id="stage-chord-box-${i}" class="${allStageChordsVisible ? '' : 'hidden'} pt-3 border-t border-slate-800">
             ${hasOff ? `<div id="offline-canvas-wrap-${i}" class="w-full overflow-y-auto max-h-[750px] rounded-xl"></div>` : (info.hasFile ? `<iframe src="${info.previewUrl}" style="height:640px;" class="w-full rounded-xl bg-white"></iframe>` : "")}
@@ -4893,6 +4912,9 @@
     });
 
     injectGDrumNavigationButtons();
+    if (repertorios && repertorios.length > 0) {
+      renderRepertorios();
+    }
   </script>
 </body>
 </html>
