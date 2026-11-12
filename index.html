@@ -609,96 +609,216 @@
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3"><h3 class="text-xs font-bold uppercase text-emerald-400">Por Categoria</h3><div id="report-tags" class="space-y-2 max-h-80 overflow-y-auto custom-scroll"></div></div>
       </div>
     </section>
-<!-- BOTÃO FLUTUANTE RETRÁTIL DE PALCO (APARECE E DESAPARECE NO CELULAR E NOTEBOOK) -->
-    <div id="stage-pro-toolbar" class="hidden fixed bottom-20 xl:bottom-6 right-4 z-40 flex flex-col items-end gap-2">
-      <!-- PAINEL EXPANDIDO (OCULTO POR PADRÃO PARA NÃO OCUPAR ESPAÇO NA TELA) -->
-      <div id="stage-fab-panel" class="hidden bg-zinc-950/95 border border-emerald-500/50 rounded-2xl p-3.5 shadow-2xl backdrop-blur-md w-72 sm:w-80 space-y-3 text-xs">
-        <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
-          <span class="font-extrabold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-            <i class="fa-solid fa-sliders"></i><span>Controles de Palco</span>
-          </span>
-          <button type="button" onclick="toggleStageFabMenu(false)" class="w-6 h-6 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-
-        <div class="grid grid-cols-2 gap-2">
-          <button type="button" onclick="toggleStageOledFullscreen(); toggleStageFabMenu(false);" id="btn-stage-oled" class="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold flex items-center justify-center gap-1.5 shadow">
-            <i class="fa-solid fa-expand"></i><span>Tela Cheia</span>
-          </button>
-          <button type="button" onclick="toggleStageAutoScroll()" id="btn-stage-autoscroll" class="py-2 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-slate-200 font-bold flex items-center justify-center gap-1.5">
-            <i class="fa-solid fa-angles-down text-indigo-400"></i><span id="lbl-stage-autoscroll">Scroll: Off</span>
-          </button>
-        </div>
-
-        <div class="flex items-center justify-between gap-2 bg-zinc-900/90 p-2 rounded-xl border border-zinc-800">
-          <span class="text-[11px] text-slate-400 font-semibold">Velocidade Scroll:</span>
-          <select id="stage-scroll-speed" onchange="updateStageScrollSpeed(this.value)" class="px-2.5 py-1 rounded-lg bg-black border border-zinc-700 text-xs text-white font-bold">
-            <option value="1">1x (Lenta)</option>
-            <option value="2" selected>2x (Média)</option>
-            <option value="3.5">3x (Rápida)</option>
-          </select>
-        </div>
-
-        <div class="flex items-center justify-between bg-zinc-900/90 border border-zinc-800 rounded-xl p-2 gap-2">
-          <button type="button" onclick="toggleStageMetronome()" id="btn-stage-metro" class="px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 font-extrabold flex items-center gap-1.5">
-            <span id="stage-metro-led" class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span>
-            <span id="lbl-stage-metro">Click: Off</span>
-          </button>
-          <div class="flex items-center gap-1">
-            <input type="number" id="stage-metro-bpm" value="120" min="40" max="240" onchange="changeStageMetroBpm(this.value)" class="w-14 bg-black border border-zinc-700 rounded-lg px-1.5 py-1 text-center text-xs font-black text-amber-400" />
-            <span class="text-[10px] text-slate-400 font-bold">BPM</span>
+<!-- ABA NOVA: BATERIA AO VIVO (ESTILO GDRUMS + PASTA GOOGLE DRIVE) -->
+    <section id="view-gdrum" class="hidden space-y-4">
+      <!-- BARRA DE TOPO DO GDRUM -->
+      <div class="bg-zinc-950 border border-amber-500/40 rounded-2xl p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-3 shadow-2xl">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-lg font-black">
+            <i class="fa-solid fa-drum"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-base sm:text-lg font-black text-white tracking-tight">GDrums DOXA</h2>
+              <span id="gdrum-drive-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">Sintetizador + Drive</span>
+            </div>
+            <p class="text-[11px] text-zinc-400">Ritmos, viradas, finais e repertório no palco • Sincronizado com a pasta <code>gDrum</code> do Google Drive</p>
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-2 pt-1 border-t border-zinc-800">
-          <button type="button" onclick="stepStageSong(-1)" class="py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-white font-bold flex items-center justify-center gap-1.5">
-            <i class="fa-solid fa-arrow-up text-amber-400"></i><span>Música Ant.</span>
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" onclick="syncGDrumDriveStyles(true)" class="px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-amber-300 text-xs font-bold flex items-center gap-1.5">
+            <i class="fa-brands fa-google-drive" id="gdrum-sync-icon"></i><span>Sincronizar Pasta gDrum (Drive)</span>
           </button>
-          <button type="button" onclick="stepStageSong(1)" class="py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-white font-bold flex items-center justify-center gap-1.5">
-            <span>Próx. Música</span><i class="fa-solid fa-arrow-down text-amber-400"></i>
+          <button type="button" onclick="openGDrumDriveUploadModal()" class="px-3 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-black text-xs font-extrabold flex items-center gap-1.5 shadow">
+            <i class="fa-solid fa-cloud-arrow-up"></i><span>Gravar / Salvar Sons no Drive</span>
           </button>
         </div>
       </div>
 
-      <!-- BOTÃO REDONDO COMPACTO (SEMPRE VISÍVEL NO NOTEBOOK E CELULAR) -->
-      <button type="button" onclick="toggleStageFabMenu()" id="btn-stage-fab-trigger" class="h-12 px-4 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white shadow-2xl border-2 border-emerald-300/40 flex items-center justify-center gap-2 font-extrabold text-xs transition transform active:scale-95" title="Abrir/Fechar Controles de Palco">
-        <i class="fa-solid fa-Sliders fa-sliders text-base" id="icon-stage-fab"></i>
-        <span class="hidden sm:inline">Palco</span>
-      </button>
-    </div>
-    <!-- MINI-PLAYER FLUTUANTE DE VS (APARECE QUANDO O VS ESTÁ TOCANDO FORA DA ABA VS) -->
-    <div id="floating-vs-miniplayer" class="hidden fixed bottom-16 md:bottom-4 left-3 right-3 md:left-auto md:right-5 md:w-96 z-40 bg-slate-950/95 border border-purple-500/60 rounded-2xl p-3 shadow-2xl backdrop-blur flex items-center justify-between gap-3">
-      <div class="min-w-0 flex-1">
-        <span class="text-[10px] font-extrabold uppercase text-purple-400 block"><i class="fa-solid fa-sliders mr-1"></i>VS Tocando em 2º Plano</span>
-        <p id="miniplayer-song-title" class="text-xs font-black text-white truncate">-</p>
-      </div>
-      <div class="flex items-center gap-1.5 shrink-0">
-        <span id="miniplayer-time" class="font-mono text-xs text-slate-300 mr-1">00:00</span>
-        <button type="button" onclick="toggleMasterVsPlay()" class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-xs"><i class="fa-solid fa-play" id="miniplayer-play-icon"></i></button>
-        <button type="button" onclick="stopMasterVs()" class="w-8 h-8 rounded-xl bg-slate-800 text-slate-300 flex items-center justify-center text-xs"><i class="fa-solid fa-stop"></i></button>
-        <button type="button" onclick="switchTab('vs')" class="px-2 py-1.5 rounded-xl bg-purple-600/30 text-purple-200 text-[10px] font-bold">Abrir</button>
-      </div>
-    </div>
+      <!-- LAYOUT 3 COLUNAS IGUAL À IMAGEM DO GDRUMS -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
 
-    <!-- BARRA DE NAVEGAÇÃO INFERIOR FIXA (MOBILE & TABLET) -->
-    <nav id="mobile-bottom-nav" class="xl:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 border-t border-slate-800/90 backdrop-blur px-2 py-1.5 flex items-center justify-around">
-      <button type="button" onclick="switchTab('musicas')" id="bnav-musicas" class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-indigo-400 font-bold text-[10px]">
-        <i class="fa-solid fa-music text-sm"></i><span>Músicas</span>
-      </button>
-      <button type="button" onclick="switchTab('repertorios')" id="bnav-repertorios" class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-slate-400 font-semibold text-[10px]">
-        <i class="fa-solid fa-guitar text-sm"></i><span>Culto & Palco</span>
-      </button>
-      <button type="button" onclick="switchTab('vs')" id="bnav-vs" class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-slate-400 font-semibold text-[10px]">
-        <i class="fa-solid fa-sliders text-sm"></i><span>VS / Mix</span>
-      </button>
-      <button type="button" onclick="switchTab('midi')" id="bnav-midi" class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-slate-400 font-semibold text-[10px]">
-        <i class="fa-solid fa-wand-magic-sparkles text-sm"></i><span>MIDI</span>
-      </button>
-      <button type="button" onclick="openSideDrawer()" class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-slate-400 font-semibold text-[10px]">
-        <i class="fa-solid fa-bars text-sm"></i><span>Menu</span>
-      </button>
-    </nav>
+        <!-- COLUNA ESQUERDA (3 cols): ESTILOS / RITMOS -->
+        <div class="lg:col-span-3 bg-zinc-950 border border-zinc-800 rounded-2xl p-3.5 flex flex-col justify-between space-y-3 shadow-xl">
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-black uppercase tracking-wider text-zinc-400">Estilos & Ritmos</span>
+              <span id="gdrum-styles-count" class="text-[10px] px-2 py-0.5 rounded bg-zinc-900 text-amber-400 font-bold">6 ritmos</span>
+            </div>
+            <input type="text" id="gdrum-style-search" oninput="renderGDrumStylesList()" placeholder="Filtrar estilo (ex: Worship, Pop)..." class="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-white" />
+            <div id="gdrum-styles-container" class="space-y-1.5 max-h-[380px] overflow-y-auto custom-scroll pr-1"></div>
+          </div>
+
+          <div class="pt-2.5 border-t border-zinc-800 text-[11px] text-zinc-400 space-y-1">
+            <div class="flex justify-between"><span>Motor de Áudio:</span><strong id="gdrum-engine-mode-lbl" class="text-emerald-400">Baixa Latência</strong></div>
+            <div class="flex justify-between"><span>Fila Próximo Compasso:</span><strong id="gdrum-queued-lbl" class="text-amber-400">-</strong></div>
+          </div>
+        </div>
+
+        <!-- COLUNA CENTRAL (6 cols): PAINEL DE PADS AO VIVO (IGUAL À FOTO DO GDRUMS) -->
+        <div class="lg:col-span-6 bg-zinc-950 border border-zinc-800 rounded-2xl p-4 sm:p-5 flex flex-col justify-between space-y-4 shadow-2xl">
+          <!-- CABEÇALHO DO RITMO ATUAL + NAVEGAÇÃO RÁPIDA -->
+          <div class="space-y-2">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <h3 id="gdrum-current-title" class="text-xl sm:text-2xl font-black text-white leading-tight">Worship Balada 4/4</h3>
+                <p id="gdrum-current-subtitle" class="text-xs text-amber-400 font-bold">120 BPM • Compasso 4/4 • Pronto para tocar</p>
+              </div>
+              <span id="gdrum-beat-counter" class="px-3 py-1.5 rounded-xl bg-black border border-zinc-800 font-mono text-sm font-black text-emerald-400">1 . 2 . 3 . 4</span>
+            </div>
+
+            <!-- BARRA DE TRANSIÇÃO / PROGRESSO DO COMPASSO -->
+            <div class="w-full h-2 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
+              <div id="gdrum-bar-progress" class="h-full bg-gradient-to-r from-amber-500 to-emerald-400 transition-all duration-75" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <!-- LINHA 1: VARIAÇÕES DE RITMO (1, 2, 3) -->
+          <div class="grid grid-cols-3 gap-2.5 sm:gap-3">
+            <button type="button" onclick="triggerGDrumPad('var1')" id="gpad-var1" class="h-24 sm:h-28 rounded-xl bg-zinc-100 text-zinc-950 border-2 border-white shadow-xl flex flex-col items-center justify-center transition transform active:scale-95">
+              <span class="text-2xl sm:text-3xl font-black leading-none">1</span>
+              <span class="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider mt-1">Ritmo 1 (Verso)</span>
+              <span id="gpad-badge-var1" class="text-[9px] mt-1 px-1.5 py-0.5 rounded bg-black/15 font-bold">ATIVO</span>
+            </button>
+
+            <button type="button" onclick="triggerGDrumPad('var2')" id="gpad-var2" class="h-24 sm:h-28 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white border-2 border-zinc-800 shadow-xl flex flex-col items-center justify-center transition transform active:scale-95">
+              <span class="text-2xl sm:text-3xl font-black leading-none">2</span>
+              <span class="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider mt-1 text-zinc-300">Ritmo 2 (Refrão)</span>
+              <span id="gpad-badge-var2" class="text-[9px] mt-1 px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 font-bold">PRONTO</span>
+            </button>
+
+            <button type="button" onclick="triggerGDrumPad('var3')" id="gpad-var3" class="h-24 sm:h-28 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white border-2 border-zinc-800 shadow-xl flex flex-col items-center justify-center transition transform active:scale-95">
+              <span class="text-2xl sm:text-3xl font-black leading-none">3</span>
+              <span class="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider mt-1 text-zinc-300">Ritmo 3 (Ponte)</span>
+              <span id="gpad-badge-var3" class="text-[9px] mt-1 px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 font-bold">PRONTO</span>
+            </button>
+          </div>
+
+          <!-- LINHA 2: VIRADAS (1 VIRADA, 2 VIRADA, 3 VIRADA) -->
+          <div class="grid grid-cols-3 gap-2.5 sm:gap-3">
+            <button type="button" onclick="triggerGDrumPad('fill1')" id="gpad-fill1" class="h-20 sm:h-24 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-white border-2 border-zinc-800 hover:border-amber-500/50 shadow-lg flex flex-col items-center justify-center transition transform active:scale-95">
+              <span class="text-xl sm:text-2xl font-black text-amber-400 leading-none">1</span>
+              <span class="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider mt-1">Virada Curta</span>
+            </button>
+
+            <button type="button" onclick="triggerGDrumPad('fill2')" id="gpad-fill2" class="h-20 sm:h-24 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-white border-2 border-zinc-800 hover:border-amber-500/50 shadow-lg flex flex-col items-center justify-center transition transform active:scale-95">
+              <span class="text-xl sm:text-2xl font-black text-amber-400 leading-none">2</span>
+              <span class="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider mt-1">Virada Caixa/Tons</span>
+            </button>
+
+            <button type="button" onclick="triggerGDrumPad('fill3')" id="gpad-fill3" class="h-20 sm:h-24 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-white border-2 border-zinc-800 hover:border-amber-500/50 shadow-lg flex flex-col items-center justify-center transition transform active:scale-95">
+              <span class="text-xl sm:text-2xl font-black text-amber-400 leading-none">3</span>
+              <span class="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider mt-1">Virada Crescente</span>
+            </button>
+          </div>
+
+          <!-- LINHA 3: ACABAMENTO / FINAL / PARADA -->
+          <div class="grid grid-cols-3 gap-2.5 sm:gap-3">
+            <button type="button" onclick="triggerGDrumPad('acabamento')" id="gpad-acabamento" class="h-14 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-amber-300 font-extrabold text-xs uppercase tracking-wider shadow flex items-center justify-center gap-1.5 active:scale-95">
+              <i class="fa-solid fa-bolt"></i><span>Acabamento</span>
+            </button>
+            <button type="button" onclick="triggerGDrumPad('final')" id="gpad-final" class="h-14 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-rose-400 font-extrabold text-xs uppercase tracking-wider shadow flex items-center justify-center gap-1.5 active:scale-95">
+              <i class="fa-solid fa-flag-checkered"></i><span>Final</span>
+            </button>
+            <button type="button" onclick="triggerGDrumPad('parada')" id="gpad-parada" class="h-14 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-cyan-300 font-extrabold text-xs uppercase tracking-wider shadow flex items-center justify-center gap-1.5 active:scale-95">
+              <i class="fa-solid fa-hand"></i><span>Parada / Breque</span>
+            </button>
+          </div>
+
+          <!-- RODAPÉ DE CONTROLE: BPM (- / + / TAP), VOLUME E PLAY/STOP -->
+          <div class="pt-3 border-t border-zinc-800 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-1.5 bg-black border border-zinc-800 rounded-xl px-2.5 py-1.5">
+              <span class="text-[10px] font-extrabold uppercase text-zinc-400 mr-1">BPM</span>
+              <button type="button" onclick="adjustGDrumBpm(-2)" class="w-7 h-7 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white font-black">-</button>
+              <input type="number" id="gdrum-bpm-input" value="120" min="40" max="240" onchange="setGDrumBpm(this.value)" class="w-14 bg-transparent text-center font-black text-base text-amber-400 focus:outline-none" />
+              <button type="button" onclick="adjustGDrumBpm(2)" class="w-7 h-7 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white font-black">+</button>
+              <button type="button" onclick="tapGDrumTempo()" class="ml-1 px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-black uppercase">TAP</button>
+            </div>
+
+            <div class="flex items-center gap-2 flex-1 max-w-[180px]">
+              <i class="fa-solid fa-volume-high text-xs text-zinc-400"></i>
+              <input type="range" id="gdrum-master-vol" min="0" max="100" value="90" oninput="setGDrumVolume(this.value)" class="w-full accent-amber-500" />
+            </div>
+
+            <button type="button" onclick="toggleGDrumMasterPlay()" id="btn-gdrum-play" class="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase tracking-wider shadow-lg flex items-center gap-2">
+              <i class="fa-solid fa-play" id="gdrum-play-icon"></i><span id="gdrum-play-text">INICIAR (ESPAÇO)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- COLUNA DIREITA (3 cols): REPERTÓRIO DO CULTO / MÚSICAS RÁPIDAS (IGUAL AO GDRUMS) -->
+        <div class="lg:col-span-3 bg-zinc-950 border border-zinc-800 rounded-2xl p-3.5 flex flex-col justify-between space-y-3 shadow-xl">
+          <div class="space-y-2.5">
+            <span class="text-[11px] font-black uppercase tracking-wider text-zinc-400 block">Repertório no Palco (BPM Automático)</span>
+            <select id="gdrum-rep-select" onchange="renderGDrumRepertorioSongs()" class="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-white font-bold"></select>
+            <input type="text" id="gdrum-song-search" oninput="renderGDrumRepertorioSongs()" placeholder="Ou buscar qualquer música do banco..." class="w-full px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-white" />
+            <div id="gdrum-rep-songs-list" class="space-y-1.5 max-h-[340px] overflow-y-auto custom-scroll pr-1"></div>
+          </div>
+
+          <div class="p-2.5 rounded-xl bg-zinc-900/70 border border-zinc-800 text-[10px] text-zinc-400 leading-relaxed">
+            <strong class="text-amber-300 block mb-0.5"><i class="fa-solid fa-keyboard mr-1"></i>Atalhos / Pedal Bluetooth:</strong>
+            Teclas <strong>1, 2, 3</strong> = Ritmos | <strong>4, 5, 6</strong> = Viradas | <strong>A</strong> = Acabamento | <strong>F</strong> = Final | <strong>Espaço</strong> = Play/Stop
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODAL PARA GRAVAR OU ENVIAR ÁUDIOS PARA A PASTA GDRUM DO GOOGLE DRIVE -->
+    <div id="gdrum-upload-modal" class="fixed inset-0 bg-black/85 z-50 hidden items-center justify-center p-4">
+      <div class="bg-zinc-950 border border-amber-500/40 rounded-2xl max-w-2xl w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto custom-scroll">
+        <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+          <div>
+            <h3 class="text-base font-black text-white"><i class="fa-brands fa-google-drive text-amber-400 mr-2"></i>Gerenciar Sons na Pasta <code>gDrum</code> do Google Drive</h3>
+            <p class="text-xs text-zinc-400">Envie arquivos (.wav/.mp3/.m4a) ou grave do microfone direto para a subpasta do Estilo no seu Drive</p>
+          </div>
+          <button type="button" onclick="closeGDrumDriveUploadModal()" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div>
+            <label class="block font-bold text-zinc-300 mb-1">Nome do Estilo / Subpasta no Drive</label>
+            <input type="text" id="gdrum-up-style-name" placeholder="Ex: Worship 4-4 (120bpm)" class="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-xl text-white font-bold" />
+          </div>
+          <div>
+            <label class="block font-bold text-zinc-300 mb-1">Qual botão (Slot) você quer gravar/enviar?</label>
+            <select id="gdrum-up-slot" class="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-xl text-amber-300 font-bold">
+              <option value="var1">Ritmo 1 (Verso - var1.wav)</option>
+              <option value="var2">Ritmo 2 (Refrão - var2.wav)</option>
+              <option value="var3">Ritmo 3 (Ponte - var3.wav)</option>
+              <option value="fill1">Virada 1 (fill1.wav)</option>
+              <option value="fill2">Virada 2 (fill2.wav)</option>
+              <option value="fill3">Virada 3 (fill3.wav)</option>
+              <option value="acabamento">Acabamento / Prato (acabamento.wav)</option>
+              <option value="final">Finalização (final.wav)</option>
+              <option value="kick">Timbre Avulso: Bumbo (kick.wav)</option>
+              <option value="snare">Timbre Avulso: Caixa (snare.wav)</option>
+              <option value="hat">Timbre Avulso: Chimbal (hat.wav)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-3.5 space-y-2">
+            <span class="text-xs font-extrabold text-amber-300 block">Opção A: Escolher Arquivo do PC/Celular</span>
+            <input type="file" id="gdrum-up-file" accept="audio/*" class="w-full text-xs text-zinc-300" />
+            <button type="button" onclick="uploadSelectedFileToGDrumDrive()" id="btn-gdrum-send-file" class="w-full py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs">
+              <i class="fa-solid fa-cloud-arrow-up mr-1"></i>Salvar Arquivo na Pasta do Drive
+            </button>
+          </div>
+
+          <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-3.5 space-y-2 flex flex-col justify-between">
+            <span class="text-xs font-extrabold text-emerald-300 block">Opção B: Gravar Agora e Enviar ao Drive</span>
+            <p class="text-[11px] text-zinc-400">Grave um loop ou peça de bateria pelo microfone/interface e salve direto na nuvem.</p>
+            <button type="button" onclick="toggleGDrumCloudMicRecord()" id="btn-gdrum-cloud-rec" class="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs">
+              <i class="fa-solid fa-microphone mr-1"></i>Iniciar Gravação p/ o Drive
+            </button>
+          </div>
+        </div>
+
+        <div id="gdrum-up-status" class="hidden p-3 rounded-xl bg-black border border-zinc-800 text-xs text-zinc-300"></div>
+      </div>
+    </div>
   </main>
 
  <!-- MODAL GERADOR DE SESSÃO REAPER (.RPP) -->
@@ -3431,645 +3551,6 @@
 
     updateAdminUI();
     syncFromGoogleSheet(false);
-// ============================================================================
-    // 5. PALCO PRO v3.6: LEITOR ESTILO CIFRA CLUB (TRANSPOSIÇÃO REAL DE ACORDES)
-    //    + TELA CHEIA 100% NA CIFRA + AUTO-SCROLL INTERNO + PEDAL BLUETOOTH
-    // ============================================================================
-    let stageAutoScrollTimer = null;
-    let stageScrollSpeed = 2;
-    let stageCurrentSongIndex = 0;
-    let stageMetroTimer = null;
-    let stageMetroBpm = 120;
-    let stageToneOffsets = {};       // idx -> semitons (-11 a +11)
-    let stageRawChordTexts = {};     // idx -> texto puro original da cifra
-    let stageInteractiveActive = {}; // idx -> boolean (true = modo Cifra Club ativo)
-    let stageFontSizePx = 15;
-    let stageTwoColumns = false;
-    let currentFullscreenSongIdx = null;
-
-    const NOTES_SHARP = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-    const NOTES_FLAT  = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
-    const ENHARMONIC_MAP = { "B#": "C", "E#": "F", "Cb": "B", "Fb": "E" };
-
-    function noteToIndex(noteStr) {
-      const clean = ENHARMONIC_MAP[noteStr] || noteStr;
-      let idx = NOTES_SHARP.indexOf(clean);
-      if (idx === -1) idx = NOTES_FLAT.indexOf(clean);
-      return idx;
-    }
-
-    function transposeSingleNote(noteStr, semitones, forceFlat = false) {
-      const idx = noteToIndex(noteStr);
-      if (idx === -1) return noteStr;
-      const nextIdx = (idx + (semitones % 12) + 12) % 12;
-      const useFlat = forceFlat || noteStr.includes("b") || [1, 3, 8, 10].includes(nextIdx);
-      return useFlat ? NOTES_FLAT[nextIdx] : NOTES_SHARP[nextIdx];
-    }
-
-    // Transpõe tanto o Tom geral quanto um acorde complexo inteiro (ex: C#m7(b5)/G# -> Dm7(b5)/A)
-    function transposeChordToken(token, semitones) {
-      if (!token || !semitones) return token;
-      return String(token).replace(/^([A-G][#b]?)(.*?)(\/[A-G][#b]?)?$/, (full, root, suffix, bass) => {
-        const newRoot = transposeSingleNote(root, semitones);
-        const newBass = bass ? "/" + transposeSingleNote(bass.slice(1), semitones) : "";
-        return newRoot + (suffix || "") + newBass;
-      });
-    }
-
-    // Identifica se uma palavra isolada é um acorde musical válido
-    function isMusicalChordToken(word) {
-      if (!word) return false;
-      const clean = word.replace(/^[(\[]+|[)\],.;:]+$/g, "");
-      return /^[A-G][#b]?(?:m|maj|min|dim|aug|sus|add|M|\+|°|º)?(?:2|4|5|6|7|9|11|13|M|\+|-)*?(?:\([#b+-]?\d+(?:\/[#b+-]?\d+)*\))?(?:\/[A-G][#b]?)?$/.test(clean);
-    }
-
-    // Verifica se uma linha inteira é uma linha de cifras (como no Cifra Club)
-    function isChordLine(line) {
-      const trimmed = line.trim();
-      if (!trimmed) return false;
-      // Remove marcadores de seção como [Intro], [Refrão], (2x)
-      const withoutSections = trimmed.replace(/\[.*?\]|\(.*?x\)/gi, " ").trim();
-      if (!withoutSections) return true;
-      const tokens = withoutSections.split(/\s+/).filter(Boolean);
-      if (tokens.length === 0) return false;
-      const chordCount = tokens.filter(t => isMusicalChordToken(t)).length;
-      return (chordCount / tokens.length) >= 0.6;
-    }
-
-// Extrai o texto direto do PDF no navegador (mantendo o espaçamento exato dos acordes acima da letra!)
-    async function extractChordTextFromPdfBase64Client(pdfBase64) {
-      if (!pdfBase64 || !window.pdfjsLib) return "";
-      try {
-        const pdfDoc = await window.pdfjsLib.getDocument({ data: base64ToUint8Array(pdfBase64) }).promise;
-        let fullText = "";
-
-        for (let p = 1; p <= pdfDoc.numPages; p++) {
-          const page = await pdfDoc.getPage(p);
-          const textContent = await page.getTextContent();
-          const rows = [];
-
-          textContent.items.forEach(item => {
-            const str = item.str;
-            if (!str) return;
-            const x = item.transform[4];
-            const y = item.transform[5];
-            let row = rows.find(r => Math.abs(r.y - y) < 4.5);
-            if (!row) {
-              row = { y, items: [] };
-              rows.push(row);
-            }
-            row.items.push({ x, str, width: item.width || (str.length * 5.2) });
-          });
-
-          // Ordena de cima para baixo
-          rows.sort((a, b) => b.y - a.y);
-
-          let prevY = null;
-          rows.forEach(row => {
-            if (prevY !== null && (prevY - row.y) > 22) fullText += "\n";
-            prevY = row.y;
-            row.items.sort((a, b) => a.x - b.x);
-
-            let lineStr = "";
-            let cursorX = row.items[0] ? Math.min(35, row.items[0].x) : 0;
-            row.items.forEach((it, idx) => {
-              if (idx > 0) {
-                const gap = it.x - cursorX;
-                if (gap > 3.5) {
-                  const spaces = Math.min(45, Math.max(1, Math.round(gap / 5.2)));
-                  lineStr += " ".repeat(spaces);
-                }
-              }
-              lineStr += it.str;
-              cursorX = it.x + it.width;
-            });
-            fullText += lineStr.replace(/\s+$/, "") + "\n";
-          });
-
-          if (p < pdfDoc.numPages) fullText += "\n";
-        }
-        return fullText.trim();
-      } catch (e) {
-        return "";
-      }
-    }
-
-    // Transpõe todos os acordes dentro de um trecho (inclusive sequências como "D  A/C#  Bm7  G")
-    function transposeAllChordsInSegment(segment, semitones) {
-      return String(segment).replace(/([A-G][#b]?(?:m|maj|min|dim|aug|sus|add|M|\+|°|º)?(?:2|4|5|6|7|9|11|13|M|\+|-)*?(?:\([#b+-]?\d+(?:\/[#b+-]?\d+)*\))?(?:\/[A-G][#b]?)?)(?=\s|$|[)\],/|-])/g, (match) => {
-        if (!isMusicalChordToken(match)) return match;
-        const tr = transposeChordToken(match, semitones);
-        return `<strong class="text-red-500 font-black">${tr}</strong>`;
-      });
-    }
-
-    // Renderiza a cifra com acordes em VERMELHO E NEGRITO (reconhecendo a marcação {{C:...}} ou linhas de acordes)
-    // Decodifica todas as entidades HTML (&ccedil;, &atilde;, &#8203;, etc.) vindas do Google Docs
-    function decodeHtmlEntitiesClean(str) {
-      if (!str) return "";
-      const txt = document.createElement("textarea");
-      txt.innerHTML = String(str)
-        .replace(/&#8203;|&#x200b;|&ZeroWidthSpace;/gi, "")
-        .replace(/[\u200B-\u200D\uFEFF]/g, "");
-      return txt.value.replace(/[\u200B-\u200D\uFEFF]/g, "");
-    }
-
-    function toggleStageFabMenu(forceState) {
-      const panel = document.getElementById("stage-fab-panel");
-      const icon = document.getElementById("icon-stage-fab");
-      if (!panel) return;
-      const willOpen = typeof forceState === "boolean" ? forceState : panel.classList.contains("hidden");
-      panel.classList.toggle("hidden", !willOpen);
-      if (icon) icon.className = willOpen ? "fa-solid fa-xmark text-base" : "fa-solid fa-sliders text-base";
-    }
-
-    // Renderiza a cifra limpa com acordes em VERMELHO E NEGRITO (sem códigos HTML de acento)
-    function renderTransposedChordHtml(rawText, semitones) {
-      if (!rawText) return "";
-      const decodedFull = decodeHtmlEntitiesClean(rawText);
-      const lines = String(decodedFull).replace(/\r\n/g, "\n").split("\n");
-
-      return lines.map(line => {
-        // Remove espaços invisíveis residuais
-        const cleanLine = line.replace(/[\u200B-\u200D\uFEFF]/g, "");
-        let escaped = cleanLine.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-        // 1. Se veio com marcação {{C:...}} do extrator de vermelho/negrito do Drive:
-        if (escaped.includes("{{C:")) {
-          escaped = escaped.replace(/\{\{C:([\s\S]*?)\}\}/g, (_, inner) => {
-            const cleanInner = inner.trim();
-            // Não pinta de vermelho palavras comuns como "Graça", "Tom:", "Intro"
-            if (/^(tom\s*:?|intro|introducao|introdução|primeira|segunda|terceira|parte|refrão|refrao|verso|ponte|final|solo|instrumental)$/i.test(cleanInner)) {
-              return `<strong class="text-emerald-400 font-extrabold">${inner}</strong>`;
-            }
-            return transposeAllChordsInSegment(inner, semitones);
-          });
-          const plainCheck = cleanLine.replace(/\{\{C:|\}\}/g, "");
-          if (isChordLine(plainCheck)) {
-            escaped = transposeAllChordsInSegment(escaped, semitones);
-          }
-          return `<span class="block leading-snug">${escaped || "&nbsp;"}</span>`;
-        }
-
-        // 2. Linhas com [Intro], Intro, Refrão, Primeira Parte, etc.
-        if (/^\s*(\[.*?\]|(?:intro|introducao|introdução|primeira\s+parte|segunda\s+parte|terceira\s+parte|verso|refrão|refrao|ponte|pré-refrão|pre-refrao|instrumental|solo|final)\s*:?)(.*)$/i.test(escaped)) {
-          return escaped.replace(/^(\s*(?:\[.*?\]|(?:intro|introducao|introdução|primeira\s+parte|segunda\s+parte|terceira\s+parte|verso|refrão|refrao|ponte|pré-refrão|pre-refrao|instrumental|solo|final)\s*:?))(.*)$/i, (_, sec, rest) => {
-            return `<span class="block mt-2"><strong class="text-emerald-400 font-extrabold uppercase">${sec}</strong>${transposeAllChordsInSegment(rest, semitones)}</span>`;
-          });
-        }
-
-        // 3. Linha de acordes padrão
-        if (isChordLine(cleanLine)) {
-          return `<span class="block leading-tight">${transposeAllChordsInSegment(escaped, semitones)}</span>`;
-        }
-
-        return `<span class="text-zinc-100 block leading-snug">${escaped || "&nbsp;"}</span>`;
-      }).join("");
-    }
-
-    // Busca automaticamente a cifra (via extrator de vermelho/negrito OU direto do PDF via pdf.js)
-    async function activateInteractiveChordMode(idx, forceOpenEditor = false) {
-      const sel = document.getElementById("palco-select-repertorio");
-      const rep = repertorios.find(r => r.id === Number(sel?.value || selectedRepertorioId)) || findNextUpcomingRepertorio();
-      if (!rep || !rep.itens[idx]) return;
-      const info = getResolvedSongDetails(rep.itens[idx]);
-      const songKey = normalizeSongKey(info.musica);
-      const cacheKey = "chordText_v2_" + songKey;
-
-      const box = document.getElementById(`stage-chord-box-${idx}`);
-      if (!box) return;
-      box.classList.remove("hidden");
-
-      if (!stageRawChordTexts[idx]) {
-        const cachedTxt = await dbGet("chords", cacheKey);
-        if (cachedTxt) {
-          stageRawChordTexts[idx] = cachedTxt;
-        } else {
-          box.innerHTML = `<div class="p-8 text-center text-sm text-amber-300 bg-black rounded-2xl border border-amber-500/30"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Lendo acordes da cifra "${info.musica}" para transposição automática...</div>`;
-
-          // Tentativa A: Extrator de HTML (vermelho/negrito) do Código.gs
-          if (navigator.onLine && scriptUrl) {
-            try {
-              const res = await fetch(`${scriptUrl}?action=obterTextoCifra&fileId=${encodeURIComponent(info.fileId || "")}&musica=${encodeURIComponent(info.musica)}`);
-              const data = await res.json();
-              if (data && data.texto && data.texto.trim()) {
-                stageRawChordTexts[idx] = data.texto;
-              } else if (data && data.pdfBase64) {
-                stageRawChordTexts[idx] = await extractChordTextFromPdfBase64Client(data.pdfBase64);
-              }
-            } catch (e) {}
-          }
-
-          // Tentativa B (Fallback Infalível): Puxa do PDF salvo offline ou da rota obterPdfsRepertorio e extrai via pdf.js no navegador!
-          if (!stageRawChordTexts[idx]) {
-            try {
-              let pdfB64 = await dbGet("chords", songKey);
-              if (!pdfB64 && navigator.onLine && scriptUrl) {
-                const itemPayload = [{ musica: info.musica, autor: info.autor || "", fileId: info.fileId || "", cifraDoxa: info.viewUrl || "" }];
-                const resPdf = await fetch(`${scriptUrl}?action=obterPdfsRepertorio&itens=${encodeURIComponent(JSON.stringify(itemPayload))}`);
-                const dataPdf = await resPdf.json();
-                if (dataPdf && dataPdf.arquivos && dataPdf.arquivos[0] && dataPdf.arquivos[0].pdfBase64) {
-                  pdfB64 = dataPdf.arquivos[0].pdfBase64;
-                  await dbPut("chords", songKey, pdfB64);
-                }
-              }
-              if (pdfB64) {
-                stageRawChordTexts[idx] = await extractChordTextFromPdfBase64Client(pdfB64);
-              }
-            } catch (e2) {}
-          }
-
-          if (stageRawChordTexts[idx]) {
-            await dbPut("chords", cacheKey, stageRawChordTexts[idx]);
-          }
-        }
-      }
-
-      if (!stageRawChordTexts[idx] || forceOpenEditor) {
-        const currentTxt = stageRawChordTexts[idx] || "";
-        box.innerHTML = `
-          <div class="bg-zinc-950 border border-amber-500/40 rounded-2xl p-4 space-y-3">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <span class="text-xs font-extrabold text-amber-300"><i class="fa-solid fa-paste mr-1.5"></i>Cole ou edite a cifra em texto (do Cifra Club ou Doc) para transpor o Tom na hora:</span>
-              <div class="flex gap-2">
-                <button type="button" onclick="saveManualChordText(${idx})" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-extrabold">Salvar e Ativar Transposição</button>
-              </div>
-            </div>
-            <textarea id="manual-chord-textarea-${idx}" rows="14" placeholder="Cole aqui a letra com os acordes acima das sílabas..." class="w-full p-3 bg-black border border-zinc-700 rounded-xl text-xs text-white font-mono">${currentTxt}</textarea>
-          </div>`;
-        return;
-      }
-
-      stageInteractiveActive[idx] = true;
-      renderInteractiveChordBox(idx);
-    }
-    async function saveManualChordText(idx) {
-      const ta = document.getElementById(`manual-chord-textarea-${idx}`);
-      if (!ta || !ta.value.trim()) return;
-      const sel = document.getElementById("palco-select-repertorio");
-      const rep = repertorios.find(r => r.id === Number(sel?.value || selectedRepertorioId)) || findNextUpcomingRepertorio();
-      const info = getResolvedSongDetails(rep.itens[idx]);
-      const cacheKey = "chordText_" + normalizeSongKey(info.musica);
-
-      stageRawChordTexts[idx] = ta.value;
-      await dbPut("chords", cacheKey, ta.value);
-      stageInteractiveActive[idx] = true;
-      renderInteractiveChordBox(idx);
-    }
-
-    function renderInteractiveChordBox(idx) {
-      const box = document.getElementById(`stage-chord-box-${idx}`);
-      if (!box || !stageRawChordTexts[idx]) return;
-      const semitones = stageToneOffsets[idx] || 0;
-      const htmlContent = renderTransposedChordHtml(stageRawChordTexts[idx], semitones);
-
-      box.innerHTML = `
-        <div class="bg-black border border-zinc-800 rounded-2xl p-4 sm:p-6 space-y-3 shadow-inner">
-          <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-zinc-800 text-xs">
-            <span class="text-emerald-400 font-bold"><i class="fa-solid fa-bolt mr-1"></i>Modo Cifra Club Ativo ${semitones !== 0 ? `(Transposto: ${semitones > 0 ? "+" + semitones : semitones} st)` : "(Tom Original)"}</span>
-            <div class="flex flex-wrap items-center gap-1.5">
-              <button type="button" onclick="changeStageFontSize(-1, ${idx})" class="px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-700 text-white font-bold">A-</button>
-              <button type="button" onclick="changeStageFontSize(1, ${idx})" class="px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-700 text-white font-bold">A+</button>
-              <button type="button" onclick="toggleStageTwoColumns(${idx})" class="px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-700 text-indigo-300 font-bold"><i class="fa-solid fa-columns mr-1"></i>${stageTwoColumns ? "1 Coluna" : "2 Colunas"}</button>
-              <button type="button" onclick="activateInteractiveChordMode(${idx}, true)" class="px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-700 text-amber-300 font-semibold">Editar Texto</button>
-              <button type="button" onclick="stageInteractiveActive[${idx}]=false;renderPalco();" class="px-2.5 py-1 rounded-lg bg-zinc-900 text-zinc-400">Ver PDF Original</button>
-            </div>
-          </div>
-          <pre id="interactive-chord-pre-${idx}" style="font-size:${stageFontSizePx}px; ${stageTwoColumns ? 'column-count: 2; column-gap: 2.5rem;' : ''}" class="font-mono whitespace-pre-wrap overflow-x-auto select-text">${htmlContent}</pre>
-        </div>`;
-
-      // Se o modal de tela cheia estiver aberto nesta música, atualiza lá também!
-      const fsBody = document.getElementById("fullscreen-chord-modal-body");
-      if (currentFullscreenSongIdx === idx && fsBody) {
-        fsBody.innerHTML = `<pre style="font-size:${stageFontSizePx + 2}px; ${stageTwoColumns ? 'column-count: 2; column-gap: 3rem;' : ''}" class="font-mono whitespace-pre-wrap p-4 sm:p-8">${htmlContent}</pre>`;
-      }
-    }
-
-    function changeStageFontSize(delta, idx) {
-      stageFontSizePx = Math.max(11, Math.min(28, stageFontSizePx + delta));
-      renderInteractiveChordBox(idx);
-    }
-
-    function toggleStageTwoColumns(idx) {
-      stageTwoColumns = !stageTwoColumns;
-      renderInteractiveChordBox(idx);
-    }
-
-    // Quando clica em "-" ou "+" no Tom: muda o Tom exibido E já transpõe os acordes da cifra!
-    async function shiftStageSongKey(idx, baseKey, delta) {
-      stageToneOffsets[idx] = (stageToneOffsets[idx] || 0) + delta;
-      const newKey = transposeChordToken(baseKey, stageToneOffsets[idx]);
-      const badge = document.getElementById(`stage-tom-val-${idx}`);
-      if (badge) badge.textContent = newKey;
-      const fsBadge = document.getElementById("fs-modal-tom-badge");
-      if (currentFullscreenSongIdx === idx && fsBadge) fsBadge.textContent = `Tom: ${newKey}`;
-
-      if (!stageInteractiveActive[idx]) {
-        await activateInteractiveChordMode(idx, false);
-      } else {
-        renderInteractiveChordBox(idx);
-      }
-    }
-
-    // MODAL DE TELA CHEIA 100% REAL FOCADO NA CIFRA (FUNCIONA PARA MODO CIFRA CLUB E PARA PDF)
-    function ensureFullscreenChordModalExists() {
-      if (document.getElementById("fullscreen-chord-modal")) return;
-      const m = document.createElement("div");
-      m.id = "fullscreen-chord-modal";
-      m.className = "fixed inset-0 z-50 bg-black hidden flex-col";
-      m.innerHTML = `
-        <div class="bg-zinc-950 border-b border-zinc-800 px-3 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0">
-          <div class="flex items-center gap-2 min-w-0">
-            <button type="button" onclick="stepFullscreenSong(-1)" class="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-700 text-white font-bold" title="Música Anterior">◀</button>
-            <div class="min-w-0">
-              <h3 id="fs-modal-song-title" class="text-sm sm:text-base font-black text-white truncate">-</h3>
-            </div>
-            <button type="button" onclick="stepFullscreenSong(1)" class="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-700 text-white font-bold" title="Próxima Música">▶</button>
-          </div>
-          <div class="flex flex-wrap items-center gap-1.5">
-            <div class="flex items-center bg-zinc-900 border border-amber-500/40 rounded-xl px-2 py-1 gap-1.5">
-              <button type="button" onclick="shiftCurrentFullscreenKey(-1)" class="w-6 h-6 rounded bg-black text-white font-black text-xs">-</button>
-              <span id="fs-modal-tom-badge" class="text-xs font-black text-amber-400 px-1">Tom: -</span>
-              <button type="button" onclick="shiftCurrentFullscreenKey(1)" class="w-6 h-6 rounded bg-black text-white font-black text-xs">+</button>
-            </div>
-            <button type="button" onclick="toggleCurrentFullscreenInteractive()" class="px-2.5 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold">⚡ Transpor Cifra</button>
-            <button type="button" onclick="toggleStageAutoScroll()" id="btn-fs-autoscroll" class="px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-700 text-slate-200 text-xs font-bold">Auto-Scroll</button>
-            <button type="button" onclick="closeFullscreenChordModal()" class="px-3 py-1.5 rounded-xl bg-rose-600 text-white text-xs font-extrabold">✕ Sair Tela Cheia</button>
-          </div>
-        </div>
-        <div id="fullscreen-chord-modal-body" class="flex-1 w-full overflow-y-auto custom-scroll bg-black"></div>
-      `;
-      document.body.appendChild(m);
-    }
-
-    async function openSongChordFullscreen(idx) {
-      ensureFullscreenChordModalExists();
-      const sel = document.getElementById("palco-select-repertorio");
-      const rep = repertorios.find(r => r.id === Number(sel?.value || selectedRepertorioId)) || findNextUpcomingRepertorio();
-      if (!rep || !rep.itens[idx]) return;
-
-      currentFullscreenSongIdx = idx;
-      stageCurrentSongIndex = idx;
-      const it = rep.itens[idx];
-      const info = getResolvedSongDetails(it);
-      const curTom = transposeChordToken(info.tom || "-", stageToneOffsets[idx] || 0);
-
-      document.getElementById("fs-modal-song-title").textContent = `${idx + 1}. ${info.musica} (${info.autor})`;
-      document.getElementById("fs-modal-tom-badge").textContent = `Tom: ${curTom}`;
-
-      const modal = document.getElementById("fullscreen-chord-modal");
-      const body = document.getElementById("fullscreen-chord-modal-body");
-      modal.classList.remove("hidden");
-      modal.classList.add("flex");
-
-      if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      }
-
-      if (stageInteractiveActive[idx] && stageRawChordTexts[idx]) {
-        renderInteractiveChordBox(idx);
-      } else if (offlineSavedChordKeys.has(normalizeSongKey(info.musica))) {
-        body.innerHTML = `<div id="fs-offline-canvas-container" class="max-w-4xl mx-auto p-2"></div>`;
-        await renderOfflinePdfInCanvasContainer(info.musica, "fs-offline-canvas-container");
-      } else if (info.hasFile) {
-        body.innerHTML = `<iframe src="${info.previewUrl}" class="w-full h-full border-0 bg-white"></iframe>`;
-      } else {
-        await activateInteractiveChordMode(idx, true);
-        body.innerHTML = document.getElementById(`stage-chord-box-${idx}`)?.innerHTML || "";
-      }
-    }
-
-    function closeFullscreenChordModal() {
-      currentFullscreenSongIdx = null;
-      const modal = document.getElementById("fullscreen-chord-modal");
-      if (modal) { modal.classList.add("hidden"); modal.classList.remove("flex"); }
-      if (document.fullscreenElement && document.exitFullscreen) {
-        document.exitFullscreen().catch(() => {});
-      }
-    }
-
-    function stepFullscreenSong(dir) {
-      const sel = document.getElementById("palco-select-repertorio");
-      const rep = repertorios.find(r => r.id === Number(sel?.value || selectedRepertorioId)) || findNextUpcomingRepertorio();
-      if (!rep || !rep.itens.length) return;
-      const nextIdx = Math.max(0, Math.min(rep.itens.length - 1, (currentFullscreenSongIdx || 0) + dir));
-      openSongChordFullscreen(nextIdx);
-    }
-
-    function shiftCurrentFullscreenKey(delta) {
-      if (currentFullscreenSongIdx === null) return;
-      const sel = document.getElementById("palco-select-repertorio");
-      const rep = repertorios.find(r => r.id === Number(sel?.value || selectedRepertorioId)) || findNextUpcomingRepertorio();
-      if (!rep || !rep.itens[currentFullscreenSongIdx]) return;
-      const info = getResolvedSongDetails(rep.itens[currentFullscreenSongIdx]);
-      shiftStageSongKey(currentFullscreenSongIdx, info.tom || "-", delta);
-    }
-
-    async function toggleCurrentFullscreenInteractive() {
-      if (currentFullscreenSongIdx === null) return;
-      await activateInteractiveChordMode(currentFullscreenSongIdx, false);
-      openSongChordFullscreen(currentFullscreenSongIdx);
-    }
-
-    function toggleStageOledFullscreen() {
-      openSongChordFullscreen(stageCurrentSongIndex || 0);
-    }
-
-    // Injeta os botões "⛶ Tela Cheia Cifra", "⚡ Modo Cifra Club (Transpor)" e "- / +" em cada card do Palco
-    const _origRenderPalco = renderPalco;
-    renderPalco = function() {
-      stageToneOffsets = {};
-      stageInteractiveActive = {};
-      _origRenderPalco();
-      document.getElementById("stage-pro-toolbar")?.classList.remove("hidden");
-
-      const sel = document.getElementById("palco-select-repertorio");
-      const rep = repertorios.find(r => r.id === Number(sel?.value || selectedRepertorioId)) || findNextUpcomingRepertorio();
-      if (!rep) return;
-
-      const cards = document.querySelectorAll("#palco-content > div");
-      cards.forEach((card, i) => {
-        card.id = `stage-song-card-${i}`;
-        const it = (rep.itens || [])[i];
-        if (!it) return;
-        const info = getResolvedSongDetails(it);
-        const bpmVal = extractNumericBpm(info.tempo) || 120;
-        const safeTom = String(info.tom || "-").replace(/'/g, "\\'");
-
-        // Adiciona botões "⛶ Tela Cheia" e "⚡ Modo Cifra Club" na barra de botões da música
-        const btnRow = card.querySelector("div.flex.flex-wrap.items-center.gap-2.pt-1");
-        if (btnRow && !btnRow.querySelector(".btn-interactive-chord")) {
-          const btnFs = document.createElement("button");
-          btnFs.type = "button";
-          btnFs.onclick = () => openSongChordFullscreen(i);
-          btnFs.className = "px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow";
-          btnFs.innerHTML = `<i class="fa-solid fa-expand"></i><span>Tela Cheia</span>`;
-          btnRow.appendChild(btnFs);
-
-          const btnCc = document.createElement("button");
-          btnCc.type = "button";
-          btnCc.onclick = () => activateInteractiveChordMode(i, false);
-          btnCc.className = "btn-interactive-chord px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-extrabold flex items-center gap-1.5";
-          btnCc.innerHTML = `<i class="fa-solid fa-bolt"></i><span>Modo Interativo (Transpor Tom)</span>`;
-          btnRow.appendChild(btnCc);
-        }
-
-        const tomBoxes = card.querySelectorAll("span.text-2xl");
-        if (tomBoxes[0]) {
-          tomBoxes[0].id = `stage-tom-val-${i}`;
-          const parentBox = tomBoxes[0].parentElement;
-          if (parentBox && !parentBox.querySelector(".tom-shift-controls")) {
-            const ctrl = document.createElement("div");
-            ctrl.className = "tom-shift-controls flex items-center justify-center gap-1 mt-1.5 pt-1 border-t border-slate-700";
-            ctrl.innerHTML = `
-              <button type="button" onclick="shiftStageSongKey(${i}, '${safeTom}', -1)" class="w-7 h-6 rounded bg-slate-900 hover:bg-amber-500 hover:text-black text-slate-200 text-xs font-black" title="Baixar meio tom (-1) na cifra inteira">-</button>
-              <button type="button" onclick="startStageMetronomeAt(${bpmVal})" class="px-2 h-6 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-extrabold" title="Tocar Metrônomo neste BPM">🥁 ${bpmVal}</button>
-              <button type="button" onclick="shiftStageSongKey(${i}, '${safeTom}', 1)" class="w-7 h-6 rounded bg-slate-900 hover:bg-amber-500 hover:text-black text-slate-200 text-xs font-black" title="Subir meio tom (+1) na cifra inteira">+</button>
-            `;
-            parentBox.appendChild(ctrl);
-          }
-        }
-      });
-    };
-
-    function toggleStageAutoScroll() {
-      const lbl = document.getElementById("lbl-stage-autoscroll");
-      const btn = document.getElementById("btn-stage-autoscroll");
-      const fsBtn = document.getElementById("btn-fs-autoscroll");
-      if (stageAutoScrollTimer) {
-        clearInterval(stageAutoScrollTimer);
-        stageAutoScrollTimer = null;
-        if (lbl) lbl.textContent = "Auto-Scroll: Off";
-        btn?.classList.remove("border-emerald-500", "text-emerald-300");
-        fsBtn?.classList.remove("bg-emerald-600", "text-white");
-      } else {
-        stageAutoScrollTimer = setInterval(() => {
-          const fsModal = document.getElementById("fullscreen-chord-modal");
-          const fsBody = document.getElementById("fullscreen-chord-modal-body");
-          if (fsModal && !fsModal.classList.contains("hidden") && fsBody) {
-            fsBody.scrollBy({ top: stageScrollSpeed, behavior: "auto" });
-          } else {
-            window.scrollBy({ top: stageScrollSpeed, behavior: "auto" });
-          }
-        }, 45);
-        if (lbl) lbl.textContent = "Auto-Scroll: ON";
-        btn?.classList.add("border-emerald-500", "text-emerald-300");
-        fsBtn?.classList.add("bg-emerald-600", "text-white");
-      }
-    }
-
-    function updateStageScrollSpeed(val) {
-      stageScrollSpeed = parseFloat(val) || 2;
-    }
-
-    function stepStageSong(dir) {
-      if (currentFullscreenSongIdx !== null) {
-        stepFullscreenSong(dir);
-        return;
-      }
-      const cards = document.querySelectorAll("[id^='stage-song-card-']");
-      if (!cards.length) return;
-      stageCurrentSongIndex = Math.max(0, Math.min(cards.length - 1, stageCurrentSongIndex + dir));
-      cards[stageCurrentSongIndex].scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-
-    function playStageClickBeep(isDownbeat = false) {
-      const ctx = ensureAudioContext();
-      if (!ctx) return;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "triangle";
-      osc.frequency.value = isDownbeat ? 1480 : 980;
-      gain.gain.setValueAtTime(0.35, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.045);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.05);
-
-      const led = document.getElementById("stage-metro-led");
-      if (led) {
-        led.className = isDownbeat ? "w-2.5 h-2.5 rounded-full bg-emerald-400 scale-125 inline-block" : "w-2 h-2 rounded-full bg-white inline-block";
-        setTimeout(() => { if (led) led.className = "w-2 h-2 rounded-full bg-amber-400 inline-block"; }, 90);
-      }
-    }
-
-    let stageMetroBeatCount = 0;
-    function toggleStageMetronome() {
-      const lbl = document.getElementById("lbl-stage-metro");
-      if (stageMetroTimer) {
-        clearInterval(stageMetroTimer);
-        stageMetroTimer = null;
-        if (lbl) lbl.textContent = "Click: Off";
-      } else {
-        stageMetroBpm = Math.max(40, Math.min(240, Number(document.getElementById("stage-metro-bpm")?.value) || 120));
-        stageMetroBeatCount = 0;
-        playStageClickBeep(true);
-        stageMetroTimer = setInterval(() => {
-          stageMetroBeatCount = (stageMetroBeatCount + 1) % 4;
-          playStageClickBeep(stageMetroBeatCount === 0);
-        }, (60 / stageMetroBpm) * 1000);
-        if (lbl) lbl.textContent = "Click: ON";
-      }
-    }
-
-    function startStageMetronomeAt(bpm) {
-      const inp = document.getElementById("stage-metro-bpm");
-      if (inp) inp.value = bpm;
-      if (stageMetroTimer) { clearInterval(stageMetroTimer); stageMetroTimer = null; }
-      toggleStageMetronome();
-    }
-
-    function changeStageMetroBpm(val) {
-      stageMetroBpm = Math.max(40, Math.min(240, Number(val) || 120));
-      if (stageMetroTimer) startStageMetronomeAt(stageMetroBpm);
-    }
-
-    document.addEventListener("keydown", (e) => {
-      const repView = document.getElementById("view-repertorios");
-      if (!repView || repView.classList.contains("hidden")) return;
-      const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
-      if (tag === "input" || tag === "textarea" || tag === "select") return;
-
-      if (e.key === "PageDown" || e.key === "ArrowRight") {
-        e.preventDefault();
-        stepStageSong(1);
-      } else if (e.key === "PageUp" || e.key === "ArrowLeft") {
-        e.preventDefault();
-        stepStageSong(-1);
-      } else if (e.key === "Escape" && currentFullscreenSongIdx !== null) {
-        closeFullscreenChordModal();
-      }
-    });
-
-    const _origSwitchTab = switchTab;
-    switchTab = function(tab) {
-      _origSwitchTab(tab);
-      const activeTab = tab === "palco" ? "repertorios" : tab;
-      ["musicas", "repertorios", "vs", "midi"].forEach(t => {
-        const b = document.getElementById(`bnav-${t}`);
-        if (b) {
-          b.className = (t === activeTab)
-            ? "flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-indigo-400 font-extrabold text-[10px]"
-            : "flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-slate-400 font-semibold text-[10px]";
-        }
-      });
-      document.getElementById("stage-pro-toolbar")?.classList.toggle("hidden", activeTab !== "repertorios");
-    };
-
-    setInterval(() => {
-      const mp = document.getElementById("floating-vs-miniplayer");
-      if (!mp) return;
-      const vsViewHidden = document.getElementById("view-vs")?.classList.contains("hidden");
-      if (vsIsPlaying && vsViewHidden) {
-        mp.classList.remove("hidden");
-        document.getElementById("miniplayer-song-title").textContent = selectedVsFolderName || "VS Ativo";
-        document.getElementById("miniplayer-time").textContent = document.getElementById("vs-current-time")?.textContent || "00:00";
-        document.getElementById("miniplayer-play-icon").className = "fa-solid fa-pause";
-      } else if (!vsIsPlaying) {
-        mp.classList.add("hidden");
-      }
-    }, 400);
   </script>
 </body>
 </html>
