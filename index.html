@@ -4915,6 +4915,806 @@
     if (repertorios && repertorios.length > 0) {
       renderRepertorios();
     }
+// ============================================================================
+    // 7. ETAPA 2: FILTRO DE CULTO NO VS + ÁUDIO DO MOISES NO MIDI + GERADOR GUIA.WAV
+    // ============================================================================
+    let vsFilterByCultoActive = false;
+    let vsFilterRepId = null;
+    let customGuideMemory = {}; // songKey -> { cues: [{ label, cueType, enterSec }], bpm, wavBase64 }
+
+    const GUIDE_CUE_OPTIONS = [
+      { value: "",             label: "-- Sem Cue --" },
+      { value: "INTRO",        label: "📢 Intro (1, 2, 3, 4)" },
+      { value: "VERSO",        label: "🎤 Verso" },
+      { value: "PRE_REFRAO",   label: "⚡ Pré-Refrão" },
+      { value: "REFRAO",       label: "🔥 Refrão" },
+      { value: "INSTRUMENTAL", label: "🎸 Instrumental / Solo" },
+      { value: "PONTE",        label: "🌉 Ponte" },
+      { value: "SUBIR",        label: "📈 Subir Dinâmica" },
+      { value: "DESCE",        label: "📉 Desce / Piano" },
+      { value: "FINAL",        label: "🏁 Final" }
+    ];
+
+    // ----------------------------------------------------------------------------
+    // 7.1 FILTRO "📌 SÓ MÚSICAS DO CULTO" DENTRO DA ABA VS / MIXER
+    // ----------------------------------------------------------------------------
+    function injectEtapa2UiElements() {
+      // 1. Injeta a barra de filtro do Culto acima da busca de pastas VS
+      const vsSearch = document.getElementById("vs-search-input");
+      if (vsSearch && !document.getElementById("vs-culto-filter-bar")) {
+        const bar = document.createElement("div");
+        bar.id = "vs-culto-filter-bar";
+        bar.className = "space-y-1.5 pb-1 border-b border-slate-800";
+        bar.innerHTML = `
+          <div class="flex items-center gap-1.5">
+            <button type="button" onclick="toggleVsCultoFilter()" id="btn-vs-culto-filter" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-[11px] font-extrabold flex items-center gap-1.5 shrink-0 transition">
+              <i class="fa-solid fa-thumbtack text-amber-400"></i><span id="lbl-vs-culto-filter">📌 Só Culto Atual</span>
+            </button>
+            <select id="vs-culto-rep-select" onchange="onChangeVsCultoSelect(this.value)" class="flex-1 min-w-0 px-2 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-[11px] text-white font-semibold truncate"></select>
+          </div>`;
+        vsSearch.insertAdjacentElement("beforebegin", bar);
+      }
+
+      // 2. Injeta os botões "Gerar Guia.wav" e "Ouvir Guia Falada" no topo da aba MIDI & Holyrics
+      const midiTopHeader = document.querySelector("#view-midi > div:first-child > div:last-child");
+      if (midiTopHeader && !document.getElementById("btn-generate-guide-wav")) {
+        const btnPreview = document.createElement("button");
+        btnPreview.type = "button";
+        btnPreview.id = "btn-preview-guide-voice";
+        btnPreview.onclick = () => toggleVoiceGuidePreview();
+        btnPreview.className = "px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-extrabold flex items-center gap-1.5";
+        btnPreview.innerHTML = `<i class="fa-solid fa-headset"></i><span id="lbl-preview-guide">🗣️ Ouvir Guia Falada</span>`;
+        midiTopHeader.prepend(btnPreview);
+
+        const btnWav = document.createElement("button");
+        btnWav.type = "button";
+        btnWav.id = "btn-generate-guide-wav";
+        btnWav.onclick = () => downloadAndSaveAutoGuideWav();
+        btnWav.className = "px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow";
+        btnWav.innerHTML = `<i class="fa-solid fa-microphone-lines"></i><span>Gerar Guia.wav (Reaper)</span>`;
+        midiTopHeader.prepend(btnWav);
+      }
+
+      // 3. Injeta o botão "🎧 Puxar Vocal/Click da Pasta VS (Moises)" no card de áudio da aba MIDI
+      const localAudioEl = document.getElementById("midi-local-audio");
+      if (localAudioEl && !document.getElementById("btn-midi-pull-vs")) {
+        const vsBar = document.createElement("div");
+        vsBar.className = "pt-1.5 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2";
+        vsBar.innerHTML = `
+          <button type="button" onclick="loadMoisesTrackIntoMidiStudio('VOCALS')" id="btn-midi-pull-vs" class="flex-1 py-1.5 px-2.5 rounded-xl bg-purple-600/25 hover:bg-purple-600/40 border border-purple-500/40 text-purple-200 text-[11px] font-extrabold flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-sliders text-purple-400"></i><span>Puxar Vocals do VS (Moises)</span>
+          </button>
+          <button type="button" onclick="loadMoisesTrackIntoMidiStudio('METRONOME')" class="py-1.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-300 text-[11px] font-bold flex items-center justify-center gap-1">
+            <i class="fa-solid fa-drum"></i><span>Click VS</span>
+          </button>`;
+        localAudioEl.insertAdjacentElement("beforebegin", vsBar);
+      }
+    }
+
+    function populateVsCultoDropdown() {
+      const sel = document.getElementById("vs-culto-rep-select");
+      if (!sel) return;
+      const cur = sel.value;
+      sel.innerHTML = `<option value="">Todos os Cultos</option>` + repertorios.map(r => `<option value="${r.id}">${r.dia} (${r.culto}) — ${r.tema}</option>`).join("");
+      if (cur) sel.value = cur;
+      else {
+        const next = findNextUpcomingRepertorio();
+        if (next) { sel.value = next.id; vsFilterRepId = next.id; }
+      }
+    }
+
+    function toggleVsCultoFilter() {
+      vsFilterByCultoActive = !vsFilterByCultoActive;
+      const btn = document.getElementById("btn-vs-culto-filter");
+      const lbl = document.getElementById("lbl-vs-culto-filter");
+      populateVsCultoDropdown();
+      if (vsFilterByCultoActive) {
+        btn?.classList.add("bg-amber-500", "text-black", "border-amber-400");
+        btn?.classList.remove("bg-slate-800", "text-slate-300");
+        if (lbl) lbl.textContent = "📌 Culto Ativo";
+      } else {
+        btn?.classList.remove("bg-amber-500", "text-black", "border-amber-400");
+        btn?.classList.add("bg-slate-800", "text-slate-300");
+        if (lbl) lbl.textContent = "📌 Só Culto Atual";
+      }
+      renderVsFoldersList();
+    }
+
+    function onChangeVsCultoSelect(val) {
+      vsFilterRepId = Number(val) || null;
+      if (vsFilterRepId && !vsFilterByCultoActive) {
+        toggleVsCultoFilter();
+      } else {
+        renderVsFoldersList();
+      }
+    }
+
+    const _origRenderVsFoldersList = renderVsFoldersList;
+    renderVsFoldersList = function() {
+      injectEtapa2UiElements();
+      populateVsCultoDropdown();
+      if (!vsFilterByCultoActive) {
+        _origRenderVsFoldersList();
+        return;
+      }
+
+      const rep = repertorios.find(r => r.id === Number(vsFilterRepId || selectedRepertorioId)) || findNextUpcomingRepertorio();
+      const q = (document.getElementById("vs-search-input")?.value || "").toLowerCase().trim();
+      const listEl = document.getElementById("vs-folders-list");
+      if (!rep || !rep.itens || !listEl) {
+        _origRenderVsFoldersList();
+        return;
+      }
+
+      const matchedFolders = [];
+      rep.itens.forEach((it, idx) => {
+        const info = getResolvedSongDetails(it);
+        const ref = findBestFolderMatch(info.musica, info.autor, vsFolders);
+        const folderObj = vsFolders.find(f => f.folderRef === ref);
+        if (folderObj && (!q || folderObj.nome.toLowerCase().includes(q))) {
+          matchedFolders.push({ folderObj, ordem: idx + 1, momento: it.momento, tom: info.tom });
+        }
+      });
+
+      if (matchedFolders.length === 0) {
+        listEl.innerHTML = `<div class="p-4 text-center text-xs text-amber-300 bg-slate-800/60 rounded-xl border border-amber-500/30">Nenhuma pasta VS encontrada para as músicas deste culto.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = matchedFolders.map(({ folderObj, ordem, momento, tom }) => {
+        const active = folderObj.folderRef === selectedVsFolderRef;
+        return `
+          <button onclick="selectVsSongFolder('${folderObj.folderRef}', '${folderObj.nome.replace(/'/g, "\\'")}')" class="w-full text-left px-3.5 py-2.5 rounded-xl border transition flex items-center justify-between gap-2 ${active ? "bg-purple-600/25 border-purple-500 text-white font-bold" : "bg-slate-800/80 border-amber-500/30 text-slate-200 hover:bg-slate-800"}">
+            <div class="min-w-0">
+              <span class="text-[10px] font-extrabold uppercase text-amber-400 block">${ordem}. ${momento} • Tom: ${tom}</span>
+              <span class="truncate text-xs sm:text-sm block">${folderObj.nome}</span>
+            </div>
+            <i class="fa-solid fa-chevron-right text-[10px] text-amber-400"></i>
+          </button>`;
+      }).join("");
+    };
+
+    // ----------------------------------------------------------------------------
+    // 7.2 CARREGAR VOCALS.M4A / METRONOME.M4A DO MOISES DIRETO NO ESTÚDIO MIDI
+    // ----------------------------------------------------------------------------
+    async function loadMoisesTrackIntoMidiStudio(preferSlot = "VOCALS") {
+      if (!midiStudioSong) {
+        alert("Primeiro escolha uma música do banco no campo '1. Escolher Música do Banco' acima.");
+        return;
+      }
+      const btn = document.getElementById("btn-midi-pull-vs");
+      const origHtml = btn ? btn.innerHTML : "";
+      if (btn) btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Buscando na pasta VS...</span>`;
+
+      try {
+        if (vsFolders.length === 0) await loadVsFolders(false);
+        const folderRef = findBestFolderMatch(midiStudioSong.musica, midiStudioSong.autor, vsFolders);
+        if (!folderRef) {
+          alert(`Não encontramos pasta VS correspondente para "${midiStudioSong.musica}".`);
+          return;
+        }
+        let faixasData = await dbGet("catalog", "vsFolder_" + folderRef);
+        if (!faixasData && navigator.onLine && scriptUrl) {
+          const res = await fetch(`${scriptUrl}?action=listarFaixasVs&folderRef=${encodeURIComponent(folderRef)}`);
+          const d = await res.json();
+          if (d && d.status === "ok") { faixasData = d; await dbPut("catalog", "vsFolder_" + folderRef, d); }
+        }
+        const faixas = (faixasData && faixasData.faixas) || [];
+        const targetTrack = faixas.find(fx => classifyTrackSlotForReaper(fx.nomeArquivo || fx.nomeFaixa, "") === preferSlot) || faixas[0];
+        if (!targetTrack) {
+          alert("Nenhuma faixa de áudio encontrada dentro da pasta VS desta música.");
+          return;
+        }
+
+        const raw = await fetchTrackCachedOrNetwork(targetTrack.audioRef, true);
+        const blob = new Blob([base64ToUint8Array(raw.base64)], { type: raw.mimeType || "audio/mp4" });
+        const audioEl = document.getElementById("midi-local-audio");
+        if (audioEl) {
+          audioEl.src = URL.createObjectURL(blob);
+          audioEl.classList.remove("hidden");
+          audioEl.play().catch(() => {});
+          startMidiReferenceClock();
+        }
+      } catch (e) {
+        alert("Erro ao puxar faixa da pasta VS: " + (e.message || e));
+      } finally {
+        if (btn) btn.innerHTML = origHtml;
+      }
+    }
+
+    // ----------------------------------------------------------------------------
+    // 7.3 DETECTOR DE SEÇÕES + GERADOR DE FAIXA GUIA.WAV AUTOMÁTICA PARA O MOISES
+    // ----------------------------------------------------------------------------
+    function inferCueTypeFromSlideText(text, idx) {
+      const t = String(text || "").toLowerCase();
+      if (/\[?\s*(intro|introducao|introdução)\s*\]?/i.test(t)) return "INTRO";
+      if (/\[?\s*(pre-refrao|pré-refrão|pre refrao)\s*\]?/i.test(t)) return "PRE_REFRAO";
+      if (/\[?\s*(refrao|refrão|coro)\s*\]?/i.test(t)) return "REFRAO";
+      if (/\[?\s*(verso|primeira parte|segunda parte|estribilho)\s*\]?/i.test(t)) return "VERSO";
+      if (/\[?\s*(instrumental|solo|interludio|interlúdio)\s*\]?/i.test(t)) return "INSTRUMENTAL";
+      if (/\[?\s*(ponte|bridge)\s*\]?/i.test(t)) return "PONTE";
+      if (/\[?\s*(final|fim)\s*\]?/i.test(t)) return "FINAL";
+      if (idx === 0) return "VERSO";
+      return "";
+    }
+
+    // Estende a lista de slides do MIDI & Holyrics com o seletor de Cue da Guia (Intro, Verso, Refrão, Ponte...)
+    const _origRenderMidiSlidesList = renderMidiSlidesList;
+    renderMidiSlidesList = function() {
+      injectEtapa2UiElements();
+      _origRenderMidiSlidesList();
+      if (midiSlides.length === 0) return;
+
+      midiSlides.forEach((sl, idx) => {
+        if (sl.cueType === undefined) {
+          sl.cueType = inferCueTypeFromSlideText(sl.text, idx);
+        }
+        const row = document.getElementById(`midi-slide-row-${idx}`);
+        if (!row) return;
+        const rightBox = row.querySelector("div.flex.items-center.gap-1\\.5.shrink-0");
+        if (rightBox && !rightBox.querySelector(".midi-cue-select")) {
+          const sel = document.createElement("select");
+          sel.className = "midi-cue-select px-2 py-1 bg-slate-950 border border-amber-500/40 rounded-lg text-[10px] text-amber-300 font-bold";
+          sel.title = "Anunciar esta seção na Faixa Guia 1 compasso (4 tempos) antes deste tempo";
+          sel.innerHTML = GUIDE_CUE_OPTIONS.map(opt => `<option value="${opt.value}" ${opt.value === sl.cueType ? 'selected' : ''}>${opt.label}</option>`).join("");
+          sel.onchange = (ev) => { midiSlides[idx].cueType = ev.target.value; };
+          rightBox.prepend(sel);
+        }
+      });
+    };
+
+    // Sintetiza o arquivo Guia.wav completo (Avisos Sonoros Distintos + Contagem "1, 2, 3, 4" 1 compasso antes de cada seção)
+    function buildSynthesizedGuideWavBytes(slidesList, bpm, totalDurationSec) {
+      const sampleRate = 22050;
+      const beatSec = 60 / (bpm || 120);
+      const maxSlideSec = slidesList.reduce((acc, s) => Math.max(acc, Number(s.timeSec) || 0), 0);
+      const durationSec = Math.max(totalDurationSec || 0, maxSlideSec + 8, 30);
+      const totalSamples = Math.ceil(durationSec * sampleRate);
+      const pcmFloat = new Float32Array(totalSamples);
+
+      // Função auxiliar para desenhar um tom/bipe limpo com envelope suave no buffer WAV
+      const addTone = (startSec, durSec, freqHz, endFreqHz, amp = 0.6) => {
+        if (startSec < 0 || startSec >= durationSec) return;
+        const startIdx = Math.floor(startSec * sampleRate);
+        const len = Math.floor(durSec * sampleRate);
+        for (let i = 0; i < len && (startIdx + i) < totalSamples; i++) {
+          const t = i / sampleRate;
+          const progress = i / len;
+          const curFreq = freqHz + (endFreqHz - freqHz) * progress;
+          const env = Math.sin(Math.min(1, progress * 8) * (Math.PI / 2)) * Math.pow(1 - progress, 1.6);
+          pcmFloat[startIdx + i] += Math.sin(2 * Math.PI * curFreq * t) * amp * env;
+        }
+      };
+
+      // Se houver espaço antes do primeiro slide, coloca uma contagem inicial de Intro no segundo 0
+      const cues = slidesList.filter(s => s.cueType && s.timeSec > 0);
+      if (cues.length === 0 && slidesList.length > 0) {
+        cues.push({ timeSec: slidesList[0].timeSec || (beatSec * 4), cueType: "INTRO" });
+      }
+
+      // Padrões melódicos de Guia (Cues inconfundíveis no fone + 4 tempos de contagem cravados no BPM)
+      const CUE_MOTIFS = {
+        INTRO:        [[523.25, 659.25], [659.25, 783.99]],         // Dó -> Mi -> Sol (Subida brilhante)
+        VERSO:        [[440, 440], [554.37, 554.37]],               // Lá -> Dó# (Suave)
+        PRE_REFRAO:   [[587.33, 698.46], [698.46, 880]],            // Ré -> Fá -> Lá (Tensão crescente)
+        REFRAO:       [[523.25, 783.99], [783.99, 1046.5]],         // Oitava forte de Refrão!
+        INSTRUMENTAL: [[659.25, 523.25], [783.99, 659.25]],         // Arpejo de Solo
+        PONTE:        [[493.88, 659.25], [659.25, 987.77]],         // Si -> Mi -> Si (Ponte)
+        SUBIR:        [[440, 880], [587.33, 1174.66]],              // Glissando ascendente ("Sobe!")
+        DESCE:        [[880, 440], [659.25, 329.63]],               // Glissando descendente ("Desce!")
+        FINAL:        [[1046.5, 523.25], [523.25, 261.63]]          // Cadência final
+      };
+
+      cues.forEach(cue => {
+        const enterSec = Number(cue.timeSec) || 0;
+        const countStartSec = enterSec - (4 * beatSec); // Exatamente 1 compasso (4 tempos) antes da seção entrar!
+
+        // 1. Toca o sinal melódico da Seção no tempo 1 da contagem (4 tempos antes da entrada)
+        const motif = CUE_MOTIFS[cue.cueType] || CUE_MOTIFS.VERSO;
+        if (countStartSec >= 0) {
+          addTone(countStartSec, 0.11, motif[0][0], motif[0][1], 0.65);
+          addTone(countStartSec + 0.12, 0.14, motif[1][0], motif[1][1], 0.70);
+        }
+
+        // 2. Contagem regressiva nos 4 tempos antes da entrada ("1, 2, 3, 4" -> Entra!)
+        for (let b = 0; b < 4; b++) {
+          const tickSec = countStartSec + (b * beatSec);
+          if (tickSec >= 0) {
+            // Tempo 1, 2, 3 e 4 (o 4º tempo é mais agudo avisando a virada de entrada)
+            const f = (b === 3) ? 1318.5 : (b === 0 ? 1046.5 : 880);
+            addTone(tickSec, 0.065, f, f * 0.92, 0.75);
+          }
+        }
+      });
+
+      // Codifica para WAV Mono 16-bit super leve
+      const dataSize = totalSamples * 2;
+      const buf = new ArrayBuffer(44 + dataSize);
+      const view = new DataView(buf);
+      const writeStr = (off, s) => { for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); };
+      writeStr(0, "RIFF"); view.setUint32(4, 36 + dataSize, true); writeStr(8, "WAVE");
+      writeStr(12, "fmt "); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
+      view.setUint32(24, sampleRate, true); view.setUint32(28, sampleRate * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true);
+      writeStr(36, "data"); view.setUint32(40, dataSize, true);
+      const pcm16 = new Int16Array(buf, 44);
+      for (let i = 0; i < totalSamples; i++) {
+        const s = Math.max(-1, Math.min(1, pcmFloat[i]));
+        pcm16[i] = s < 0 ? s * 32768 : s * 32767;
+      }
+      return new Uint8Array(buf);
+    }
+
+    async function downloadAndSaveAutoGuideWav() {
+      if (midiSlides.length === 0) {
+        alert("Gere os slides e marque os tempos primeiro para criar a faixa Guia.wav.");
+        return;
+      }
+      const bpm = Math.max(40, Math.min(240, Number(document.getElementById("midi-bpm-input")?.value) || 120));
+      const songTitle = midiStudioSong ? midiStudioSong.musica : (prompt("Nome da música para a faixa Guia:") || "Musica_DOXA");
+      const wavBytes = buildSynthesizedGuideWavBytes(midiSlides, bpm, 0);
+
+      // 1. Baixa o arquivo Guia.wav para o computador (pronto para jogar na pasta do Moises!)
+      const safeTitle = songTitle.replace(/[\\/:*?"<>|]/g, "");
+      const blob = new Blob([wavBytes], { type: "audio/wav" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${safeTitle} - Guia.wav`;
+      a.click();
+
+      // 2. Salva na memória do aplicativo para incluir automaticamente na track 'Guia' do Reaper (.RPP)
+      const key = normalizeSongKey(songTitle);
+      const savedGuides = (await dbGet("catalog", "guideAutomations")) || {};
+      savedGuides[key] = {
+        musica: songTitle,
+        bpm,
+        wavBase64: uint8ArrayToBase64(wavBytes),
+        cues: midiSlides.filter(s => s.cueType).map(s => ({ cueType: s.cueType, timeSec: s.timeSec })),
+        updatedAt: Date.now()
+      };
+      await dbPut("catalog", "guideAutomations", savedGuides);
+      customGuideMemory = savedGuides;
+
+      alert(`✅ Faixa "${safeTitle} - Guia.wav" gerada e vinculada ao Reaper!\n\nQuando você clicar em "Baixar VS + MIDI Offline & Gerar .RPP", o aplicativo já salvará a Guia.wav dentro da pasta da música e colocará na track 'Guia' do Reaper automaticamente!`);
+    }
+
+    // Prévia ao vivo com Voz em Português (Web Speech API) sincronizada com o relógio da aba MIDI!
+    let guideVoicePreviewActive = false;
+    let guideSpokenCuesSet = new Set();
+    let guideVoiceInterval = null;
+
+    function speakPortugueseCue(textToSpeak) {
+      if (!("speechSynthesis" in window)) return;
+      try {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(textToSpeak);
+        u.lang = "pt-BR";
+        u.rate = 1.25;
+        u.pitch = 1.0;
+        window.speechSynthesis.speak(u);
+      } catch (e) {}
+    }
+
+    function toggleVoiceGuidePreview() {
+      guideVoicePreviewActive = !guideVoicePreviewActive;
+      const lbl = document.getElementById("lbl-preview-guide");
+      const btn = document.getElementById("btn-preview-guide-voice");
+      guideSpokenCuesSet.clear();
+
+      if (guideVoicePreviewActive) {
+        if (lbl) lbl.textContent = "🗣️ Guia Falada: ON";
+        btn?.classList.add("bg-emerald-600", "text-white");
+        speakPortugueseCue("Guia falada ativada");
+
+        const SPOKEN_NAMES = {
+          INTRO: "Introdução, 1, 2, 3, 4",
+          VERSO: "Verso, 2, 3, 4",
+          PRE_REFRAO: "Pré Refrão, 2, 3, 4",
+          REFRAO: "Refrão, 2, 3, 4",
+          INSTRUMENTAL: "Instrumental, 2, 3, 4",
+          PONTE: "Ponte, 2, 3, 4",
+          SUBIR: "Sobe dinâmica, 2, 3, 4",
+          DESCE: "Desce dinâmica, 2, 3, 4",
+          FINAL: "Final, 2, 3, 4"
+        };
+
+        if (guideVoiceInterval) clearInterval(guideVoiceInterval);
+        guideVoiceInterval = setInterval(() => {
+          const nowSec = getMidiReferenceCurrentTime();
+          const bpm = Math.max(40, Math.min(240, Number(document.getElementById("midi-bpm-input")?.value) || 120));
+          const fourBeatsSec = (60 / bpm) * 4;
+
+          midiSlides.forEach((sl, idx) => {
+            if (!sl.cueType || !sl.timeSec) return;
+            const triggerTime = Math.max(0, sl.timeSec - fourBeatsSec);
+            const key = `${idx}_${sl.cueType}`;
+            if (nowSec >= triggerTime && nowSec <= triggerTime + 0.65 && !guideSpokenCuesSet.has(key)) {
+              guideSpokenCuesSet.add(key);
+              speakPortugueseCue(SPOKEN_NAMES[sl.cueType] || sl.cueType);
+            }
+          });
+        }, 120);
+      } else {
+        if (lbl) lbl.textContent = "🗣️ Ouvir Guia Falada";
+        btn?.classList.remove("bg-emerald-600", "text-white");
+        if (guideVoiceInterval) { clearInterval(guideVoiceInterval); guideVoiceInterval = null; }
+      }
+    }
+
+    // Conecta a Guia.wav gerada diretamente ao exportador do Reaper (.RPP) se a pasta do Moises não tiver faixa Guia!
+    const _origOpenReaperModal = openReaperModal;
+    openReaperModal = async function(repId) {
+      const savedGuides = await dbGet("catalog", "guideAutomations");
+      if (savedGuides) customGuideMemory = savedGuides;
+      return _origOpenReaperModal(repId);
+    };
+
+    const _origGenerateReaperRppFile = generateReaperRppFile;
+    generateReaperRppFile = async function(downloadFromCloudToDisk = false) {
+      const savedGuides = await dbGet("catalog", "guideAutomations");
+      if (savedGuides) customGuideMemory = savedGuides;
+
+      // Se o usuário pediu para baixar o pacote Offline para a pasta local, grava também as Guia.wav geradas dentro da subpasta de cada música!
+      if (downloadFromCloudToDisk && localVsRootHandle && reaperTargetPayload && reaperTargetPayload.items) {
+        for (let i = 0; i < reaperTargetPayload.items.length; i++) {
+          const it = reaperTargetPayload.items[i];
+          const info = getResolvedSongDetails(it);
+          const guideObj = customGuideMemory[normalizeSongKey(info.musica)];
+          const chosenRef = it.selectedFolderRef || "";
+          const driveFolder = vsFolders.find(f => f.folderRef === chosenRef);
+          if (guideObj && guideObj.wavBase64 && driveFolder) {
+            try {
+              const safeFolderName = sanitizeFileSystemName(driveFolder.nome, `Musica_${i + 1}`, "");
+              const songDirHandle = await localVsRootHandle.getDirectoryHandle(safeFolderName, { create: true });
+              const fHandle = await songDirHandle.getFileHandle("Guia.wav", { create: true });
+              const w = await fHandle.createWritable();
+              await w.write(new Blob([base64ToUint8Array(guideObj.wavBase64)], { type: "audio/wav" }));
+              await w.close();
+            } catch (e) {}
+          }
+        }
+      }
+      return _origGenerateReaperRppFile(downloadFromCloudToDisk);
+    };
+
+    injectEtapa2UiElements();
+// ============================================================================
+    // 8. ETAPA 3: ESCALA DA EQUIPE POR CULTO + ALERTA DE REPETIÇÃO + "BAÚ DO DOXA"
+    // ============================================================================
+    let rosterDirectory = {}; // repId ou "dia_culto" -> { vocais: "", banda: "", ministrosPorMusica: { idx: "Nome" } }
+
+    function getRepRosterKey(rep) {
+      if (!rep) return "";
+      return `${String(rep.dia || "").trim()}__${String(rep.culto || "").trim()}`;
+    }
+
+    async function loadRosterDirectory() {
+      try {
+        const saved = await dbGet("catalog", "doxaTeamRoster_v1");
+        if (saved && typeof saved === "object") rosterDirectory = saved;
+      } catch (e) {}
+    }
+
+    async function saveRosterDirectory() {
+      try {
+        await dbPut("catalog", "doxaTeamRoster_v1", rosterDirectory);
+      } catch (e) {}
+    }
+
+    function getRosterForRep(rep) {
+      if (!rep) return { vocais: "", banda: "", ministrosPorMusica: {} };
+      const byId = rosterDirectory["ID_" + rep.id];
+      const byKey = rosterDirectory[getRepRosterKey(rep)];
+      const found = byId || byKey || {};
+      return {
+        vocais: rep.escalaVocais || found.vocais || "",
+        banda: rep.escalaBanda || found.banda || "",
+        ministrosPorMusica: found.ministrosPorMusica || {}
+      };
+    }
+
+    // Calcula há quantos dias cada música foi tocada pela última vez nos Repertórios
+    function getSongLastPlayedStats(songName) {
+      const targetKey = normalizeSongKey(removeHymnPrefix(songName));
+      if (!targetKey || !Array.isArray(repertorios)) return null;
+
+      const today = new Date();
+      today.setHours(12, 0, 0, 0);
+      let lastDate = null;
+      let lastDiaStr = "";
+      let totalInReps = 0;
+
+      repertorios.forEach(rep => {
+        const d = parseRepDate(rep.dia);
+        (rep.itens || []).forEach(it => {
+          if (normalizeSongKey(removeHymnPrefix(it.musica)) === targetKey) {
+            totalInReps++;
+            if (d && d.getTime() <= today.getTime() + (86400000 * 3)) {
+              if (!lastDate || d.getTime() > lastDate.getTime()) {
+                lastDate = d;
+                lastDiaStr = rep.dia;
+              }
+            }
+          }
+        });
+      });
+
+      if (!lastDate) return { daysAgo: null, lastDiaStr: "", totalInReps };
+      const diffDays = Math.max(0, Math.round((today.getTime() - lastDate.getTime()) / 86400000));
+      return { daysAgo: diffDays, lastDiaStr, totalInReps };
+    }
+
+    // Injeta os campos de Escala da Equipe e o botão "💎 Sugerir do Baú" dentro do modal de Repertório
+    function injectEtapa3ModalElements() {
+      const repForm = document.getElementById("repertorio-form");
+      if (!repForm) return;
+
+      // 1. Bloco de Escala (Vocais e Banda) logo abaixo de Data/Culto/Tema
+      if (!document.getElementById("rep-escala-box")) {
+        const firstGrid = repForm.querySelector("div.grid");
+        if (firstGrid) {
+          const escalaDiv = document.createElement("div");
+          escalaDiv.id = "rep-escala-box";
+          escalaDiv.className = "grid grid-cols-1 sm:grid-cols-2 gap-2 bg-slate-800/50 border border-indigo-500/30 rounded-xl p-3";
+          escalaDiv.innerHTML = `
+            <div>
+              <label class="block text-[11px] font-extrabold uppercase text-indigo-300 mb-1"><i class="fa-solid fa-microphone-lines mr-1"></i>Ministros / Vocais Escalados</label>
+              <input type="text" id="rep-escala-vocais" placeholder="Ex: Luiz, Giovanna, Ana..." class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-extrabold uppercase text-emerald-300 mb-1"><i class="fa-solid fa-guitar mr-1"></i>Banda / Instrumental Escalado</label>
+              <input type="text" id="rep-escala-banda" placeholder="Ex: Teclado: Luiz | Violão: Lucas | Batera..." class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white" />
+            </div>`;
+          firstGrid.insertAdjacentElement("afterend", escalaDiv);
+        }
+      }
+
+      // 2. Botão "💎 Sugerir do Baú" e caixa de sugestões
+      const draftContainer = document.getElementById("rep-draft-items");
+      if (draftContainer && !document.getElementById("btn-rep-bau")) {
+        const bauBar = document.createElement("div");
+        bauBar.className = "flex flex-wrap items-center justify-between gap-2 pt-1";
+        bauBar.innerHTML = `
+          <span class="text-[11px] text-slate-400">Dica: Digite na busca para ver alertas de repetição recente.</span>
+          <button type="button" onclick="toggleBauSuggestionsPanel()" id="btn-rep-bau" class="px-3 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 text-xs font-extrabold flex items-center gap-1.5">
+            <i class="fa-solid fa-gem"></i><span>💎 Sugerir do Baú (+90 dias sem tocar)</span>
+          </button>`;
+        draftContainer.insertAdjacentElement("beforebegin", bauBar);
+
+        const bauPanel = document.createElement("div");
+        bauPanel.id = "rep-bau-panel";
+        bauPanel.className = "hidden bg-slate-950 border border-cyan-500/40 rounded-xl p-3 space-y-2 max-h-52 overflow-y-auto custom-scroll";
+        draftContainer.insertAdjacentElement("beforebegin", bauPanel);
+      }
+    }
+
+    function toggleBauSuggestionsPanel() {
+      const panel = document.getElementById("rep-bau-panel");
+      if (!panel) return;
+      const isHidden = panel.classList.contains("hidden");
+      if (!isHidden) {
+        panel.classList.add("hidden");
+        return;
+      }
+
+      const inDraftSet = new Set(draftRepertorioItems.map(i => normalizeSongKey(i.musica)));
+      const candidates = [];
+
+      songs.forEach(s => {
+        if (!s.musica || inDraftSet.has(normalizeSongKey(s.musica))) return;
+        const st = getSongLastPlayedStats(s.musica);
+        const daysAgo = st ? st.daysAgo : null;
+        if (daysAgo === null || daysAgo >= 75) {
+          candidates.push({ song: s, daysAgo, vezes: Number(s.vezes) || 0 });
+        }
+      });
+
+      // Prioriza músicas conhecidas da igreja (vezes > 0) que estão há muito tempo sem tocar
+      candidates.sort((a, b) => {
+        const dA = a.daysAgo === null ? 999 : a.daysAgo;
+        const dB = b.daysAgo === null ? 999 : b.daysAgo;
+        return (b.vezes * 20 + dB) - (a.vezes * 20 + dA);
+      });
+
+      const top = candidates.slice(0, 25);
+      panel.innerHTML = `
+        <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+          <span class="text-[11px] font-extrabold text-cyan-300 uppercase"><i class="fa-solid fa-gem mr-1"></i>Sugestões do Baú DOXA (Clique para incluir no culto)</span>
+          <button type="button" onclick="document.getElementById('rep-bau-panel').classList.add('hidden')" class="text-xs text-slate-400 hover:text-white">✕</button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+          ${top.map(({ song, daysAgo }) => {
+            const badge = daysAgo === null ? "Nunca escalada no app" : `Há ${daysAgo} dias sem tocar`;
+            return `
+              <button type="button" onclick="quickAddBauSong(${song.id})" class="text-left px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-cyan-950/60 border border-slate-800 hover:border-cyan-500/40 flex items-center justify-between gap-2 transition">
+                <div class="min-w-0">
+                  <span class="text-xs font-bold text-white truncate block">${song.musica}</span>
+                  <span class="text-[10px] text-cyan-300 block">${badge} • ${song.vezes || 0}x</span>
+                </div>
+                <span class="px-1.5 py-0.5 rounded bg-slate-800 text-amber-400 font-bold text-[10px] shrink-0">${song.tom || "-"}</span>
+              </button>`;
+          }).join("")}
+        </div>`;
+      panel.classList.remove("hidden");
+    }
+
+    function quickAddBauSong(songId) {
+      const s = songs.find(x => x.id === Number(songId));
+      if (!s) return;
+      draftRepertorioItems.push({
+        momento: document.getElementById("rep-item-momento")?.value || "Adoração",
+        musica: s.musica,
+        autor: s.autor || "",
+        tom: s.tom || "",
+        ref: s.ref || "",
+        fileId: s.fileId || "",
+        ministro: ""
+      });
+      renderDraftRepertorioItems();
+      toggleBauSuggestionsPanel();
+    }
+
+    // Sobrescreve o dropdown de busca de músicas no Repertório para mostrar o Alerta de Repetição Recente
+    const _origFilterRepSongsDropdown = filterRepSongsDropdown;
+    filterRepSongsDropdown = function() {
+      const q = (document.getElementById("rep-item-song-search")?.value || "").toLowerCase().trim();
+      const drop = document.getElementById("dropdown-rep-songs");
+      if (!drop) return _origFilterRepSongsDropdown();
+
+      const matched = songs.filter(s => !q || (s.musica && s.musica.toLowerCase().includes(q)) || (s.autor && s.autor.toLowerCase().includes(q))).slice(0, 40);
+      drop.innerHTML = matched.map(s => {
+        const st = getSongLastPlayedStats(s.musica);
+        let statusBadge = "";
+        if (st && st.daysAgo !== null) {
+          if (st.daysAgo <= 21) {
+            statusBadge = `<span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/25 border border-rose-500/40 text-rose-300 font-extrabold">⚠️ Tocada há ${st.daysAgo}d (${st.lastDiaStr})</span>`;
+          } else if (st.daysAgo <= 45) {
+            statusBadge = `<span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">Há ${st.daysAgo}d</span>`;
+          } else {
+            statusBadge = `<span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300">Há ${st.daysAgo}d</span>`;
+          }
+        }
+        const safeName = String(s.musica || "").replace(/'/g, "\\'");
+        return `
+          <button type="button" onclick="document.getElementById('rep-item-song-id').value=${s.id};document.getElementById('rep-item-song-search').value='${safeName}';document.getElementById('dropdown-rep-songs').classList.add('hidden');" class="w-full text-left px-3 py-2 text-xs text-white hover:bg-amber-600/25 flex items-center justify-between gap-2 border-b border-slate-800/60">
+            <span class="truncate"><strong>${s.musica}</strong> <span class="text-slate-400">(${s.tom || "-"})</span></span>
+            ${statusBadge}
+          </button>`;
+      }).join("");
+      drop.classList.remove("hidden");
+    };
+
+    // Estende a lista de itens do rascunho de Repertório com o campo "🎤 Ministro" por música
+    const _origRenderDraftRepertorioItems = renderDraftRepertorioItems;
+    renderDraftRepertorioItems = function() {
+      injectEtapa3ModalElements();
+      const container = document.getElementById("rep-draft-items");
+      if (!container) return _origRenderDraftRepertorioItems();
+
+      container.innerHTML = draftRepertorioItems.map((it, i) => `
+        <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900 px-3 py-2 rounded-lg text-xs border border-slate-800">
+          <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[220px]">
+            <span class="text-amber-400 font-bold">${i + 1}.</span>
+            <input type="text" value="${(it.momento || '').replace(/"/g, '&quot;')}" onchange="draftRepertorioItems[${i}].momento=this.value" placeholder="Momento" class="w-24 px-2 py-1 bg-slate-800 border border-slate-700 rounded text-amber-300 font-semibold text-xs" />
+            <span class="font-bold text-white truncate flex-1 min-w-[120px]">${it.musica}</span>
+            <input type="text" value="${(it.ministro || '').replace(/"/g, '&quot;')}" onchange="draftRepertorioItems[${i}].ministro=this.value" placeholder="🎤 Ministro(a)" class="w-28 px-2 py-1 bg-slate-800 border border-indigo-500/40 rounded text-indigo-200 font-semibold text-xs" title="Quem ministra esta música" />
+            <input type="text" value="${(it.tom || '').replace(/"/g, '&quot;')}" onchange="draftRepertorioItems[${i}].tom=this.value" placeholder="Tom" class="w-12 px-1.5 py-1 bg-slate-800 border border-slate-700 rounded text-center text-amber-400 font-bold text-xs" />
+          </div>
+          <div class="flex items-center gap-1">
+            <button type="button" onclick="moveDraftItem(${i},-1)" class="w-6 h-6 rounded bg-slate-800 text-slate-300 hover:text-white">↑</button>
+            <button type="button" onclick="moveDraftItem(${i},1)" class="w-6 h-6 rounded bg-slate-800 text-slate-300 hover:text-white">↓</button>
+            <button type="button" onclick="draftRepertorioItems.splice(${i},1);renderDraftRepertorioItems();" class="w-6 h-6 rounded bg-rose-600/20 text-rose-400">×</button>
+          </div>
+        </div>`).join("");
+    };
+
+    const _origOpenRepertorioModal = openRepertorioModal;
+    openRepertorioModal = function(repId = null) {
+      injectEtapa3ModalElements();
+      _origOpenRepertorioModal(repId);
+      const vInp = document.getElementById("rep-escala-vocais");
+      const bInp = document.getElementById("rep-escala-banda");
+      document.getElementById("rep-bau-panel")?.classList.add("hidden");
+
+      if (repId) {
+        const rep = repertorios.find(r => r.id === Number(repId));
+        const rst = getRosterForRep(rep);
+        if (vInp) vInp.value = rst.vocais || "";
+        if (bInp) bInp.value = rst.banda || "";
+        draftRepertorioItems.forEach((it, idx) => {
+          if (!it.ministro && rst.ministrosPorMusica && rst.ministrosPorMusica[idx]) {
+            it.ministro = rst.ministrosPorMusica[idx];
+          }
+        });
+        renderDraftRepertorioItems();
+      } else {
+        if (vInp) vInp.value = "";
+        if (bInp) bInp.value = "";
+      }
+    };
+
+    const _origSaveRepertorio = saveRepertorio;
+    saveRepertorio = async function(e) {
+      const vocais = document.getElementById("rep-escala-vocais")?.value.trim() || "";
+      const banda = document.getElementById("rep-escala-banda")?.value.trim() || "";
+      const dia = document.getElementById("rep-dia")?.value.trim() || "";
+      const culto = document.getElementById("rep-culto")?.value.trim() || "";
+      const editId = document.getElementById("rep-edit-id")?.value;
+
+      const ministrosPorMusica = {};
+      draftRepertorioItems.forEach((it, idx) => {
+        if (it.ministro) ministrosPorMusica[idx] = it.ministro.trim();
+      });
+
+      await _origSaveRepertorio(e);
+
+      const savedRep = repertorios.find(r => (editId && r.id === Number(editId)) || (r.dia === dia && r.culto === culto)) || repertorios[0];
+      if (savedRep) {
+        savedRep.escalaVocais = vocais;
+        savedRep.escalaBanda = banda;
+        const entry = { vocais, banda, ministrosPorMusica };
+        rosterDirectory["ID_" + savedRep.id] = entry;
+        rosterDirectory[getRepRosterKey(savedRep)] = entry;
+        await saveRosterDirectory();
+        renderFeaturedRepertorio();
+        renderPalco();
+      }
+    };
+
+    // Exibe a Escala da Equipe e o Ministro de cada música no card do Culto e no Modo Palco
+    const _origRenderFeaturedRepertorio = renderFeaturedRepertorio;
+    renderFeaturedRepertorio = function(isNextBadge = false) {
+      _origRenderFeaturedRepertorio(isNextBadge);
+      const rep = repertorios.find(r => r.id === selectedRepertorioId) || findNextUpcomingRepertorio();
+      const bodyEl = document.getElementById("featured-rep-body");
+      if (!rep || !bodyEl) return;
+
+      const rst = getRosterForRep(rep);
+      if (rst.vocais || rst.banda) {
+        const rosterBanner = document.createElement("div");
+        rosterBanner.className = "bg-slate-950/90 border border-indigo-500/30 rounded-xl p-3 flex flex-wrap items-center gap-4 text-xs";
+        rosterBanner.innerHTML = `
+          ${rst.vocais ? `<div><span class="text-[10px] font-extrabold uppercase text-indigo-400 block"><i class="fa-solid fa-microphone-lines mr-1"></i>Vocais Escalados</span><strong class="text-white">${rst.vocais}</strong></div>` : ""}
+          ${rst.banda ? `<div><span class="text-[10px] font-extrabold uppercase text-emerald-400 block"><i class="fa-solid fa-guitar mr-1"></i>Banda Escalada</span><strong class="text-white">${rst.banda}</strong></div>` : ""}`;
+        bodyEl.prepend(rosterBanner);
+      }
+    };
+
+    // Inclui automaticamente a Escala da Equipe e quem ministra cada música na mensagem do WhatsApp da Equipe!
+    const _origBuildWhatsAppTextAsync = buildWhatsAppTextAsync;
+    buildWhatsAppTextAsync = async function(rep, mode) {
+      const baseText = await _origBuildWhatsAppTextAsync(rep, mode);
+      if (mode !== "equipe" || !rep) return baseText;
+
+      const rst = getRosterForRep(rep);
+      let escalaHeader = "";
+      if (rst.vocais || rst.banda) {
+        escalaHeader = `\n👥 *ESCALA DA EQUIPE:*\n` +
+          (rst.vocais ? `🎤 *Vocais:* ${rst.vocais}\n` : "") +
+          (rst.banda ? `🎸 *Banda:* ${rst.banda}\n` : "");
+      }
+
+      // Insere a escala logo após o Tema e adiciona o nome do ministro nas músicas se houver
+      let updated = escalaHeader
+        ? baseText.replace(/(\*Tema:\*[^\n]*\n)/, `$1${escalaHeader}`)
+        : baseText;
+
+      (rep.itens || []).forEach((it, idx) => {
+        const min = it.ministro || (rst.ministrosPorMusica && rst.ministrosPorMusica[idx]);
+        if (min) {
+          const linePrefix = `${idx + 1}. *${it.momento}:*`;
+          updated = updated.replace(linePrefix, `${idx + 1}. *${it.momento}* _(🎤 ${min})_:`);
+        }
+      });
+
+      return updated;
+    };
+
+    loadRosterDirectory().then(() => {
+      injectEtapa3ModalElements();
+      if (repertorios && repertorios.length > 0) {
+        renderFeaturedRepertorio();
+      }
+    });
   </script>
 </body>
 </html>
