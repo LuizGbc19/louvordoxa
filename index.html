@@ -3551,6 +3551,829 @@
 
     updateAdminUI();
     syncFromGoogleSheet(false);
+    // ============================================================================
+    // 6. MÓDULO GDRUMS DOXA (AUTO-INJETÁVEL — CORRIGE TELA PRETA E FALTA DE HTML)
+    // ============================================================================
+    let gdrumIsPlaying = false;
+    let gdrumBpm = 120;
+    let gdrumMasterVol = 0.9;
+    let gdrumActiveStyleId = "synth_worship44";
+    let gdrumActiveVar = "var1";
+    let gdrumQueuedFill = null;
+    let gdrumStepTimer = null;
+    let gdrumCurrentStep = 0;
+    let gdrumTapTimes = [];
+    let gdrumDriveStyles = [];
+    let gdrumDecodedBuffers = {};
+    let gdrumActiveLoopSource = null;
+    let gdrumCloudRecorder = null;
+    let gdrumCloudChunks = [];
+
+    const GDRUM_BUILTIN_STYLES = [
+      {
+        id: "synth_worship44", nome: "Worship Balada 4/4", bpm: 120, compasso: "4/4", isBuiltin: true,
+        vars: {
+          var1: { kick: [1,0,0,0, 0,0,1,0, 1,0,0,0, 0,0,1,0], snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0], hat: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0], openHat: [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,1,0] },
+          var2: { kick: [1,0,1,0, 0,0,1,0, 1,0,1,0, 0,1,0,0], snare: [0,0,0,0, 1,0,0,1, 0,0,0,0, 1,0,0,0], hat: [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1], openHat: [0,0,0,0, 0,0,0,1, 0,0,0,0, 0,0,1,0] },
+          var3: { kick: [1,0,0,1, 0,0,1,0, 1,0,0,1, 0,0,1,0], snare: [0,0,0,0, 1,0,0,0, 0,0,1,0, 1,0,0,1], hat: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0], openHat: [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0] }
+        }
+      },
+      {
+        id: "synth_worship68", nome: "Worship 6/8 (Adoração)", bpm: 74, compasso: "6/8", isBuiltin: true,
+        vars: {
+          var1: { kick: [1,0,0,0,0,0, 0,0,0,0,1,0], snare: [0,0,0,0,0,0, 1,0,0,0,0,0], hat: [1,0,1,0,1,0, 1,0,1,0,1,0], openHat: [0,0,0,0,0,0, 0,0,0,0,0,0] },
+          var2: { kick: [1,0,0,1,0,0, 0,0,1,0,1,0], snare: [0,0,0,0,0,0, 1,0,0,0,0,1], hat: [1,1,1,1,1,1, 1,1,1,1,1,1], openHat: [0,0,0,0,0,1, 0,0,0,0,0,1] },
+          var3: { kick: [1,0,1,0,1,0, 1,0,1,0,1,0], snare: [0,0,0,0,0,0, 1,0,0,1,0,0], hat: [1,0,1,0,1,0, 1,0,1,0,1,0], openHat: [1,0,0,0,0,0, 1,0,0,0,0,0] }
+        }
+      },
+      {
+        id: "synth_poprock", nome: "Pop Rock Celebração", bpm: 132, compasso: "4/4", isBuiltin: true,
+        vars: {
+          var1: { kick: [1,0,0,0, 0,0,1,0, 1,0,1,0, 0,0,0,0], snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0], hat: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0], openHat: [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,1,0] },
+          var2: { kick: [1,0,1,0, 0,0,1,0, 1,0,1,0, 0,0,1,0], snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,1], hat: [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1], openHat: [0,0,0,1, 0,0,0,1, 0,0,0,1, 0,0,1,0] },
+          var3: { kick: [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0], snare: [0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0], hat: [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1], openHat: [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0] }
+        }
+      },
+      {
+        id: "synth_forro", nome: "Forrozão / Baião Gospel", bpm: 155, compasso: "4/4", isBuiltin: true,
+        vars: {
+          var1: { kick: [1,0,0,1, 0,0,1,0, 1,0,0,1, 0,0,1,0], snare: [0,0,1,0, 0,1,0,0, 0,0,1,0, 0,1,0,0], hat: [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1], openHat: [0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0] },
+          var2: { kick: [1,0,0,1, 0,1,1,0, 1,0,0,1, 0,1,1,0], snare: [0,0,1,0, 1,0,0,1, 0,0,1,0, 1,0,0,1], hat: [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1], openHat: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0] },
+          var3: { kick: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0], snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0], hat: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0], openHat: [0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0] }
+        }
+      },
+      {
+        id: "synth_marcha", nome: "Country / Vaneira / Harpa", bpm: 140, compasso: "4/4", isBuiltin: true,
+        vars: {
+          var1: { kick: [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0], snare: [0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0], hat: [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1], openHat: [0,0,0,0, 0,0,1,0, 0,0,0,0, 0,0,1,0] },
+          var2: { kick: [1,0,0,1, 1,0,0,0, 1,0,0,1, 1,0,0,0], snare: [0,0,1,0, 0,1,1,0, 0,0,1,0, 0,1,1,0], hat: [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1], openHat: [1,0,0,0, 0,0,1,0, 1,0,0,0, 0,0,1,0] },
+          var3: { kick: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0], snare: [0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,1], hat: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0], openHat: [0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0] }
+        }
+      },
+      {
+        id: "synth_balada", nome: "Balada Lenta Piano/Violão", bpm: 68, compasso: "4/4", isBuiltin: true,
+        vars: {
+          var1: { kick: [1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,1,0], snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0], hat: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0], openHat: [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0] },
+          var2: { kick: [1,0,0,0, 0,0,1,0, 1,0,1,0, 0,0,1,0], snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,1], hat: [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1], openHat: [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,1,0] },
+          var3: { kick: [1,0,1,0, 0,0,1,0, 1,0,1,0, 0,1,0,0], snare: [0,0,0,0, 1,0,0,1, 0,0,0,0, 1,0,1,0], hat: [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1], openHat: [1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,1,0] }
+        }
+      }
+    ];
+
+    // Cria a <section id="view-gdrum"> e o modal automaticamente se não existirem no HTML!
+    function ensureGDrumDomElementsExist() {
+      const mainEl = document.querySelector("main") || document.getElementById("view-musicas")?.parentElement;
+      if (!mainEl) return;
+
+      if (!document.getElementById("view-gdrum")) {
+        const sec = document.createElement("section");
+        sec.id = "view-gdrum";
+        sec.className = "hidden space-y-4 pb-20";
+        sec.innerHTML = `
+          <div class="bg-zinc-950 border border-amber-500/40 rounded-2xl p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-3 shadow-2xl">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-lg font-black">
+                <i class="fa-solid fa-drum"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h2 class="text-base sm:text-lg font-black text-white tracking-tight">GDrums DOXA</h2>
+                  <span id="gdrum-drive-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">Sintetizador + Drive</span>
+                </div>
+                <p class="text-[11px] text-zinc-400">Ritmos, viradas, finais e repertório no palco • Sincronizado com a pasta <code>gDrum</code> do Drive</p>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button type="button" onclick="syncGDrumDriveStyles(true)" class="px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-amber-300 text-xs font-bold flex items-center gap-1.5">
+                <i class="fa-brands fa-google-drive" id="gdrum-sync-icon"></i><span>Sincronizar Drive</span>
+              </button>
+              <button type="button" onclick="openGDrumDriveUploadModal()" class="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-extrabold flex items-center gap-1.5 shadow">
+                <i class="fa-solid fa-cloud-arrow-up"></i><span>Gravar / Salvar no Drive</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+            <div class="lg:col-span-3 bg-zinc-950 border border-zinc-800 rounded-2xl p-3.5 flex flex-col justify-between space-y-3 shadow-xl">
+              <div class="space-y-2.5">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-black uppercase tracking-wider text-zinc-400">Estilos & Ritmos</span>
+                  <span id="gdrum-styles-count" class="text-[10px] px-2 py-0.5 rounded bg-zinc-900 text-amber-400 font-bold">6 ritmos</span>
+                </div>
+                <input type="text" id="gdrum-style-search" oninput="renderGDrumStylesList()" placeholder="Filtrar estilo..." class="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-white" />
+                <div id="gdrum-styles-container" class="space-y-1.5 max-h-[320px] overflow-y-auto custom-scroll pr-1"></div>
+              </div>
+              <div class="pt-2.5 border-t border-zinc-800 text-[11px] text-zinc-400 space-y-1">
+                <div class="flex justify-between"><span>Motor de Áudio:</span><strong id="gdrum-engine-mode-lbl" class="text-emerald-400">Baixa Latência</strong></div>
+                <div class="flex justify-between"><span>Fila Virada:</span><strong id="gdrum-queued-lbl" class="text-amber-400">-</strong></div>
+              </div>
+            </div>
+
+            <div class="lg:col-span-6 bg-zinc-950 border border-zinc-800 rounded-2xl p-4 sm:p-5 flex flex-col justify-between space-y-4 shadow-2xl">
+              <div class="space-y-2">
+                <div class="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 id="gdrum-current-title" class="text-xl sm:text-2xl font-black text-white leading-tight">Worship Balada 4/4</h3>
+                    <p id="gdrum-current-subtitle" class="text-xs text-amber-400 font-bold">120 BPM • Compasso 4/4 • Pronto para tocar</p>
+                  </div>
+                  <span id="gdrum-beat-counter" class="px-3 py-1.5 rounded-xl bg-black border border-zinc-800 font-mono text-sm font-black text-emerald-400">1 · 2 · 3 · 4</span>
+                </div>
+                <div class="w-full h-2 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
+                  <div id="gdrum-bar-progress" class="h-full bg-gradient-to-r from-amber-500 to-emerald-400 transition-all duration-75" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-3 gap-2.5 sm:gap-3">
+                <button type="button" onclick="triggerGDrumPad('var1')" id="gpad-var1" class="h-24 sm:h-28 rounded-xl bg-zinc-100 text-zinc-950 border-2 border-white shadow-xl flex flex-col items-center justify-center transition transform active:scale-95">
+                  <span class="text-2xl sm:text-3xl font-black leading-none">1</span>
+                  <span class="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider mt-1">Ritmo 1 (Verso)</span>
+                  <span id="gpad-badge-var1" class="text-[9px] mt-1 px-1.5 py-0.5 rounded bg-amber-500 text-black font-black">ATIVO</span>
+                </button>
+                <button type="button" onclick="triggerGDrumPad('var2')" id="gpad-var2" class="h-24 sm:h-28 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white border-2 border-zinc-800 shadow-xl flex flex-col items-center justify-center transition transform active:scale-95">
+                  <span class="text-2xl sm:text-3xl font-black leading-none">2</span>
+                  <span class="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider mt-1 text-zinc-300">Ritmo 2 (Refrão)</span>
+                  <span id="gpad-badge-var2" class="text-[9px] mt-1 px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 font-bold">PRONTO</span>
+                </button>
+                <button type="button" onclick="triggerGDrumPad('var3')" id="gpad-var3" class="h-24 sm:h-28 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white border-2 border-zinc-800 shadow-xl flex flex-col items-center justify-center transition transform active:scale-95">
+                  <span class="text-2xl sm:text-3xl font-black leading-none">3</span>
+                  <span class="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider mt-1 text-zinc-300">Ritmo 3 (Ponte)</span>
+                  <span id="gpad-badge-var3" class="text-[9px] mt-1 px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 font-bold">PRONTO</span>
+                </button>
+              </div>
+
+              <div class="grid grid-cols-3 gap-2.5 sm:gap-3">
+                <button type="button" onclick="triggerGDrumPad('fill1')" class="h-20 sm:h-24 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white border-2 border-zinc-800 hover:border-amber-500/50 shadow-lg flex flex-col items-center justify-center active:scale-95">
+                  <span class="text-xl sm:text-2xl font-black text-amber-400 leading-none">1</span>
+                  <span class="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider mt-1">Virada Curta</span>
+                </button>
+                <button type="button" onclick="triggerGDrumPad('fill2')" class="h-20 sm:h-24 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white border-2 border-zinc-800 hover:border-amber-500/50 shadow-lg flex flex-col items-center justify-center active:scale-95">
+                  <span class="text-xl sm:text-2xl font-black text-amber-400 leading-none">2</span>
+                  <span class="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider mt-1">Virada Caixa/Tons</span>
+                </button>
+                <button type="button" onclick="triggerGDrumPad('fill3')" class="h-20 sm:h-24 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white border-2 border-zinc-800 hover:border-amber-500/50 shadow-lg flex flex-col items-center justify-center active:scale-95">
+                  <span class="text-xl sm:text-2xl font-black text-amber-400 leading-none">3</span>
+                  <span class="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider mt-1">Virada Crescente</span>
+                </button>
+              </div>
+
+              <div class="grid grid-cols-3 gap-2.5 sm:gap-3">
+                <button type="button" onclick="triggerGDrumPad('acabamento')" class="h-14 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-amber-300 font-extrabold text-xs uppercase tracking-wider shadow flex items-center justify-center gap-1.5 active:scale-95">
+                  <i class="fa-solid fa-bolt"></i><span>Acabamento</span>
+                </button>
+                <button type="button" onclick="triggerGDrumPad('final')" class="h-14 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-rose-400 font-extrabold text-xs uppercase tracking-wider shadow flex items-center justify-center gap-1.5 active:scale-95">
+                  <i class="fa-solid fa-flag-checkered"></i><span>Final</span>
+                </button>
+                <button type="button" onclick="triggerGDrumPad('parada')" class="h-14 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-cyan-300 font-extrabold text-xs uppercase tracking-wider shadow flex items-center justify-center gap-1.5 active:scale-95">
+                  <i class="fa-solid fa-hand"></i><span>Parada</span>
+                </button>
+              </div>
+
+              <div class="pt-3 border-t border-zinc-800 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-1.5 bg-black border border-zinc-800 rounded-xl px-2.5 py-1.5">
+                  <span class="text-[10px] font-extrabold uppercase text-zinc-400 mr-1">BPM</span>
+                  <button type="button" onclick="adjustGDrumBpm(-2)" class="w-7 h-7 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white font-black">-</button>
+                  <input type="number" id="gdrum-bpm-input" value="120" min="40" max="240" onchange="setGDrumBpm(this.value)" class="w-14 bg-transparent text-center font-black text-base text-amber-400 focus:outline-none" />
+                  <button type="button" onclick="adjustGDrumBpm(2)" class="w-7 h-7 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white font-black">+</button>
+                  <button type="button" onclick="tapGDrumTempo()" class="ml-1 px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-black uppercase">TAP</button>
+                </div>
+                <div class="flex items-center gap-2 flex-1 max-w-[160px]">
+                  <i class="fa-solid fa-volume-high text-xs text-zinc-400"></i>
+                  <input type="range" id="gdrum-master-vol" min="0" max="100" value="90" oninput="setGDrumVolume(this.value)" class="w-full accent-amber-500" />
+                </div>
+                <button type="button" onclick="toggleGDrumMasterPlay()" id="btn-gdrum-play" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase tracking-wider shadow-lg flex items-center gap-2">
+                  <i class="fa-solid fa-play" id="gdrum-play-icon"></i><span id="gdrum-play-text">INICIAR</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="lg:col-span-3 bg-zinc-950 border border-zinc-800 rounded-2xl p-3.5 flex flex-col justify-between space-y-3 shadow-xl">
+              <div class="space-y-2.5">
+                <span class="text-[11px] font-black uppercase tracking-wider text-zinc-400 block">Repertório no Palco (BPM Automático)</span>
+                <select id="gdrum-rep-select" onchange="renderGDrumRepertorioSongs()" class="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-white font-bold"></select>
+                <input type="text" id="gdrum-song-search" oninput="renderGDrumRepertorioSongs()" placeholder="Buscar qualquer música..." class="w-full px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-white" />
+                <div id="gdrum-rep-songs-list" class="space-y-1.5 max-h-[300px] overflow-y-auto custom-scroll pr-1"></div>
+              </div>
+              <div class="p-2.5 rounded-xl bg-zinc-900/70 border border-zinc-800 text-[10px] text-zinc-400 leading-relaxed">
+                <strong class="text-amber-300 block mb-0.5"><i class="fa-solid fa-keyboard mr-1"></i>Atalhos / Pedal:</strong>
+                Teclas <strong>1, 2, 3</strong> = Ritmos | <strong>4, 5, 6</strong> = Viradas | <strong>A</strong> = Acabamento | <strong>F</strong> = Final | <strong>Espaço</strong> = Play/Stop
+              </div>
+            </div>
+          </div>`;
+        mainEl.appendChild(sec);
+      }
+
+      if (!document.getElementById("gdrum-upload-modal")) {
+        const mod = document.createElement("div");
+        mod.id = "gdrum-upload-modal";
+        mod.className = "fixed inset-0 bg-black/85 z-50 hidden items-center justify-center p-4";
+        mod.innerHTML = `
+          <div class="bg-zinc-950 border border-amber-500/40 rounded-2xl max-w-2xl w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto custom-scroll">
+            <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+              <div>
+                <h3 class="text-base font-black text-white"><i class="fa-brands fa-google-drive text-amber-400 mr-2"></i>Salvar Sons na Pasta <code>gDrum</code> do Google Drive</h3>
+                <p class="text-xs text-zinc-400">Envie arquivos (.wav/.mp3/.m4a) ou grave do microfone direto para o seu Drive</p>
+              </div>
+              <button type="button" onclick="closeGDrumDriveUploadModal()" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div>
+                <label class="block font-bold text-zinc-300 mb-1">Nome do Estilo / Subpasta no Drive</label>
+                <input type="text" id="gdrum-up-style-name" placeholder="Ex: Worship 4-4 (120bpm)" class="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-xl text-white font-bold" />
+              </div>
+              <div>
+                <label class="block font-bold text-zinc-300 mb-1">Botão (Slot) para gravar/enviar</label>
+                <select id="gdrum-up-slot" class="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-xl text-amber-300 font-bold">
+                  <option value="var1">Ritmo 1 (Verso - var1.wav)</option>
+                  <option value="var2">Ritmo 2 (Refrão - var2.wav)</option>
+                  <option value="var3">Ritmo 3 (Ponte - var3.wav)</option>
+                  <option value="fill1">Virada 1 (fill1.wav)</option>
+                  <option value="fill2">Virada 2 (fill2.wav)</option>
+                  <option value="fill3">Virada 3 (fill3.wav)</option>
+                  <option value="acabamento">Acabamento / Prato (acabamento.wav)</option>
+                  <option value="final">Finalização (final.wav)</option>
+                  <option value="kick">Timbre: Bumbo (kick.wav)</option>
+                  <option value="snare">Timbre: Caixa (snare.wav)</option>
+                  <option value="hat">Timbre: Chimbal (hat.wav)</option>
+                </select>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-3.5 space-y-2">
+                <span class="text-xs font-extrabold text-amber-300 block">Opção A: Enviar Arquivo de Áudio</span>
+                <input type="file" id="gdrum-up-file" accept="audio/*" class="w-full text-xs text-zinc-300" />
+                <button type="button" onclick="uploadSelectedFileToGDrumDrive()" class="w-full py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs">
+                  <i class="fa-solid fa-cloud-arrow-up mr-1"></i>Salvar no Google Drive
+                </button>
+              </div>
+              <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-3.5 space-y-2 flex flex-col justify-between">
+                <span class="text-xs font-extrabold text-emerald-300 block">Opção B: Gravar do Microfone</span>
+                <p class="text-[11px] text-zinc-400">Grave um som ou levada agora e envie para a pasta do Drive.</p>
+                <button type="button" onclick="toggleGDrumCloudMicRecord()" id="btn-gdrum-cloud-rec" class="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs">
+                  <i class="fa-solid fa-microphone mr-1"></i>Iniciar Gravação p/ o Drive
+                </button>
+              </div>
+            </div>
+            <div id="gdrum-up-status" class="hidden p-3 rounded-xl bg-black border border-zinc-800 text-xs text-zinc-300"></div>
+          </div>`;
+        document.body.appendChild(mod);
+      }
+    }
+
+    function injectGDrumNavigationButtons() {
+      ensureGDrumDomElementsExist();
+
+      const topRef = document.getElementById("tab-midi") || document.getElementById("tab-vs");
+      if (topRef && !document.getElementById("tab-gdrum")) {
+        const btn = document.createElement("button");
+        btn.id = "tab-gdrum";
+        btn.type = "button";
+        btn.onclick = () => switchTab("gdrum");
+        btn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 text-slate-300 hover:text-white";
+        btn.innerHTML = `<i class="fa-solid fa-drum text-amber-400"></i><span>gDrum Live</span>`;
+        topRef.insertAdjacentElement("afterend", btn);
+      }
+
+      const drawerRef = document.getElementById("drawer-tab-midi") || document.getElementById("drawer-tab-vs");
+      if (drawerRef && !document.getElementById("drawer-tab-gdrum")) {
+        const dBtn = document.createElement("button");
+        dBtn.id = "drawer-tab-gdrum";
+        dBtn.type = "button";
+        dBtn.onclick = () => { if (typeof closeSideDrawer === "function") closeSideDrawer(); switchTab("gdrum"); };
+        dBtn.className = "w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold flex items-center justify-between text-slate-300 hover:bg-slate-800";
+        dBtn.innerHTML = `<span class="flex items-center gap-3"><i class="fa-solid fa-drum w-5 text-center text-amber-400"></i><span>Bateria Ao Vivo (gDrum)</span></span><span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold">Palco</span>`;
+        drawerRef.insertAdjacentElement("afterend", dBtn);
+      }
+
+      const bnavRef = document.getElementById("bnav-midi") || document.getElementById("bnav-vs");
+      if (bnavRef && !document.getElementById("bnav-gdrum")) {
+        const mBtn = document.createElement("button");
+        mBtn.id = "bnav-gdrum";
+        mBtn.type = "button";
+        mBtn.onclick = () => switchTab("gdrum");
+        mBtn.className = "flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-slate-400 font-semibold text-[10px]";
+        mBtn.innerHTML = `<i class="fa-solid fa-drum text-sm text-amber-400"></i><span>gDrum</span>`;
+        bnavRef.insertAdjacentElement("afterend", mBtn);
+      }
+    }
+
+    const _prevSwitchTabBeforeGdrum = switchTab;
+    switchTab = function(tab) {
+      ensureGDrumDomElementsExist();
+      if (tab === "gdrum") {
+        ["musicas", "repertorios", "midi", "vs", "pedidos", "relatorios", "gdrum"].forEach(t => {
+          document.getElementById(`view-${t}`)?.classList.toggle("hidden", t !== "gdrum");
+        });
+        const pill = document.getElementById("active-tab-pill");
+        if (pill) pill.textContent = "gDrum Live";
+        document.getElementById("stage-pro-toolbar")?.classList.add("hidden");
+        ["musicas", "repertorios", "vs", "midi", "gdrum"].forEach(t => {
+          const b = document.getElementById(`bnav-${t}`);
+          if (b) b.className = (t === "gdrum")
+            ? "flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-amber-400 font-extrabold text-[10px]"
+            : "flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-slate-400 font-semibold text-[10px]";
+        });
+        initGDrumTab();
+        window.scrollTo({ top: 0 });
+        return;
+      }
+      document.getElementById("view-gdrum")?.classList.add("hidden");
+      const bGdrum = document.getElementById("bnav-gdrum");
+      if (bGdrum) bGdrum.className = "flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-slate-400 font-semibold text-[10px]";
+      _prevSwitchTabBeforeGdrum(tab);
+    };
+
+    async function initGDrumTab() {
+      ensureGDrumDomElementsExist();
+      try {
+        const cached = await dbGet("catalog", "gdrumDriveStyles");
+        if (cached && Array.isArray(cached)) gdrumDriveStyles = cached;
+      } catch (e) {}
+      renderGDrumStylesList();
+      populateGDrumRepertorios();
+      if (navigator.onLine && scriptUrl && gdrumDriveStyles.length === 0) {
+        syncGDrumDriveStyles(false);
+      }
+    }
+
+    function getAllGDrumStyles() {
+      const driveMapped = gdrumDriveStyles.map(ds => ({
+        id: "drive_" + ds.folderRef,
+        folderRef: ds.folderRef,
+        nome: ds.nome,
+        bpm: ds.bpm || 120,
+        compasso: "Drive",
+        isBuiltin: false,
+        slots: ds.slots || {}
+      }));
+      return [...driveMapped, ...GDRUM_BUILTIN_STYLES];
+    }
+
+    async function syncGDrumDriveStyles(showFeedback = true) {
+      if (!scriptUrl || !navigator.onLine) return;
+      const icon = document.getElementById("gdrum-sync-icon");
+      icon?.classList.add("fa-spin");
+      try {
+        const res = await fetch(`${scriptUrl}?action=listarEstilosGdrum&t=${Date.now()}`);
+        const data = await res.json();
+        if (data && data.status === "ok" && Array.isArray(data.estilos)) {
+          gdrumDriveStyles = data.estilos;
+          await dbPut("catalog", "gdrumDriveStyles", gdrumDriveStyles);
+          renderGDrumStylesList();
+          const badge = document.getElementById("gdrum-drive-badge");
+          if (badge) badge.textContent = `${gdrumDriveStyles.length} pastas no Drive`;
+          if (showFeedback) alert(`Sincronizado com a pasta 'gDrum' do Google Drive (${gdrumDriveStyles.length} estilos encontrados)!`);
+        }
+      } catch (e) {} finally {
+        icon?.classList.remove("fa-spin");
+      }
+    }
+
+    function renderGDrumStylesList() {
+      const container = document.getElementById("gdrum-styles-container");
+      if (!container) return;
+      const q = (document.getElementById("gdrum-style-search")?.value || "").toLowerCase().trim();
+      const all = getAllGDrumStyles().filter(s => !q || s.nome.toLowerCase().includes(q));
+      const countEl = document.getElementById("gdrum-styles-count");
+      if (countEl) countEl.textContent = `${all.length} ritmos`;
+
+      container.innerHTML = all.map(st => {
+        const active = st.id === gdrumActiveStyleId;
+        const badgeTxt = st.isBuiltin ? `${st.bpm} BPM` : `☁️ Drive (${Object.keys(st.slots || {}).length})`;
+        return `
+          <button type="button" onclick="selectGDrumStyle('${st.id}')" class="w-full text-left px-3 py-2.5 rounded-xl border transition flex items-center justify-between gap-2 ${active ? 'bg-zinc-100 text-zinc-950 border-white font-black shadow' : 'bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 border-zinc-800 font-semibold'}">
+            <span class="text-xs truncate">${st.nome}</span>
+            <span class="text-[10px] px-2 py-0.5 rounded ${active ? 'bg-amber-500 text-black font-black' : 'bg-zinc-800 text-amber-400 font-bold'} shrink-0">${badgeTxt}</span>
+          </button>`;
+      }).join("");
+    }
+
+    async function selectGDrumStyle(styleId) {
+      gdrumActiveStyleId = styleId;
+      const st = getAllGDrumStyles().find(x => x.id === styleId);
+      if (!st) return;
+
+      setGDrumBpm(st.bpm || 120);
+      const titleEl = document.getElementById("gdrum-current-title");
+      const subEl = document.getElementById("gdrum-current-subtitle");
+      if (titleEl) titleEl.textContent = st.nome;
+      if (subEl) subEl.textContent = `${gdrumBpm} BPM • ${st.isBuiltin ? 'Ritmo Nativo de Palco' : 'Pasta gDrum do Google Drive'}`;
+      renderGDrumStylesList();
+
+      if (!st.isBuiltin && st.slots) {
+        const lbl = document.getElementById("gdrum-engine-mode-lbl");
+        if (lbl) lbl.textContent = "Carregando Drive...";
+        for (const info of Object.values(st.slots)) {
+          await ensureGDrumDriveBufferLoaded(info.audioRef);
+        }
+        if (lbl) lbl.textContent = "Drive Offline Pronto";
+        if (gdrumIsPlaying) startOrSwitchDriveLoop(gdrumActiveVar);
+      } else {
+        const lbl = document.getElementById("gdrum-engine-mode-lbl");
+        if (lbl) lbl.textContent = "Sintetizador Zero-Delay";
+      }
+    }
+
+    async function ensureGDrumDriveBufferLoaded(audioRef) {
+      if (!audioRef || gdrumDecodedBuffers[audioRef]) return gdrumDecodedBuffers[audioRef];
+      try {
+        const raw = await fetchTrackCachedOrNetwork(audioRef, false);
+        if (raw && raw.base64) {
+          const bytes = base64ToUint8Array(raw.base64);
+          const ctx = ensureAudioContext();
+          if (ctx) {
+            const audioBuf = await ctx.decodeAudioData(bytes.buffer.slice(0));
+            gdrumDecodedBuffers[audioRef] = audioBuf;
+            return audioBuf;
+          }
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    function playGDrumPiece(piece, accent = 1) {
+      const ctx = ensureAudioContext();
+      if (!ctx) return;
+
+      const st = getAllGDrumStyles().find(x => x.id === gdrumActiveStyleId);
+      if (st && st.slots && st.slots[piece] && gdrumDecodedBuffers[st.slots[piece].audioRef]) {
+        const src = ctx.createBufferSource();
+        src.buffer = gdrumDecodedBuffers[st.slots[piece].audioRef];
+        const g = ctx.createGain();
+        g.gain.value = gdrumMasterVol * accent;
+        src.connect(g); g.connect(ctx.destination);
+        src.start(0);
+        return;
+      }
+
+      const now = ctx.currentTime;
+      const vol = gdrumMasterVol * accent;
+
+      if (piece === "kick") {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.frequency.setValueAtTime(145, now);
+        osc.frequency.exponentialRampToValueAtTime(42, now + 0.08);
+        gain.gain.setValueAtTime(vol * 1.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(now); osc.stop(now + 0.29);
+      } else if (piece === "snare" || piece === "tom") {
+        const osc = ctx.createOscillator();
+        const oGain = ctx.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(piece === "tom" ? 130 : 185, now);
+        osc.frequency.exponentialRampToValueAtTime(piece === "tom" ? 65 : 110, now + 0.1);
+        oGain.gain.setValueAtTime(vol * 0.55, now);
+        oGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+        osc.connect(oGain); oGain.connect(ctx.destination);
+        osc.start(now); osc.stop(now + 0.15);
+
+        if (piece === "snare") {
+          const bufSz = Math.floor(ctx.sampleRate * 0.18);
+          const buf = ctx.createBuffer(1, bufSz, ctx.sampleRate);
+          const ch = buf.getChannelData(0);
+          for (let i = 0; i < bufSz; i++) ch[i] = Math.random() * 2 - 1;
+          const noise = ctx.createBufferSource();
+          noise.buffer = buf;
+          const filter = ctx.createBiquadFilter();
+          filter.type = "highpass"; filter.frequency.value = 950;
+          const nGain = ctx.createGain();
+          nGain.gain.setValueAtTime(vol * 0.65, now);
+          nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+          noise.connect(filter); filter.connect(nGain); nGain.connect(ctx.destination);
+          noise.start(now);
+        }
+      } else if (piece === "hat" || piece === "openHat" || piece === "acabamento" || piece === "final") {
+        const dur = (piece === "acabamento" || piece === "final") ? 1.35 : (piece === "openHat" ? 0.22 : 0.045);
+        const bufSz = Math.floor(ctx.sampleRate * dur);
+        const buf = ctx.createBuffer(1, bufSz, ctx.sampleRate);
+        const ch = buf.getChannelData(0);
+        for (let i = 0; i < bufSz; i++) ch[i] = Math.random() * 2 - 1;
+        const noise = ctx.createBufferSource();
+        noise.buffer = buf;
+        const filter = ctx.createBiquadFilter();
+        filter.type = "highpass";
+        filter.frequency.value = (piece === "acabamento" || piece === "final") ? 3200 : 6500;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(vol * ((piece === "acabamento" || piece === "final") ? 0.55 : 0.28), now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+        noise.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+        noise.start(now);
+      }
+    }
+
+    function stopActiveDriveLoop() {
+      if (gdrumActiveLoopSource) {
+        try { gdrumActiveLoopSource.stop(); } catch (e) {}
+        gdrumActiveLoopSource = null;
+      }
+    }
+
+    function startOrSwitchDriveLoop(slotKey) {
+      stopActiveDriveLoop();
+      const st = getAllGDrumStyles().find(x => x.id === gdrumActiveStyleId);
+      if (!st || st.isBuiltin || !st.slots || !st.slots[slotKey]) return false;
+      const info = st.slots[slotKey];
+      const buf = gdrumDecodedBuffers[info.audioRef];
+      const ctx = ensureAudioContext();
+      if (!buf || !ctx) return false;
+
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.loop = slotKey.startsWith("var");
+      const baseBpm = st.bpm || 120;
+      src.playbackRate.value = Math.max(0.5, Math.min(2.0, gdrumBpm / baseBpm));
+      const g = ctx.createGain();
+      g.gain.value = gdrumMasterVol;
+      src.connect(g); g.connect(ctx.destination);
+      src.start(0);
+      gdrumActiveLoopSource = src;
+      return true;
+    }
+
+    function updateGDrumPadsVisual() {
+      ["var1", "var2", "var3"].forEach(v => {
+        const btn = document.getElementById(`gpad-${v}`);
+        const badge = document.getElementById(`gpad-badge-${v}`);
+        const isAct = (gdrumActiveVar === v);
+        if (btn) {
+          btn.className = isAct
+            ? "h-24 sm:h-28 rounded-xl bg-zinc-100 text-zinc-950 border-2 border-white shadow-xl flex flex-col items-center justify-center transition transform active:scale-95"
+            : "h-24 sm:h-28 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white border-2 border-zinc-800 shadow-xl flex flex-col items-center justify-center transition transform active:scale-95";
+        }
+        if (badge) {
+          badge.textContent = isAct ? "ATIVO" : "PRONTO";
+          badge.className = isAct
+            ? "text-[9px] mt-1 px-1.5 py-0.5 rounded bg-amber-500 text-black font-black"
+            : "text-[9px] mt-1 px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 font-bold";
+        }
+      });
+    }
+
+    function triggerGDrumPad(padKey) {
+      if (padKey === "var1" || padKey === "var2" || padKey === "var3") {
+        gdrumActiveVar = padKey;
+        updateGDrumPadsVisual();
+        if (!gdrumIsPlaying) toggleGDrumMasterPlay();
+        else startOrSwitchDriveLoop(padKey);
+        return;
+      }
+
+      if (padKey === "fill1" || padKey === "fill2" || padKey === "fill3") {
+        gdrumQueuedFill = padKey;
+        const qLbl = document.getElementById("gdrum-queued-lbl");
+        if (qLbl) qLbl.textContent = padKey.toUpperCase();
+        playGDrumPiece("snare", 1.1);
+        setTimeout(() => playGDrumPiece("tom", 1.0), 90);
+        setTimeout(() => playGDrumPiece("snare", 1.15), 180);
+        if (padKey === "fill2") setTimeout(() => { gdrumActiveVar = "var2"; updateGDrumPadsVisual(); }, 250);
+        if (padKey === "fill3") setTimeout(() => { gdrumActiveVar = "var3"; updateGDrumPadsVisual(); }, 250);
+        return;
+      }
+
+      if (padKey === "acabamento") {
+        playGDrumPiece("kick", 1.2);
+        playGDrumPiece("acabamento", 1.1);
+        return;
+      }
+
+      if (padKey === "parada") {
+        playGDrumPiece("kick", 1.2);
+        playGDrumPiece("acabamento", 0.9);
+        if (gdrumIsPlaying) toggleGDrumMasterPlay();
+        return;
+      }
+
+      if (padKey === "final") {
+        playGDrumPiece("snare", 1.1);
+        setTimeout(() => {
+          playGDrumPiece("kick", 1.3);
+          playGDrumPiece("final", 1.25);
+          if (gdrumIsPlaying) toggleGDrumMasterPlay();
+        }, 160);
+      }
+    }
+
+    function startGDrumEngineTimer() {
+      if (gdrumStepTimer) clearInterval(gdrumStepTimer);
+      const st = getAllGDrumStyles().find(x => x.id === gdrumActiveStyleId) || GDRUM_BUILTIN_STYLES[0];
+      const stepMs = (60 / gdrumBpm) * 250;
+      const usingDriveLoop = startOrSwitchDriveLoop(gdrumActiveVar);
+
+      gdrumStepTimer = setInterval(() => {
+        const pat = (st.vars && st.vars[gdrumActiveVar]) ? st.vars[gdrumActiveVar] : GDRUM_BUILTIN_STYLES[0].vars.var1;
+        const totalSteps = pat.kick.length || 16;
+        const stepIdx = gdrumCurrentStep % totalSteps;
+
+        const pct = Math.round(((stepIdx + 1) / totalSteps) * 100);
+        const barEl = document.getElementById("gdrum-bar-progress");
+        if (barEl) barEl.style.width = `${pct}%`;
+        const beatNum = Math.floor(stepIdx / (totalSteps === 12 ? 3 : 4)) + 1;
+        const counterEl = document.getElementById("gdrum-beat-counter");
+        if (counterEl) counterEl.textContent = [1, 2, 3, 4].map(b => b === beatNum ? `[${b}]` : b).join(" · ");
+
+        if (!usingDriveLoop) {
+          if (stepIdx === 0 && gdrumQueuedFill) {
+            playGDrumPiece("acabamento", 1.0);
+            gdrumQueuedFill = null;
+            const qLbl = document.getElementById("gdrum-queued-lbl");
+            if (qLbl) qLbl.textContent = "-";
+          }
+          if (pat.kick[stepIdx]) playGDrumPiece("kick", stepIdx === 0 ? 1.15 : 0.95);
+          if (pat.snare[stepIdx]) playGDrumPiece("snare", 1.0);
+          if (pat.openHat && pat.openHat[stepIdx]) playGDrumPiece("openHat", 0.9);
+          else if (pat.hat[stepIdx]) playGDrumPiece("hat", stepIdx % 2 === 0 ? 0.9 : 0.6);
+        }
+        gdrumCurrentStep++;
+      }, stepMs);
+    }
+
+    function toggleGDrumMasterPlay() {
+      gdrumIsPlaying = !gdrumIsPlaying;
+      const btn = document.getElementById("btn-gdrum-play");
+      const icon = document.getElementById("gdrum-play-icon");
+      const txt = document.getElementById("gdrum-play-text");
+
+      if (gdrumIsPlaying) {
+        gdrumCurrentStep = 0;
+        playGDrumPiece("acabamento", 0.85);
+        startGDrumEngineTimer();
+        if (btn) btn.className = "px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xs uppercase tracking-wider shadow-lg flex items-center gap-2";
+        if (icon) icon.className = "fa-solid fa-stop";
+        if (txt) txt.textContent = "PARAR";
+      } else {
+        if (gdrumStepTimer) { clearInterval(gdrumStepTimer); gdrumStepTimer = null; }
+        stopActiveDriveLoop();
+        if (btn) btn.className = "px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase tracking-wider shadow-lg flex items-center gap-2";
+        if (icon) icon.className = "fa-solid fa-play";
+        if (txt) txt.textContent = "INICIAR";
+      }
+    }
+
+    function setGDrumBpm(val) {
+      gdrumBpm = Math.max(40, Math.min(240, Math.round(Number(val) || 120)));
+      const inp = document.getElementById("gdrum-bpm-input");
+      if (inp) inp.value = gdrumBpm;
+      const st = getAllGDrumStyles().find(x => x.id === gdrumActiveStyleId);
+      const sub = document.getElementById("gdrum-current-subtitle");
+      if (sub && st) sub.textContent = `${gdrumBpm} BPM • ${st.isBuiltin ? 'Ritmo Nativo de Palco' : 'Pasta gDrum do Google Drive'}`;
+      if (gdrumIsPlaying) startGDrumEngineTimer();
+    }
+
+    function adjustGDrumBpm(delta) { setGDrumBpm(gdrumBpm + delta); }
+
+    function tapGDrumTempo() {
+      const now = performance.now();
+      gdrumTapTimes = gdrumTapTimes.filter(t => (now - t) < 3000);
+      gdrumTapTimes.push(now);
+      if (gdrumTapTimes.length >= 2) {
+        let sum = 0;
+        for (let i = 1; i < gdrumTapTimes.length; i++) sum += (gdrumTapTimes[i] - gdrumTapTimes[i - 1]);
+        setGDrumBpm(Math.round(60000 / (sum / (gdrumTapTimes.length - 1))));
+      }
+    }
+
+    function setGDrumVolume(val) { gdrumMasterVol = Math.max(0, Math.min(1, Number(val) / 100)); }
+
+    function populateGDrumRepertorios() {
+      const sel = document.getElementById("gdrum-rep-select");
+      if (!sel) return;
+      sel.innerHTML = `<option value="">-- Culto Atual / Repertório --</option>` + repertorios.map(r => `<option value="${r.id}">${r.dia} (${r.culto}) — ${r.tema}</option>`).join("");
+      const next = findNextUpcomingRepertorio();
+      if (next) sel.value = next.id;
+      renderGDrumRepertorioSongs();
+    }
+
+    function renderGDrumRepertorioSongs() {
+      const listEl = document.getElementById("gdrum-rep-songs-list");
+      if (!listEl) return;
+      const q = (document.getElementById("gdrum-song-search")?.value || "").toLowerCase().trim();
+      const repId = Number(document.getElementById("gdrum-rep-select")?.value || 0);
+
+      let itemsToShow = [];
+      if (q) {
+        itemsToShow = songs.filter(s => (s.musica && s.musica.toLowerCase().includes(q)) || (s.autor && s.autor.toLowerCase().includes(q))).slice(0, 35);
+      } else {
+        const rep = repertorios.find(r => r.id === repId) || findNextUpcomingRepertorio();
+        if (rep && rep.itens) itemsToShow = rep.itens.map(it => getResolvedSongDetails(it));
+      }
+
+      if (itemsToShow.length === 0) {
+        listEl.innerHTML = `<div class="text-xs text-zinc-500 text-center py-6">Nenhuma música listada.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = itemsToShow.map((s, idx) => {
+        const bpm = extractNumericBpm(s.tempo) || 120;
+        const safeName = String(s.musica || "").replace(/'/g, "\\'");
+        return `
+          <button type="button" onclick="applySongToGDrum('${safeName}', ${bpm})" class="w-full text-left px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 flex items-center justify-between gap-2 transition">
+            <div class="min-w-0">
+              <span class="text-xs font-bold text-white truncate block">${idx + 1}. ${s.musica}</span>
+              <span class="text-[10px] text-zinc-400 block">${s.autor || "DOXA"} • Tom: <strong class="text-amber-400">${s.tom || "-"}</strong></span>
+            </div>
+            <span class="px-2 py-1 rounded-lg bg-black border border-amber-500/30 text-amber-300 font-mono text-[11px] font-black shrink-0">${bpm} BPM</span>
+          </button>`;
+      }).join("");
+    }
+
+    function applySongToGDrum(songName, bpm) {
+      setGDrumBpm(bpm || 120);
+      const matchDrive = getAllGDrumStyles().find(st => !st.isBuiltin && normalizeSongKey(st.nome).includes(normalizeSongKey(songName)));
+      if (matchDrive) selectGDrumStyle(matchDrive.id);
+      else if (bpm <= 78) { selectGDrumStyle("synth_worship68"); setGDrumBpm(bpm); }
+    }
+
+    function openGDrumDriveUploadModal() {
+      ensureGDrumDomElementsExist();
+      const st = getAllGDrumStyles().find(x => x.id === gdrumActiveStyleId);
+      const inp = document.getElementById("gdrum-up-style-name");
+      if (inp && st) inp.value = st.isBuiltin ? `${st.nome} (${gdrumBpm}bpm)` : st.nome;
+      document.getElementById("gdrum-up-status")?.classList.add("hidden");
+      document.getElementById("gdrum-upload-modal")?.classList.remove("hidden");
+      document.getElementById("gdrum-upload-modal")?.classList.add("flex");
+    }
+
+    function closeGDrumDriveUploadModal() {
+      document.getElementById("gdrum-upload-modal")?.classList.add("hidden");
+      document.getElementById("gdrum-upload-modal")?.classList.remove("flex");
+    }
+
+    async function sendBase64AudioToGDrumDrive(base64Str, fileName, mimeType) {
+      const estilo = document.getElementById("gdrum-up-style-name")?.value.trim() || "Worship Custom";
+      const slotKey = document.getElementById("gdrum-up-slot")?.value || "var1";
+      const statusEl = document.getElementById("gdrum-up-status");
+      if (statusEl) {
+        statusEl.classList.remove("hidden");
+        statusEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2 text-amber-400"></i>Salvando <strong>${fileName}</strong> na pasta <code>gDrum/${estilo}</code> do Google Drive...`;
+      }
+      try {
+        const payload = { action: "uploadGdrumAudio", estilo, slotKey, fileName, mimeType, base64: base64Str };
+        await fetch(scriptUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
+        if (statusEl) statusEl.innerHTML = `<span class="text-emerald-400 font-bold">✅ Salvo em <code>gDrum/${estilo}</code> no Google Drive!</span>`;
+        setTimeout(() => syncGDrumDriveStyles(false), 1800);
+      } catch (err) {
+        if (statusEl) statusEl.innerHTML = `<span class="text-rose-400">Erro ao enviar: ${err.message || err}</span>`;
+      }
+    }
+
+    function uploadSelectedFileToGDrumDrive() {
+      const fileInp = document.getElementById("gdrum-up-file");
+      const slotKey = document.getElementById("gdrum-up-slot")?.value || "var1";
+      if (!fileInp || !fileInp.files || !fileInp.files[0]) { alert("Selecione um arquivo de áudio primeiro."); return; }
+      const file = fileInp.files[0];
+      const ext = (file.name.match(/\.([a-z0-9]+)$/i)?.[1] || "wav").toLowerCase();
+      const reader = new FileReader();
+      reader.onload = (e) => sendBase64AudioToGDrumDrive(e.target.result, `${slotKey}.${ext}`, file.type || "audio/wav");
+      reader.readAsDataURL(file);
+    }
+
+    async function toggleGDrumCloudMicRecord() {
+      const btn = document.getElementById("btn-gdrum-cloud-rec");
+      const slotKey = document.getElementById("gdrum-up-slot")?.value || "var1";
+      if (gdrumCloudRecorder && gdrumCloudRecorder.state === "recording") {
+        gdrumCloudRecorder.stop();
+        if (btn) btn.innerHTML = `<i class="fa-solid fa-microphone mr-1"></i>Iniciar Gravação p/ o Drive`;
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        gdrumCloudChunks = [];
+        gdrumCloudRecorder = new MediaRecorder(stream);
+        gdrumCloudRecorder.ondataavailable = (e) => { if (e.data.size > 0) gdrumCloudChunks.push(e.data); };
+        gdrumCloudRecorder.onstop = () => {
+          const blob = new Blob(gdrumCloudChunks, { type: "audio/webm" });
+          const reader = new FileReader();
+          reader.onload = (ev) => sendBase64AudioToGDrumDrive(ev.target.result, `${slotKey}.webm`, "audio/webm");
+          reader.readAsDataURL(blob);
+          stream.getTracks().forEach(t => t.stop());
+        };
+        gdrumCloudRecorder.start();
+        if (btn) btn.innerHTML = `<i class="fa-solid fa-stop text-rose-300 mr-1"></i>Parar e Salvar no Drive`;
+      } catch (e) { alert("Permita o acesso ao microfone para gravar."); }
+    }
+
+    document.addEventListener("keydown", (e) => {
+      const gView = document.getElementById("view-gdrum");
+      const upModal = document.getElementById("gdrum-upload-modal");
+      if (!gView || gView.classList.contains("hidden")) return;
+      if (upModal && !upModal.classList.contains("hidden")) return;
+      const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
+      if (tag === "input" || tag === "textarea" || tag === "select") return;
+
+      if (e.key === "1") triggerGDrumPad("var1");
+      else if (e.key === "2") triggerGDrumPad("var2");
+      else if (e.key === "3") triggerGDrumPad("var3");
+      else if (e.key === "4") triggerGDrumPad("fill1");
+      else if (e.key === "5") triggerGDrumPad("fill2");
+      else if (e.key === "6") triggerGDrumPad("fill3");
+      else if (e.key.toLowerCase() === "a") triggerGDrumPad("acabamento");
+      else if (e.key.toLowerCase() === "f") triggerGDrumPad("final");
+      else if (e.key.toLowerCase() === "p") triggerGDrumPad("parada");
+      else if (e.code === "Space") { e.preventDefault(); toggleGDrumMasterPlay(); }
+    });
+
+    injectGDrumNavigationButtons();
   </script>
 </body>
 </html>
