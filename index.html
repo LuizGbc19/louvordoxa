@@ -100,7 +100,7 @@
         </div>
       </div>
     </div>
-    <div class="text-[11px] text-zinc-600 tracking-wider uppercase font-semibold z-10">DOXA • Louvor e Adoração • v4.3</div>
+    <div class="text-[11px] text-zinc-600 tracking-wider uppercase font-semibold z-10">DOXA • Louvor e Adoração • v5.0</div>
   </div>
 
   <!-- MENU LATERAL (☰) -->
@@ -6478,7 +6478,803 @@
     // Inicializa os botões na aba Músicas imediatamente
     renderSongs();
     document.getElementById("stage-pro-toolbar")?.classList.remove("hidden");
+// ============================================================================
+    // 11. MÓDULO DOXA CONTINUOUS PADS (ABA PRÓPRIA + BOTÃO FLUTUANTE + REAPER .RPP)
+    // ============================================================================
+    const PAD_CHROMATIC_KEYS = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
+    const PAD_KEY_FREQS = {
+      "C": 130.81, "C#": 138.59, "D": 146.83, "Eb": 155.56, "E": 164.81, "F": 174.61,
+      "F#": 185.00, "G": 196.00, "Ab": 207.65, "A": 220.00, "Bb": 233.08, "B": 246.94
+    };
+
+    const PAD_BUILTIN_PACKS = [
+      { id: "synth_warm",    nome: "🌌 Warm Worship Pad (Nativo)",   isBuiltin: true, cutoff: 950,  shimmer: 0.25 },
+      { id: "synth_shimmer", nome: "✨ Shimmer Celestial (Nativo)",  isBuiltin: true, cutoff: 2100, shimmer: 0.65 },
+      { id: "synth_deep",    nome: "🌊 Deep Analog Sub-Pad (Nativo)", isBuiltin: true, cutoff: 520,  shimmer: 0.10 }
+    ];
+
+    let padDrivePacks = [];
+    let padActivePackId = "synth_warm";
+    let padActiveKey = null;          // "C", "D", etc.
+    let padIsPlaying = false;
+    let padCrossfadeSec = 3.5;
+    let padMasterVol = 0.80;
+    let padFilterCutoff = 1100;
+    let padFollowStageKey = true;     // Muda o tom do Pad automaticamente quando transpõe a cifra!
+    let padActiveNodes = null;        // Guarda a voz atual para fazer crossfade suave na troca de tom
+    let padMasterFilterNode = null;
+    let padMasterGainNode = null;
+    let padDecodedDriveCache = {};    // audioRef -> AudioBuffer
+
+    let padMinorMode = "TONICA"; // "TONICA" (Dm -> usa Pad D) ou "RELATIVA" (Dm -> usa Pad F)
+
+    function resolvePadRootKeyFromSongTom(tomStr) {
+      if (!tomStr || tomStr === "-") return "C";
+      const clean = String(tomStr).trim().split("/")[0].trim();
+      const m = clean.match(/^([A-G][#b]?)(m(?!aj))?/i);
+      if (!m) return "C";
+      let root = m[1].charAt(0).toUpperCase() + (m[1].slice(1) || "");
+      const isMinor = !!m[2];
+
+      const normMap = { "Db": "C#", "D#": "Eb", "Gb": "F#", "G#": "Ab", "A#": "Bb", "B#": "C", "E#": "F", "Cb": "B", "Fb": "E" };
+      root = normMap[root] || root;
+      let idx = PAD_CHROMATIC_KEYS.indexOf(root);
+      if (idx === -1) return "C";
+
+      // Só sobe 3 semitons para a Relativa Maior se você escolher o modo "RELATIVA"
+      if (isMinor && padMinorMode === "RELATIVA") {
+        idx = (idx + 3) % 12;
+      }
+      return PAD_CHROMATIC_KEYS[idx];
+    }
+
+    function getAllPadPacks() {
+      const driveMapped = padDrivePacks.map(dp => ({
+        id: "drive_" + dp.folderRef,
+        folderRef: dp.folderRef,
+        nome: "☁️ " + dp.nome,
+        rawName: dp.nome,
+        isBuiltin: false,
+        tons: dp.tons || {}
+      }));
+      return [...driveMapped, ...PAD_BUILTIN_PACKS];
+    }
+
+    function ensurePadAudioGraph() {
+      const ctx = ensureAudioContext();
+      if (!ctx) return null;
+      if (!padMasterFilterNode) {
+        padMasterFilterNode = ctx.createBiquadFilter();
+        padMasterFilterNode.type = "lowpass";
+        padMasterFilterNode.frequency.value = padFilterCutoff;
+        padMasterFilterNode.Q.value = 0.7;
+
+        padMasterGainNode = ctx.createGain();
+        padMasterGainNode.gain.value = padMasterVol;
+
+        padMasterFilterNode.connect(padMasterGainNode);
+        padMasterGainNode.connect(ctx.destination);
+      }
+      return ctx;
+    }
+
+    // Desliga suavemente o acorde/áudio anterior (Crossfade Out sem clique!)
+    function fadeOutPadVoice(voiceObj, fadeSec) {
+      if (!voiceObj) return;
+      const ctx = ensurePadAudioGraph();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const dur = Math.max(0.2, Number(fadeSec) || 2.5);
+      try {
+        voiceObj.gainNode.gain.cancelScheduledValues(now);
+        voiceObj.gainNode.gain.setValueAtTime(voiceObj.gainNode.gain.value, now);
+        voiceObj.gainNode.gain.linearRampToValueAtTime(0.0001, now + dur);
+        setTimeout(() => {
+          (voiceObj.sources || []).forEach(s => { try { s.stop(); s.disconnect(); } catch (e) {} });
+          try { voiceObj.gainNode.disconnect(); } catch (e) {}
+        }, dur * 1000 + 150);
+      } catch (e) {}
+    }
+
+    // Inicia uma nova camada de Continuous Pad (do Google Drive ou do Sintetizador Warm/Shimmer) com Fade-In suave
+    async function triggerPadKey(targetKey) {
+      const normalizedKey = resolvePadRootKeyFromSongTom(targetKey);
+      if (padIsPlaying && padActiveKey === normalizedKey) {
+        // Se clicou no mesmo tom que já está tocando, desliga com Fade-Out suave
+        stopContinuousPad();
+        return;
+      }
+
+      const ctx = ensurePadAudioGraph();
+      if (!ctx) return;
+
+      const prevVoice = padActiveNodes;
+      padActiveKey = normalizedKey;
+      padIsPlaying = true;
+      updatePadUiState();
+
+      const pack = getAllPadPacks().find(p => p.id === padActivePackId) || PAD_BUILTIN_PACKS[0];
+      const voiceGain = ctx.createGain();
+      const now = ctx.currentTime;
+      const fadeSec = Math.max(0.4, Number(padCrossfadeSec) || 3.5);
+      voiceGain.gain.setValueAtTime(0.0001, now);
+      voiceGain.gain.linearRampToValueAtTime(1.0, now + fadeSec);
+      voiceGain.connect(padMasterFilterNode);
+
+      const sources = [];
+
+      // Caso 1: Pack da pasta 'Pads' do Google Drive
+      if (!pack.isBuiltin && pack.tons && pack.tons[normalizedKey]) {
+        const toneInfo = pack.tons[normalizedKey];
+        const statusEl = document.getElementById("pad-status-banner");
+        if (statusEl) statusEl.textContent = `Carregando Pad ${normalizedKey} (${pack.rawName})...`;
+
+        let audioBuf = padDecodedDriveCache[toneInfo.audioRef];
+        if (!audioBuf) {
+          try {
+            const raw = await fetchTrackCachedOrNetwork(toneInfo.audioRef, true);
+            if (raw && raw.base64) {
+              const bytes = base64ToUint8Array(raw.base64);
+              audioBuf = await decodeBufferCrossBrowser(ctx, bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
+              padDecodedDriveCache[toneInfo.audioRef] = audioBuf;
+            }
+          } catch (e) {}
+        }
+
+        if (audioBuf) {
+          const src = ctx.createBufferSource();
+          src.buffer = audioBuf;
+          src.loop = true;
+          // Faz loop na região central do arquivo para evitar buracos do fim do MP3
+          if (audioBuf.duration > 16) {
+            src.loopStart = 3.0;
+            src.loopEnd = audioBuf.duration - 3.0;
+          }
+          src.connect(voiceGain);
+          src.start(0);
+          sources.push(src);
+        }
+      }
+
+      // Caso 2: Sintetizador Warm/Shimmer Analógico Nativo (ou fallback se faltar a nota na pasta)
+      if (sources.length === 0) {
+        const baseFreq = PAD_KEY_FREQS[normalizedKey] || 130.81;
+        const shimmerAmt = pack.shimmer !== undefined ? pack.shimmer : 0.3;
+        // Acorde Worship aberto (Fundamental Grave, Fundamental, Quinta Justa, Oitava e Décima/Terça no Shimmer)
+        const ratios = [0.5, 1.0, 1.4983, 2.0, 2.5198];
+        const detunes = [-8, 7, -5, 9, -11];
+
+        ratios.forEach((r, idx) => {
+          const osc1 = ctx.createOscillator();
+          const osc2 = ctx.createOscillator();
+          const subGain = ctx.createGain();
+
+          osc1.type = idx === 0 ? "sine" : "sawtooth";
+          osc2.type = idx >= 3 ? "triangle" : "sawtooth";
+          osc1.frequency.value = baseFreq * r;
+          osc2.frequency.value = baseFreq * r;
+          osc1.detune.value = detunes[idx];
+          osc2.detune.value = -detunes[idx];
+
+          const layerVol = idx === 0 ? 0.28 : (idx >= 3 ? 0.14 * (0.4 + shimmerAmt) : 0.20);
+          subGain.gain.value = layerVol;
+
+          osc1.connect(subGain);
+          osc2.connect(subGain);
+          subGain.connect(voiceGain);
+          osc1.start(now);
+          osc2.start(now);
+          sources.push(osc1, osc2);
+        });
+      }
+
+      padActiveNodes = { key: normalizedKey, gainNode: voiceGain, sources };
+      if (prevVoice) fadeOutPadVoice(prevVoice, fadeSec);
+      updatePadUiState();
+    }
+
+    function stopContinuousPad() {
+      if (padActiveNodes) {
+        fadeOutPadVoice(padActiveNodes, padCrossfadeSec);
+        padActiveNodes = null;
+      }
+      padIsPlaying = false;
+      padActiveKey = null;
+      updatePadUiState();
+    }
+
+    function setPadMasterVolume(val) {
+      padMasterVol = Math.max(0, Math.min(1, Number(val) / 100));
+      if (padMasterGainNode && vsAudioCtx) {
+        padMasterGainNode.gain.setTargetAtTime(padMasterVol, vsAudioCtx.currentTime, 0.05);
+      }
+      const v1 = document.getElementById("pad-vol-slider");
+      const v2 = document.getElementById("fab-pad-vol");
+      if (v1) v1.value = Math.round(padMasterVol * 100);
+      if (v2) v2.value = Math.round(padMasterVol * 100);
+    }
+
+    function setPadFilterCutoff(hzVal) {
+      padFilterCutoff = Math.max(200, Math.min(6000, Number(hzVal) || 1100));
+      if (padMasterFilterNode && vsAudioCtx) {
+        padMasterFilterNode.frequency.setTargetAtTime(padFilterCutoff, vsAudioCtx.currentTime, 0.05);
+      }
+    }
+
+    function setPadCrossfadeTime(secVal) {
+      padCrossfadeSec = Math.max(0.5, Math.min(10, Number(secVal) || 3.5));
+      const lbl = document.getElementById("pad-crossfade-lbl");
+      if (lbl) lbl.textContent = `${padCrossfadeSec.toFixed(1)}s`;
+    }
+
+    function selectPadPack(packId) {
+      padActivePackId = packId;
+      const p = getAllPadPacks().find(x => x.id === packId);
+      if (p && p.isBuiltin && p.cutoff) {
+        setPadFilterCutoff(p.cutoff);
+        const fSlider = document.getElementById("pad-cutoff-slider");
+        if (fSlider) fSlider.value = p.cutoff;
+      }
+      const selMain = document.getElementById("pad-pack-select");
+      const selFab = document.getElementById("fab-pad-pack-select");
+      if (selMain) selMain.value = packId;
+      if (selFab) selFab.value = packId;
+
+      if (padIsPlaying && padActiveKey) {
+        const k = padActiveKey;
+        padActiveKey = null; // Força crossfade suave para o novo timbre de Pack!
+        triggerPadKey(k);
+      } else {
+        updatePadUiState();
+      }
+    }
+
+    async function syncPadPacksFromDrive(showAlert = true) {
+      if (!scriptUrl || !navigator.onLine) return;
+      const icon = document.getElementById("pad-sync-icon");
+      icon?.classList.add("fa-spin");
+      try {
+        const res = await fetch(`${scriptUrl}?action=listarPacksPads&t=${Date.now()}`);
+        const data = await res.json();
+        if (data && data.status === "ok" && Array.isArray(data.packs)) {
+          padDrivePacks = data.packs;
+          await dbPut("catalog", "padDrivePacks", padDrivePacks);
+          populatePadPackDropdowns();
+          updatePadUiState();
+          if (showAlert) {
+            alert(`Sincronizado com a pasta 'Pads' do Google Drive (${padDrivePacks.length} packs encontrados)!`);
+          }
+        }
+      } catch (e) {} finally {
+        icon?.classList.remove("fa-spin");
+      }
+    }
+
+    async function saveCurrentPadPackOffline() {
+      const pack = getAllPadPacks().find(p => p.id === padActivePackId);
+      if (!pack || pack.isBuiltin) {
+        alert("Este pack já é 100% nativo e funciona offline automaticamente! Selecione um Pack do Google Drive se quiser baixar os 12 tons dele para a memória offline.");
+        return;
+      }
+      const entries = Object.entries(pack.tons || {});
+      if (entries.length === 0) {
+        alert("Nenhum arquivo de áudio (.mp3/.wav/.m4a) foi encontrado dentro desta pasta no Drive.");
+        return;
+      }
+      const btn = document.getElementById("btn-save-pad-offline");
+      const orig = btn ? btn.innerHTML : "";
+      let done = 0;
+      try {
+        for (const [nota, info] of entries) {
+          done++;
+          if (btn) btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Baixando Tom ${nota} (${done}/${entries.length})...</span>`;
+          await fetchTrackCachedOrNetwork(info.audioRef, true);
+        }
+        await refreshOfflineKeysCache();
+        alert(`✅ Todos os ${entries.length} tons do pack "${pack.rawName}" foram salvos na memória offline do aparelho!`);
+      } finally {
+        if (btn) btn.innerHTML = orig;
+      }
+    }
+
+    function populatePadPackDropdowns() {
+      const all = getAllPadPacks();
+      const opts = all.map(p => {
+        const count = p.isBuiltin ? "12 tons" : `${Object.keys(p.tons || {}).length}/12 tons`;
+        return `<option value="${p.id}">${p.nome} (${count})</option>`;
+      }).join("");
+
+      ["pad-pack-select", "fab-pad-pack-select", "reaper-pad-pack-select"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.innerHTML = opts;
+          el.value = padActivePackId;
+        }
+      });
+    }
+
+    function updatePadUiState() {
+      const pack = getAllPadPacks().find(p => p.id === padActivePackId) || PAD_BUILTIN_PACKS[0];
+      const banner = document.getElementById("pad-status-banner");
+      if (banner) {
+        banner.innerHTML = padIsPlaying
+          ? `<span class="text-emerald-400 font-black">🔊 TOCANDO PAD EM TOM: ${padActiveKey}</span> <span class="text-zinc-400 ml-2">(${pack.nome})</span>`
+          : `<span class="text-zinc-400">Pad em espera • Toque em qualquer nota abaixo para iniciar com Fade-In de ${padCrossfadeSec.toFixed(1)}s</span>`;
+      }
+
+      const fabBadge = document.getElementById("fab-pad-active-badge");
+      if (fabBadge) {
+        fabBadge.textContent = padIsPlaying ? `PAD: ${padActiveKey}` : "OFF";
+        fabBadge.className = padIsPlaying
+          ? "px-2 py-0.5 rounded-full bg-emerald-500 text-black font-black text-[10px] animate-pulse"
+          : "px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 font-bold text-[10px]";
+      }
+
+      PAD_CHROMATIC_KEYS.forEach(k => {
+        const isAct = padIsPlaying && padActiveKey === k;
+        const hasDriveTone = pack.isBuiltin || (pack.tons && pack.tons[k]);
+        const mainBtn = document.getElementById(`pad-key-btn-${k}`);
+        if (mainBtn) {
+          mainBtn.className = isAct
+            ? "h-20 sm:h-24 rounded-2xl bg-emerald-500 text-black border-2 border-white font-black text-2xl sm:text-3xl shadow-2xl scale-[1.02] transition flex flex-col items-center justify-center"
+            : `h-20 sm:h-24 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-white border-2 ${hasDriveTone ? 'border-zinc-800 hover:border-emerald-500/50' : 'border-rose-900/40 opacity-60'} font-black text-2xl sm:text-3xl shadow-lg transition flex flex-col items-center justify-center active:scale-95`;
+        }
+        const fabBtn = document.getElementById(`fab-pad-key-${k}`);
+        if (fabBtn) {
+          fabBtn.className = isAct
+            ? "h-8 rounded-lg bg-emerald-500 text-black font-black text-xs shadow border border-white"
+            : "h-8 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 font-bold text-xs border border-zinc-700";
+        }
+      });
+    }
+
+    // ----------------------------------------------------------------------------
+    // 11.1 CRIA A ABA PRÓPRIA 'view-pads' + WIDGET DENTRO DO BOTÃO FLUTUANTE PALCO
+    // ----------------------------------------------------------------------------
+    function ensurePadsDomAndFloatingWidget() {
+      const mainEl = document.querySelector("main");
+      if (mainEl && !document.getElementById("view-pads")) {
+        const sec = document.createElement("section");
+        sec.id = "view-pads";
+        sec.className = "hidden space-y-4 pb-20";
+
+        const keysGridHtml = PAD_CHROMATIC_KEYS.map(k => `
+          <button type="button" id="pad-key-btn-${k}" onclick="triggerPadKey('${k}')" class="h-20 sm:h-24 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-white border-2 border-zinc-800 font-black text-2xl sm:text-3xl shadow-lg transition flex flex-col items-center justify-center">
+            <span>${k}</span>
+            <span class="text-[10px] font-bold opacity-60 mt-1">${k} / ${transposeSingleNote(k, 9)}m</span>
+          </button>`).join("");
+
+        sec.innerHTML = `
+          <div class="bg-zinc-950 border border-emerald-500/40 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-2xl">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 text-xl">
+                <i class="fa-solid fa-wave-square"></i>
+              </div>
+              <div>
+                <h2 class="text-base sm:text-lg font-black text-white tracking-tight">DOXA Continuous Pads — Ambiência & Transição</h2>
+                <p id="pad-status-banner" class="text-xs text-zinc-400">Crossfade suave entre tons • Sincronizado com a pasta <code>Pads</code> do Google Drive e Cifras</p>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button type="button" onclick="syncPadPacksFromDrive(true)" class="px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-emerald-300 text-xs font-bold flex items-center gap-1.5">
+                <i class="fa-brands fa-google-drive" id="pad-sync-icon"></i><span>Sincronizar Pasta Pads (Drive)</span>
+              </button>
+              <button type="button" id="btn-save-pad-offline" onclick="saveCurrentPadPackOffline()" class="px-3 py-2 rounded-xl bg-teal-600/25 hover:bg-teal-600/40 border border-teal-500/40 text-teal-200 text-xs font-extrabold flex items-center gap-1.5">
+                <i class="fa-solid fa-cloud-arrow-down"></i><span>Salvar Pack Offline</span>
+              </button>
+              <button type="button" onclick="stopContinuousPad()" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black uppercase shadow">
+                <i class="fa-solid fa-stop mr-1"></i>Fade-Out (Stop)
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <!-- PAINEL ESQUERDO: ESCOLHA DO PACK, CROSSFADE, FILTRO E AUTO-FOLLOW -->
+            <div class="lg:col-span-4 bg-zinc-950 border border-zinc-800 rounded-2xl p-4 space-y-4 shadow-xl">
+              <div>
+                <label class="block text-xs font-extrabold uppercase text-emerald-400 mb-1.5">1. Pack / Timbre do Continuous Pad</label>
+                <select id="pad-pack-select" onchange="selectPadPack(this.value)" class="w-full px-3 py-2.5 bg-zinc-900 border border-zinc-700 rounded-xl text-xs text-white font-bold"></select>
+              </div>
+
+              <div class="space-y-2 pt-2 border-t border-zinc-800">
+                <div class="flex justify-between text-xs">
+                  <span class="text-zinc-300 font-bold">Tempo de Crossfade (Troca Suave):</span>
+                  <strong id="pad-crossfade-lbl" class="text-emerald-400">3.5s</strong>
+                </div>
+                <input type="range" min="0.5" max="8" step="0.5" value="3.5" oninput="setPadCrossfadeTime(this.value)" class="w-full accent-emerald-500" />
+              </div>
+
+              <div class="space-y-2 pt-2 border-t border-zinc-800">
+                <div class="flex justify-between text-xs">
+                  <span class="text-zinc-300 font-bold">Brilho / Filtro Low-Pass (Abafador):</span>
+                  <span class="text-[11px] text-amber-300">Oração ⇄ Louvor</span>
+                </div>
+                <input type="range" id="pad-cutoff-slider" min="250" max="4500" step="50" value="1100" oninput="setPadFilterCutoff(this.value)" class="w-full accent-amber-500" />
+              </div>
+
+              <div class="space-y-2 pt-2 border-t border-zinc-800">
+                <div class="flex justify-between text-xs">
+                  <span class="text-zinc-300 font-bold">Volume Master do Pad:</span>
+                </div>
+                <input type="range" id="pad-vol-slider" min="0" max="100" value="80" oninput="setPadMasterVolume(this.value)" class="w-full accent-emerald-500" />
+              </div>
+
+              <label class="flex items-center gap-2.5 pt-2 border-t border-zinc-800 cursor-pointer text-xs text-zinc-200 font-bold">
+                <input type="checkbox" id="pad-follow-stage-chk" checked onchange="padFollowStageKey=this.checked" class="w-4 h-4 rounded accent-emerald-500" />
+                <span>Seguir automaticamente o Tom da Cifra (- / +) no Modo Palco</span>
+              </label>
+            </div>
+
+            <!-- PAINEL DIREITO: GRADE DOS 12 TONS CROMÁTICOS -->
+            <div class="lg:col-span-8 bg-zinc-950 border border-zinc-800 rounded-2xl p-4 sm:p-6 space-y-4 shadow-xl flex flex-col justify-between">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-extrabold uppercase tracking-wider text-emerald-400">2. Escolha o Tom (Relativos Menores Inclusos)</span>
+                <span class="text-[11px] text-zinc-400">Toque em outra nota para Crossfade automático</span>
+              </div>
+              <div class="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                ${keysGridHtml}
+              </div>
+            </div>
+          </div>`;
+        mainEl.appendChild(sec);
+      }
+
+      // 2. Injeta botões de navegação para a aba 'pads'
+      const topGdrum = document.getElementById("tab-gdrum") || document.getElementById("tab-midi");
+      if (topGdrum && !document.getElementById("tab-pads")) {
+        const b = document.createElement("button");
+        b.id = "tab-pads";
+        b.type = "button";
+        b.onclick = () => switchTab("pads");
+        b.className = "px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 text-slate-300 hover:text-white";
+        b.innerHTML = `<i class="fa-solid fa-wave-square text-emerald-400"></i><span>Pads</span>`;
+        topGdrum.insertAdjacentElement("afterend", b);
+      }
+
+      const drawerGdrum = document.getElementById("drawer-tab-gdrum") || document.getElementById("drawer-tab-midi");
+      if (drawerGdrum && !document.getElementById("drawer-tab-pads")) {
+        const db = document.createElement("button");
+        db.id = "drawer-tab-pads";
+        db.type = "button";
+        db.onclick = () => { if (typeof closeSideDrawer === "function") closeSideDrawer(); switchTab("pads"); };
+        db.className = "w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold flex items-center justify-between text-slate-300 hover:bg-slate-800";
+        db.innerHTML = `<span class="flex items-center gap-3"><i class="fa-solid fa-wave-square w-5 text-center text-emerald-400"></i><span>Continuous Pads</span></span><span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold">12 Tons</span>`;
+        drawerGdrum.insertAdjacentElement("afterend", db);
+      }
+
+      // 3. Injeta o Mini-Dock de Continuous Pads dentro do Botão Flutuante de Palco ("🎛️ Palco")!
+      const fabPanel = document.getElementById("stage-fab-panel");
+      if (fabPanel && !document.getElementById("fab-continuous-pad-box")) {
+        const padWidget = document.createElement("div");
+        padWidget.id = "fab-continuous-pad-box";
+        padWidget.className = "pt-2.5 border-t border-zinc-800 space-y-2";
+        const miniKeys = PAD_CHROMATIC_KEYS.map(k => `<button type="button" id="fab-pad-key-${k}" onclick="triggerPadKey('${k}')" class="h-8 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 font-bold text-xs border border-zinc-700">${k}</button>`).join("");
+        padWidget.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-extrabold uppercase text-emerald-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-wave-square"></i><span>Continuous Pad</span>
+            </span>
+            <div class="flex items-center gap-1">
+              <span id="fab-pad-active-badge" class="px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 font-bold text-[10px]">OFF</span>
+              <button type="button" onclick="stopContinuousPad()" class="px-2 py-0.5 rounded bg-rose-600/30 text-rose-300 text-[10px] font-bold">Stop</button>
+            </div>
+          </div>
+          <select id="fab-pad-pack-select" onchange="selectPadPack(this.value)" class="w-full px-2 py-1 bg-black border border-zinc-700 rounded-lg text-[11px] text-white font-semibold"></select>
+          <div class="grid grid-cols-6 gap-1">${miniKeys}</div>
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-volume-low text-[10px] text-zinc-400"></i>
+            <input type="range" id="fab-pad-vol" min="0" max="100" value="80" oninput="setPadMasterVolume(this.value)" class="w-full h-1.5 accent-emerald-500" />
+          </div>`;
+        fabPanel.appendChild(padWidget);
+      }
+
+      // 4. Injeta a opção de incluir Continuous Pad por música dentro do Modal do Reaper (.RPP)!
+      const reaperChecksRow = document.querySelector("#reaper-modal div.flex.flex-wrap.gap-4.pt-1");
+      if (reaperChecksRow && !document.getElementById("reaper-include-pad-box")) {
+        const rPadBox = document.createElement("div");
+        rPadBox.id = "reaper-include-pad-box";
+        rPadBox.className = "w-full bg-emerald-950/25 border border-emerald-500/40 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 mt-1";
+        rPadBox.innerHTML = `
+          <label class="flex items-center gap-2 cursor-pointer text-emerald-200 font-extrabold text-xs">
+            <input type="checkbox" id="reaper-include-continuous-pad" checked class="rounded accent-emerald-500 w-4 h-4" />
+            <span>🎹 Incluir faixa <code>Continuous Pad</code> no Tom de cada música (Com Loop e Fade automático)</span>
+          </label>
+          <select id="reaper-pad-pack-select" onchange="selectPadPack(this.value)" class="px-2.5 py-1 bg-slate-900 border border-emerald-500/40 rounded-lg text-xs text-white font-bold"></select>`;
+        reaperChecksRow.insertAdjacentElement("afterend", rPadBox);
+      }
+
+      populatePadPackDropdowns();
+      updatePadUiState();
+    }
+
+    // Estende switchTab para abrir a aba 'view-pads'
+    const _prevSwitchTabBeforePads = switchTab;
+    switchTab = function(tab) {
+      ensurePadsDomAndFloatingWidget();
+      if (tab === "pads") {
+        ["musicas", "repertorios", "midi", "vs", "pedidos", "relatorios", "gdrum", "pads"].forEach(t => {
+          document.getElementById(`view-${t}`)?.classList.toggle("hidden", t !== "pads");
+        });
+        const pill = document.getElementById("active-tab-pill");
+        if (pill) pill.textContent = "Continuous Pads";
+        document.getElementById("stage-pro-toolbar")?.classList.remove("hidden");
+        window.scrollTo({ top: 0 });
+        return;
+      }
+      document.getElementById("view-pads")?.classList.add("hidden");
+      _prevSwitchTabBeforePads(tab);
+    };
+
+    // Faz o Continuous Pad acompanhar automaticamente quando você muda o Tom da Cifra (- / +) no Modo Palco ou Banco!
+    const _prevShiftStageSongKeyForPad = shiftStageSongKey;
+    shiftStageSongKey = async function(idx, baseKey, delta) {
+      await _prevShiftStageSongKeyForPad(idx, baseKey, delta);
+      if (padIsPlaying && padFollowStageKey) {
+        const badge = document.getElementById(`stage-tom-val-${idx}`);
+        if (badge && badge.textContent) triggerPadKey(badge.textContent);
+      }
+    };
+
+    const _prevShiftBankStageKeyForPad = shiftBankStageKey;
+    shiftBankStageKey = function(delta) {
+      _prevShiftBankStageKeyForPad(delta);
+      if (padIsPlaying && padFollowStageKey && bankStageActiveSong) {
+        const newTom = transposeChordToken(bankStageActiveSong.tom || "C", bankStageToneOffset);
+        triggerPadKey(newTom);
+      }
+    };
+
+    // ----------------------------------------------------------------------------
+    // 11.2 GERADOR DE ARQUIVO WAV DE CONTINUOUS PAD + INJEÇÃO AUTOMÁTICA NO REAPER (.RPP)
+    // ----------------------------------------------------------------------------
+    // Caso você escolha um Pack Nativo (ou falte o arquivo no Drive), gera um loop WAV perfeito de 12 segundos no tom da música!
+    function buildSynthesizedPadLoopWavBytes(noteKey, packObj) {
+      const sampleRate = 22050;
+      const durSec = 12; // 12 segundos em loop contínuo (super leve no disco e roda pelo tempo todo da música no Reaper com LOOP 1!)
+      const totalSamples = durSec * sampleRate;
+      const pcmL = new Float32Array(totalSamples);
+      const pcmR = new Float32Array(totalSamples);
+
+      const baseFreq = PAD_KEY_FREQS[resolvePadRootKeyFromSongTom(noteKey)] || 130.81;
+      const shimmer = (packObj && packObj.shimmer !== undefined) ? packObj.shimmer : 0.35;
+      // Frequências ajustadas para ciclo inteiro em 12s (zero clique no ponto de loop!)
+      const freqs = [baseFreq * 0.5, baseFreq, baseFreq * 1.5, baseFreq * 2.0, baseFreq * 2.5];
+      const amps  = [0.28, 0.24, 0.18, 0.12 * (0.5 + shimmer), 0.08 * shimmer];
+
+      for (let i = 0; i < totalSamples; i++) {
+        const t = i / sampleRate;
+        const lfoL = 1 + 0.08 * Math.sin((2 * Math.PI * t) / 6.0);
+        const lfoR = 1 + 0.08 * Math.cos((2 * Math.PI * t) / 6.0);
+        let sL = 0, sR = 0;
+        for (let h = 0; h < freqs.length; h++) {
+          const f = Math.round(freqs[h] * durSec) / durSec;
+          sL += Math.sin(2 * Math.PI * f * t + h * 0.7) * amps[h];
+          sR += Math.sin(2 * Math.PI * f * t + h * 1.3) * amps[h];
+        }
+        pcmL[i] = Math.tanh(sL * lfoL * 0.85);
+        pcmR[i] = Math.tanh(sR * lfoR * 0.85);
+      }
+
+      const wavBlob = encodeStereoWav16(pcmL, pcmR, sampleRate);
+      return wavBlob;
+    }
+
+    // Adiciona o slot "CONTINUOUS_PAD" na lista fixa de tracks do Reaper para sair no canal da Banda (R no Split L/R)
+    if (!REAPER_FIXED_SLOTS.some(s => s.id === "CONTINUOUS_PAD")) {
+      const keysIdx = REAPER_FIXED_SLOTS.findIndex(s => s.id === "KEYS");
+      const padSlot = { id: "CONTINUOUS_PAD", name: "Continuous Pad", r: 16, g: 185, b: 129, isClickGuide: false, optional: true };
+      if (keysIdx > -1) REAPER_FIXED_SLOTS.splice(keysIdx + 1, 0, padSlot);
+      else REAPER_FIXED_SLOTS.push(padSlot);
+    }
+
+    const _origClassifyTrackSlotPad = classifyTrackSlotForReaper;
+    classifyTrackSlotForReaper = function(fileName, folderName = "") {
+      if (/\bcontinuous[_\s-]*pad\b/i.test(fileName)) return "CONTINUOUS_PAD";
+      return _origClassifyTrackSlotPad(fileName, folderName);
+    };
+
+    // Intercepta a geração do Reaper (.RPP) para baixar/incluir automaticamente o Continuous Pad no Tom de cada música!
+    const _prevGenerateReaperRppWithPads = generateReaperRppFile;
+    generateReaperRppFile = async function(downloadFromCloudToDisk = false) {
+      const includePad = document.getElementById("reaper-include-continuous-pad")?.checked;
+      const chosenPackId = document.getElementById("reaper-pad-pack-select")?.value || padActivePackId;
+      const pack = getAllPadPacks().find(p => p.id === chosenPackId) || PAD_BUILTIN_PACKS[0];
+
+      // Se o usuário marcou "Baixar VS + MIDI Offline & Gerar .RPP" e ativou o Continuous Pad, salva o arquivo do Pad dentro da subpasta de cada música!
+      if (includePad && downloadFromCloudToDisk && localVsRootHandle && reaperTargetPayload && reaperTargetPayload.items) {
+        const progTxt = document.getElementById("reaper-progress-text");
+        const progWrap = document.getElementById("reaper-progress-wrap");
+        progWrap?.classList.remove("hidden");
+
+        for (let i = 0; i < reaperTargetPayload.items.length; i++) {
+          const it = reaperTargetPayload.items[i];
+          const info = getResolvedSongDetails(it);
+          const padNote = resolvePadRootKeyFromSongTom(info.tom);
+          const chosenRef = it.selectedFolderRef || "";
+          const driveFolder = vsFolders.find(f => f.folderRef === chosenRef);
+          const folderTitle = driveFolder ? driveFolder.nome : info.musica;
+          const safeFolderName = sanitizeFileSystemName(folderTitle, `Musica_${i + 1}`, "");
+
+          try {
+            const songDirHandle = await localVsRootHandle.getDirectoryHandle(safeFolderName, { create: true });
+            if (progTxt) progTxt.textContent = `Preparando Continuous Pad em ${padNote} (${info.tom}) para: ${info.musica}...`;
+
+            if (!pack.isBuiltin && pack.tons && pack.tons[padNote]) {
+              const toneInfo = pack.tons[padNote];
+              const rawPad = await fetchTrackCachedOrNetwork(toneInfo.audioRef, true);
+              const ext = toneInfo.extensao || "mp3";
+              const padFileName = `Continuous_Pad_${padNote.replace("#", "s")}.${ext}`;
+              const fHandle = await songDirHandle.getFileHandle(padFileName, { create: true });
+              const w = await fHandle.createWritable();
+              await w.write(new Blob([base64ToUint8Array(rawPad.base64)], { type: rawPad.mimeType || "audio/mpeg" }));
+              await w.close();
+            } else {
+              const wavBlob = buildSynthesizedPadLoopWavBytes(padNote, pack);
+              const padFileName = `Continuous_Pad_${padNote.replace("#", "s")}.wav`;
+              const fHandle = await songDirHandle.getFileHandle(padFileName, { create: true });
+              const w = await fHandle.createWritable();
+              await w.write(wavBlob);
+              await w.close();
+            }
+          } catch (ePadDisk) {}
+        }
+      }
+
+      // Executa o gerador original do .RPP
+      await _prevGenerateReaperRppWithPads(downloadFromCloudToDisk);
+    };
+
+    // Inicializa os packs salvos e injeta a aba + controles flutuantes
+    dbGet("catalog", "padDrivePacks").then(saved => {
+      if (saved && Array.isArray(saved)) padDrivePacks = saved;
+      ensurePadsDomAndFloatingWidget();
+      if (navigator.onLine && scriptUrl && padDrivePacks.length === 0) {
+        syncPadPacksFromDrive(false);
+      }
+    });
+// ============================================================================
+    // 12. EXPORTADOR DE ARQUIVO .TXT DOS SLIDES PARA O HOLYRICS (ABA MIDI + REAPER)
+    // ============================================================================
+
+    // Monta o conteúdo final em texto puro (separado por linha em branco dupla) a partir dos slides editados
+    function buildHolyricsSlidesTxtContent(keepInstrumentalLabel = false) {
+      if (Array.isArray(midiSlides) && midiSlides.length > 0) {
+        const blocks = midiSlides.map(sl => {
+          const raw = String(sl.text || "").trim();
+          // Se for um slide instrumental, garante que o bloco exista no Holyrics para não deslocar o número dos slides seguintes no MIDI!
+          if (/^\[\s*instrumental\s*\]$/i.test(raw) && !keepInstrumentalLabel) {
+            return "."; // Ponto discreto ou slide de respiro para manter a contagem exata de slides no Holyrics
+          }
+          return raw;
+        }).filter(Boolean);
+        return blocks.join("\r\n\r\n");
+      }
+
+      // Fallback caso o usuário clique antes de gerar a lista da direita
+      const rawTa = (document.getElementById("midi-raw-lyrics")?.value || "").trim();
+      return rawTa.replace(/\r?\n/g, "\r\n");
+    }
+
+    // Faz o download imediato do arquivo .TXT pronto para importar/copiar no Holyrics
+    function downloadHolyricsSlidesTxtFile() {
+      const txtContent = buildHolyricsSlidesTxtTxtWithHeader(false);
+      if (!txtContent.trim()) {
+        alert("Gere ou digite os slides primeiro para baixar o arquivo .TXT do Holyrics.");
+        return;
+      }
+
+      // Sincroniza também a caixa de texto da esquerda com a versão final dos slides da direita
+      if (typeof syncMidiSlidesBackToRawTextarea === "function") {
+        syncMidiSlidesBackToRawTextarea();
+      }
+
+      const rawTitle = midiStudioSong ? midiStudioSong.musica : "Letra_Slides";
+      const safeTitle = String(rawTitle).replace(/[\\/:*?"<>|]/g, "").trim() || "Letra_Slides";
+
+      const blob = new Blob([txtContent], { type: "text/plain;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${safeTitle}_Holyrics.txt`;
+      a.click();
+    }
+
+    function buildHolyricsSlidesTxtTxtWithHeader(includeTimesReport = false) {
+      if (!includeTimesReport) {
+        return buildHolyricsSlidesTxtContent(true);
+      }
+      // Versão opcional com mapa de tempos e notas MIDI no rodapé
+      const body = buildHolyricsSlidesTxtContent(true);
+      if (!midiSlides || midiSlides.length === 0) return body;
+      const mapLines = midiSlides.map((sl, i) => `Slide ${String(i + 1).padStart(2, "0")} [${formatTimeWithTenths(sl.timeSec)} | Nota MIDI ${sl.midiNote}]: ${String(sl.text || "").replace(/\n/g, " / ")}`).join("\r\n");
+      return `${body}\r\n\r\n========================================\r\nMAPA DE SINCRONIZAÇÃO MIDI DOXA:\r\n========================================\r\n${mapLines}`;
+    }
+
+    // Injeta os botões "📄 Baixar .TXT (Holyrics)" no topo da aba MIDI e no cabeçalho do Gabarito
+    function injectHolyricsTxtExportButtons() {
+      // 1. Botão principal no topo da aba MIDI & Holyrics (ao lado de Baixar .MID)
+      const midiTopActions = document.querySelector("#view-midi > div:first-child > div:last-child");
+      if (midiTopActions && !document.getElementById("btn-download-holyrics-txt-top")) {
+        const btnTxtTop = document.createElement("button");
+        btnTxtTop.type = "button";
+        btnTxtTop.id = "btn-download-holyrics-txt-top";
+        btnTxtTop.onclick = () => downloadHolyricsSlidesTxtFile();
+        btnTxtTop.className = "px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow";
+        btnTxtTop.title = "Baixa um arquivo .TXT com todos os slides formatados e editados para colar/importar no Holyrics";
+        btnTxtTop.innerHTML = `<i class="fa-solid fa-file-lines"></i><span>Baixar .TXT (Holyrics)</span>`;
+        midiTopActions.prepend(btnTxtTop);
+      }
+
+      // 2. Botão rápido na barra do card "2. Letra / Gabarito Holyrics" (ao lado de Copiar p/ Holyrics)
+      const copyBtn = document.querySelector("button[onclick='copyHolyricsTemplateText()']");
+      if (copyBtn && copyBtn.parentElement && !document.getElementById("btn-download-holyrics-txt-card")) {
+        const btnTxtCard = document.createElement("button");
+        btnTxtCard.type = "button";
+        btnTxtCard.id = "btn-download-holyrics-txt-card";
+        btnTxtCard.onclick = () => downloadHolyricsSlidesTxtFile();
+        btnTxtCard.className = "px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[11px] font-extrabold flex items-center gap-1 shadow";
+        btnTxtCard.innerHTML = `<i class="fa-solid fa-download"></i><span>.TXT</span>`;
+        copyBtn.insertAdjacentElement("afterend", btnTxtCard);
+      }
+    }
+
+    // Atualiza o botão "Copiar p/ Holyrics" para sempre puxar os slides já editados/copiados da direita!
+    const _prevCopyHolyricsTemplateText = copyHolyricsTemplateText;
+    copyHolyricsTemplateText = function() {
+      if (typeof syncMidiSlidesBackToRawTextarea === "function") {
+        syncMidiSlidesBackToRawTextarea();
+      }
+      _prevCopyHolyricsTemplateText();
+    };
+
+    // Ao clicar em "Vincular ao Reaper (.RPP)", salva também o texto dos slides (.txt) na memória da música!
+    const _prevSaveHolyricsMidiToAppMemory = saveHolyricsMidiToAppMemory;
+    saveHolyricsMidiToAppMemory = async function() {
+      if (typeof syncMidiSlidesBackToRawTextarea === "function") {
+        syncMidiSlidesBackToRawTextarea();
+      }
+      await _prevSaveHolyricsMidiToAppMemory();
+
+      if (midiSlides.length > 0 && midiStudioSong) {
+        const key = normalizeSongKey(midiStudioSong.musica);
+        const saved = (await dbGet("catalog", "midiAutomations")) || {};
+        if (saved[key]) {
+          saved[key].slidesTxt = buildHolyricsSlidesTxtContent(true);
+          await dbPut("catalog", "midiAutomations", saved);
+          customMidiMemory = saved;
+        }
+      }
+    };
+
+    // Quando baixar o pacote do Reaper (.RPP) para a pasta local do PC, já salva o arquivo _Holyrics.txt na pasta da música!
+    const _prevGenerateReaperRppWithTxt = generateReaperRppFile;
+    generateReaperRppFile = async function(downloadFromCloudToDisk = false) {
+      if (downloadFromCloudToDisk && localVsRootHandle && reaperTargetPayload && reaperTargetPayload.items) {
+        const savedMidis = (await dbGet("catalog", "midiAutomations")) || {};
+        for (let i = 0; i < reaperTargetPayload.items.length; i++) {
+          const it = reaperTargetPayload.items[i];
+          const info = getResolvedSongDetails(it);
+          const mObj = savedMidis[normalizeSongKey(info.musica)];
+          if (mObj && mObj.slidesTxt) {
+            const chosenRef = it.selectedFolderRef || "";
+            const driveFolder = vsFolders.find(f => f.folderRef === chosenRef);
+            const folderTitle = driveFolder ? driveFolder.nome : info.musica;
+            const safeFolderName = sanitizeFileSystemName(folderTitle, `Musica_${i + 1}`, "");
+            const safeTxtName = sanitizeFileSystemName(`${info.musica}_Holyrics.txt`, "Letra_Holyrics.txt", "txt");
+            try {
+              const songDirHandle = await localVsRootHandle.getDirectoryHandle(safeFolderName, { create: true });
+              const fHandle = await songDirHandle.getFileHandle(safeTxtName, { create: true });
+              const w = await fHandle.createWritable();
+              await w.write(new Blob([mObj.slidesTxt], { type: "text/plain;charset=utf-8" }));
+              await w.close();
+            } catch (eTxt) {}
+          }
+        }
+      }
+      return _prevGenerateReaperRppWithTxt(downloadFromCloudToDisk);
+    };
+
+    injectHolyricsTxtExportButtons();
   </script>
 </body>
 </html>
-<!-- FIM DO ARQUIVO DOXA v4.3 -->
+<!-- FIM DO ARQUIVO DOXA v5.0 -->
