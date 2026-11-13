@@ -100,7 +100,7 @@
         </div>
       </div>
     </div>
-    <div class="text-[11px] text-zinc-600 tracking-wider uppercase font-semibold z-10">DOXA • Louvor e Adoração • v3.2 Turbo & Reaper</div>
+    <div class="text-[11px] text-zinc-600 tracking-wider uppercase font-semibold z-10">DOXA • Louvor e Adoração • v4.3</div>
   </div>
 
   <!-- MENU LATERAL (☰) -->
@@ -6037,7 +6037,448 @@
     }
 
     injectCustomVoiceModalButton();
+// ============================================================================
+    // 10. BANCO DE MÚSICAS EM MODO PALCO + DOWNLOAD OFFLINE TOTAL + COPIAR SLIDES MIDI
+    // ============================================================================
+    let bankStageActiveSong = null;
+    let bankStageToneOffset = 0;
+    let bankStageRawText = "";
+    let bankOfflineSyncRunning = false;
+    let copiedMidiSlideClipboard = null; // Guarda o slide copiado para colar em qualquer posição
+
+    // ----------------------------------------------------------------------------
+    // 10.1 ABRIR QUALQUER MÚSICA DO BANCO DIRETO NO MODO PALCO (COM TRANSPOSIÇÃO)
+    // ----------------------------------------------------------------------------
+    async function extractAndCacheSongChordText(info) {
+      const songKey = normalizeSongKey(info.musica);
+      const cacheKey = "chordText_v2_" + songKey;
+
+      let txt = await dbGet("chords", cacheKey);
+      if (txt && txt.trim()) return txt;
+
+      // Tentativa 1: Extrator de texto/cores direto do Código.gs
+      if (navigator.onLine && scriptUrl) {
+        try {
+          const res = await fetch(`${scriptUrl}?action=obterTextoCifra&fileId=${encodeURIComponent(info.fileId || "")}&musica=${encodeURIComponent(info.musica)}`);
+          const data = await res.json();
+          if (data && data.texto && data.texto.trim()) {
+            txt = data.texto;
+          } else if (data && data.pdfBase64) {
+            await dbPut("chords", songKey, data.pdfBase64);
+            txt = await extractChordTextFromPdfBase64Client(data.pdfBase64);
+          }
+        } catch (e) {}
+      }
+
+      // Tentativa 2: Extrair do PDF salvo no IndexedDB ou buscar via obterPdfsRepertorio
+      if (!txt) {
+        try {
+          let pdfB64 = await dbGet("chords", songKey);
+          if (!pdfB64 && navigator.onLine && scriptUrl && (info.fileId || info.hasFile)) {
+            const itemPayload = [{ musica: info.musica, autor: info.autor || "", fileId: info.fileId || "", cifraDoxa: info.viewUrl || "" }];
+            const resPdf = await fetch(`${scriptUrl}?action=obterPdfsRepertorio&itens=${encodeURIComponent(JSON.stringify(itemPayload))}`);
+            const dataPdf = await resPdf.json();
+            if (dataPdf && dataPdf.arquivos && dataPdf.arquivos[0] && dataPdf.arquivos[0].pdfBase64) {
+              pdfB64 = dataPdf.arquivos[0].pdfBase64;
+              await dbPut("chords", songKey, pdfB64);
+            }
+          }
+          if (pdfB64) {
+            txt = await extractChordTextFromPdfBase64Client(pdfB64);
+          }
+        } catch (e2) {}
+      }
+
+      if (txt && txt.trim()) {
+        await dbPut("chords", cacheKey, txt);
+        offlineSavedChordKeys.add(cacheKey);
+      }
+      return txt || "";
+    }
+
+    function ensureBankStageModalExists() {
+      if (document.getElementById("bank-stage-modal")) return;
+      const m = document.createElement("div");
+      m.id = "bank-stage-modal";
+      m.className = "fixed inset-0 z-50 bg-black hidden flex-col";
+      m.innerHTML = `
+        <div class="bg-zinc-950 border-b border-zinc-800 px-3 sm:px-5 py-2.5 flex flex-wrap items-center justify-between gap-2 shrink-0">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span class="px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[11px] font-extrabold uppercase shrink-0">
+              <i class="fa-solid fa-guitar mr-1"></i>Palco Avulso
+            </span>
+            <div class="min-w-0">
+              <h3 id="bank-stage-title" class="text-sm sm:text-lg font-black text-white truncate">-</h3>
+              <p id="bank-stage-subtitle" class="text-[11px] text-zinc-400 truncate">-</p>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-1.5">
+            <!-- CONTROLE DE TOM (- / +) -->
+            <div class="flex items-center bg-zinc-900 border border-amber-500/40 rounded-xl px-2 py-1 gap-1.5">
+              <button type="button" onclick="shiftBankStageKey(-1)" class="w-7 h-6 rounded bg-black hover:bg-amber-500 hover:text-black text-white font-black text-xs" title="Baixar meio tom (-1)">-</button>
+              <span id="bank-stage-tom-badge" class="text-xs sm:text-sm font-black text-amber-400 px-1.5">Tom: -</span>
+              <button type="button" onclick="shiftBankStageKey(1)" class="w-7 h-6 rounded bg-black hover:bg-amber-500 hover:text-black text-white font-black text-xs" title="Subir meio tom (+1)">+</button>
+            </div>
+
+            <!-- METRÔNOMO RÁPIDO -->
+            <button type="button" id="btn-bank-stage-metro" onclick="toggleStageMetronome()" class="px-2.5 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-extrabold">
+              🥁 Click
+            </button>
+
+            <!-- TAMANHO DA FONTE E COLUNAS -->
+            <button type="button" onclick="changeBankStageFont(-1)" class="px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-700 text-white text-xs font-bold">A-</button>
+            <button type="button" onclick="changeBankStageFont(1)" class="px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-700 text-white text-xs font-bold">A+</button>
+            <button type="button" onclick="toggleBankStageColumns()" id="btn-bank-stage-cols" class="px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-700 text-indigo-300 text-xs font-bold">2 Colunas</button>
+            <button type="button" onclick="toggleBankStageAutoScroll()" id="btn-bank-stage-scroll" class="px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-700 text-emerald-300 text-xs font-bold">Auto-Scroll</button>
+            <button type="button" onclick="openBankStageManualEditor()" class="px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-700 text-amber-300 text-xs font-semibold">✏️ Editar</button>
+            <button type="button" onclick="closeBankStageModal()" class="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-extrabold">✕ Fechar</button>
+          </div>
+        </div>
+        <div id="bank-stage-body" class="flex-1 w-full overflow-y-auto custom-scroll bg-black p-4 sm:p-8"></div>
+      `;
+      document.body.appendChild(m);
+    }
+
+    async function openSongFromBankInStageMode(songId) {
+      ensureBankStageModalExists();
+      const s = songs.find(x => Number(x.id) === Number(songId)) || songs[0];
+      if (!s) return;
+      const info = getResolvedSongDetails(s);
+      bankStageActiveSong = info;
+      bankStageToneOffset = 0;
+
+      const bpm = extractNumericBpm(info.tempo) || 120;
+      const metroInput = document.getElementById("stage-metro-bpm");
+      if (metroInput) metroInput.value = bpm;
+
+      document.getElementById("bank-stage-title").textContent = info.musica;
+      document.getElementById("bank-stage-subtitle").textContent = `${info.autor || "DOXA"}${info.tempo ? ` • ${info.tempo} BPM` : ""}`;
+      document.getElementById("bank-stage-tom-badge").textContent = `Tom: ${info.tom || "-"}`;
+
+      const modal = document.getElementById("bank-stage-modal");
+      const body = document.getElementById("bank-stage-body");
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+
+      body.innerHTML = `<div class="p-10 text-center text-sm text-amber-300"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Abrindo cifra de <strong>${info.musica}</strong> em Modo Palco...</div>`;
+
+      bankStageRawText = await extractAndCacheSongChordText(info);
+      if (bankStageRawText && bankStageRawText.trim()) {
+        renderBankStageChordContent();
+      } else {
+        openBankStageManualEditor();
+      }
+    }
+
+    function renderBankStageChordContent() {
+      const body = document.getElementById("bank-stage-body");
+      if (!body || !bankStageActiveSong) return;
+      const curTom = transposeChordToken(bankStageActiveSong.tom || "-", bankStageToneOffset);
+      document.getElementById("bank-stage-tom-badge").textContent = `Tom: ${curTom}`;
+
+      const htmlContent = renderTransposedChordHtml(bankStageRawText, bankStageToneOffset);
+      body.innerHTML = `<pre style="font-size:${stageFontSizePx + 1}px; ${stageTwoColumns ? 'column-count: 2; column-gap: 3rem;' : ''}" class="font-mono whitespace-pre-wrap max-w-6xl mx-auto select-text">${htmlContent}</pre>`;
+    }
+
+    function shiftBankStageKey(delta) {
+      bankStageToneOffset += delta;
+      renderBankStageChordContent();
+    }
+
+    function changeBankStageFont(delta) {
+      stageFontSizePx = Math.max(11, Math.min(30, stageFontSizePx + delta));
+      renderBankStageChordContent();
+    }
+
+    function toggleBankStageColumns() {
+      stageTwoColumns = !stageTwoColumns;
+      const btn = document.getElementById("btn-bank-stage-cols");
+      if (btn) btn.textContent = stageTwoColumns ? "1 Coluna" : "2 Colunas";
+      renderBankStageChordContent();
+    }
+
+    function toggleBankStageAutoScroll() {
+      const btn = document.getElementById("btn-bank-stage-scroll");
+      if (stageAutoScrollTimer) {
+        clearInterval(stageAutoScrollTimer);
+        stageAutoScrollTimer = null;
+        btn?.classList.remove("bg-emerald-600", "text-white");
+      } else {
+        stageAutoScrollTimer = setInterval(() => {
+          const body = document.getElementById("bank-stage-body");
+          if (body) body.scrollBy({ top: stageScrollSpeed, behavior: "auto" });
+        }, 45);
+        btn?.classList.add("bg-emerald-600", "text-white");
+      }
+    }
+
+    function openBankStageManualEditor() {
+      const body = document.getElementById("bank-stage-body");
+      if (!body || !bankStageActiveSong) return;
+      body.innerHTML = `
+        <div class="max-w-4xl mx-auto bg-zinc-950 border border-amber-500/40 rounded-2xl p-4 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span class="text-xs font-extrabold text-amber-300"><i class="fa-solid fa-paste mr-1.5"></i>Cole ou edite a letra/cifra de "${bankStageActiveSong.musica}" (Ficará salva offline no aparelho):</span>
+            <button type="button" onclick="saveBankStageManualChord()" class="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold">Salvar e Abrir no Palco</button>
+          </div>
+          <textarea id="bank-stage-manual-ta" rows="18" placeholder="Cole aqui a letra com os acordes acima das sílabas..." class="w-full p-3 bg-black border border-zinc-700 rounded-xl text-xs text-white font-mono">${bankStageRawText || ""}</textarea>
+        </div>`;
+    }
+
+    async function saveBankStageManualChord() {
+      const ta = document.getElementById("bank-stage-manual-ta");
+      if (!ta || !ta.value.trim() || !bankStageActiveSong) return;
+      bankStageRawText = ta.value;
+      const cacheKey = "chordText_v2_" + normalizeSongKey(bankStageActiveSong.musica);
+      await dbPut("chords", cacheKey, bankStageRawText);
+      offlineSavedChordKeys.add(cacheKey);
+      renderBankStageChordContent();
+    }
+
+    function closeBankStageModal() {
+      const modal = document.getElementById("bank-stage-modal");
+      if (modal) { modal.classList.add("hidden"); modal.classList.remove("flex"); }
+      if (stageAutoScrollTimer) { clearInterval(stageAutoScrollTimer); stageAutoScrollTimer = null; }
+    }
+
+    // ----------------------------------------------------------------------------
+    // 10.2 BOTÃO "☁️ BAIXAR TODO O BANCO OFFLINE" (PARA VER QUALQUER MÚSICA SEM INTERNET)
+    // ----------------------------------------------------------------------------
+    async function downloadEntireSongBankForOfflineStage() {
+      if (bankOfflineSyncRunning) return;
+      if (!navigator.onLine || !scriptUrl) {
+        alert("Conecte-se à internet para baixar todo o banco de cifras para a memória offline.");
+        return;
+      }
+
+      const songsWithFiles = songs.map(s => getResolvedSongDetails(s)).filter(info => info.hasFile || info.fileId);
+      if (songsWithFiles.length === 0) {
+        alert("Nenhuma música sincronizada encontrada.");
+        return;
+      }
+
+      const pending = [];
+      for (const info of songsWithFiles) {
+        const cacheKey = "chordText_v2_" + normalizeSongKey(info.musica);
+        const hasTxt = await dbGet("chords", cacheKey);
+        if (!hasTxt) pending.push(info);
+      }
+
+      if (pending.length === 0) {
+        alert(`✅ Todas as ${songsWithFiles.length} cifras do banco já estão salvas na memória offline deste aparelho! Você já pode abrir qualquer música sem internet.`);
+        return;
+      }
+
+      if (!confirm(`Deseja baixar e preparar ${pending.length} cifras restantes do banco para leitura instantânea em Modo Palco sem internet?`)) {
+        return;
+      }
+
+      bankOfflineSyncRunning = true;
+      const btn = document.getElementById("btn-download-all-bank-offline");
+      const origHtml = btn ? btn.innerHTML : "";
+
+      let done = 0;
+      const BATCH_SIZE = 4;
+      try {
+        for (let i = 0; i < pending.length; i += BATCH_SIZE) {
+          const chunk = pending.slice(i, i + BATCH_SIZE);
+          await Promise.all(chunk.map(async (info) => {
+            try { await extractAndCacheSongChordText(info); } catch (e) {}
+            done++;
+            if (btn) {
+              const pct = Math.round((done / pending.length) * 100);
+              btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-amber-300"></i><span>Salvando Offline: ${done}/${pending.length} (${pct}%)</span>`;
+            }
+          }));
+        }
+        await refreshOfflineKeysCache();
+        renderSongs();
+        alert(`✅ Pronto! ${done} cifras foram salvas no aparelho. Agora você pode abrir qualquer música do Banco em Modo Palco mesmo sem internet!`);
+      } finally {
+        bankOfflineSyncRunning = false;
+        if (btn) btn.innerHTML = origHtml;
+      }
+    }
+
+    // Injeta o botão "🎸 Palco" em todas as músicas do Banco e ativa o botão flutuante na aba Músicas
+    function injectBankStageButtonsAndToolbar() {
+      // 1. Botão "☁️ Baixar Banco Offline" ao lado da barra de pesquisa de músicas
+      const searchInp = document.getElementById("search-input");
+      if (searchInp && searchInp.parentElement && !document.getElementById("btn-download-all-bank-offline")) {
+        const btnAll = document.createElement("button");
+        btnAll.type = "button";
+        btnAll.id = "btn-download-all-bank-offline";
+        btnAll.onclick = () => downloadEntireSongBankForOfflineStage();
+        btnAll.className = "px-3 py-2 rounded-xl bg-teal-600/25 hover:bg-teal-600/40 border border-teal-500/40 text-teal-200 text-xs font-extrabold flex items-center gap-1.5 shrink-0";
+        btnAll.innerHTML = `<i class="fa-solid fa-bolt text-amber-400"></i><span>Baixar Banco p/ Palco Offline</span>`;
+        searchInp.parentElement.insertAdjacentElement("afterend", btnAll);
+      }
+
+      // 2. Mantém o botão flutuante de Palco ("🎛️ Palco") visível também na aba Músicas!
+      const musView = document.getElementById("view-musicas");
+      if (musView && !musView.classList.contains("hidden")) {
+        document.getElementById("stage-pro-toolbar")?.classList.remove("hidden");
+      }
+    }
+
+    const _prevRenderSongsBankStage = renderSongs;
+    renderSongs = function() {
+      _prevRenderSongsBankStage();
+      injectBankStageButtonsAndToolbar();
+
+      // Reaplica os filtros atuais para identificar cada música da página atual e adicionar o botão "🎸 Palco"
+      const q = document.getElementById("search-input").value.toLowerCase().trim();
+      const tag = document.getElementById("filter-tag").value, tom = document.getElementById("filter-tom").value, dif = document.getElementById("filter-dificuldade").value;
+      const tempoFilter = document.getElementById("filter-tempo")?.value || "";
+      const vezesFilter = document.getElementById("filter-vezes")?.value || "";
+
+      let filtered = songs.filter(s => {
+        const tags = parseTags(s.categoria);
+        const matchText = (!q || (s.musica && s.musica.toLowerCase().includes(q)) || (s.autor && s.autor.toLowerCase().includes(q)) || (s.ref && s.ref.toLowerCase().includes(q)));
+        if (!matchText || (tag && !tags.includes(tag)) || (tom && s.tom !== tom) || (dif && s.dificuldade !== dif)) return false;
+        if (tempoFilter) {
+          const bpm = extractNumericBpm(s.tempo);
+          const tLower = String(s.tempo || "").toLowerCase();
+          if (tempoFilter === "LENTA" && !((bpm > 0 && bpm < 75) || tLower.includes("lent"))) return false;
+          if (tempoFilter === "MEDIA" && !((bpm >= 75 && bpm <= 110) || tLower.includes("med") || tLower.includes("méd"))) return false;
+          if (tempoFilter === "RAPIDA" && !(bpm > 110 || tLower.includes("rap") || tLower.includes("ráp"))) return false;
+          if (tempoFilter.startsWith("EXACT::") && String(s.tempo || "").trim() !== tempoFilter.slice(7)) return false;
+        }
+        const vz = Number(s.vezes) || 0;
+        if (vezesFilter === "ZERO" && vz !== 0) return false;
+        if (vezesFilter === "1_A_5" && (vz < 1 || vz > 5)) return false;
+        if (vezesFilter === "MAIS_5" && vz <= 5) return false;
+        return true;
+      });
+      if (vezesFilter === "ORD_DESC") filtered.sort((a, b) => (Number(b.vezes) || 0) - (Number(a.vezes) || 0));
+      else if (vezesFilter === "ORD_ASC") filtered.sort((a, b) => (Number(a.vezes) || 0) - (Number(b.vezes) || 0));
+      const pageItems = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+      // Adiciona botão "🎸 Palco" nos cards mobile
+      const mobileCards = document.querySelectorAll("#songs-mobile-cards > div");
+      mobileCards.forEach((card, idx) => {
+        const s = pageItems[idx];
+        if (!s) return;
+        const actionRow = card.querySelector("div.flex.flex-wrap.items-center.gap-1\\.5");
+        if (actionRow && !actionRow.querySelector(".btn-bank-stage")) {
+          const isCached = offlineSavedChordKeys.has("chordText_v2_" + normalizeSongKey(s.musica)) || offlineSavedChordKeys.has(normalizeSongKey(s.musica));
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.onclick = () => openSongFromBankInStageMode(s.id);
+          btn.className = "btn-bank-stage px-2.5 h-8 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1 text-[11px] font-extrabold shadow";
+          btn.innerHTML = `<i class="fa-solid fa-guitar"></i><span>Palco${isCached ? " ✓" : ""}</span>`;
+          actionRow.prepend(btn);
+        }
+      });
+
+      // Adiciona botão "🎸 Palco" nas linhas da tabela desktop
+      const tableRows = document.querySelectorAll("#songs-tbody > tr");
+      tableRows.forEach((tr, idx) => {
+        const s = pageItems[idx];
+        if (!s) return;
+        const lastTd = tr.querySelector("td:last-child");
+        if (lastTd && !lastTd.querySelector(".btn-bank-stage")) {
+          const isCached = offlineSavedChordKeys.has("chordText_v2_" + normalizeSongKey(s.musica)) || offlineSavedChordKeys.has(normalizeSongKey(s.musica));
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.onclick = () => openSongFromBankInStageMode(s.id);
+          btn.className = "btn-bank-stage inline-flex items-center gap-1 px-2.5 h-8 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow mr-1";
+          btn.title = "Abrir cifra interativa direto em Modo Palco (Transpor Tom / Sem baixar arquivo)";
+          btn.innerHTML = `<i class="fa-solid fa-guitar"></i><span>Palco${isCached ? " ✓" : ""}</span>`;
+          lastTd.prepend(btn);
+        }
+      });
+    };
+
+    // Garante que o botão flutuante "🎛️ Palco" apareça tanto em Músicas quanto em Repertórios
+    const _prevSwitchTabStageFab = switchTab;
+    switchTab = function(tab) {
+      _prevSwitchTabStageFab(tab);
+      const showFab = (tab === "musicas" || tab === "repertorios" || tab === "palco");
+      document.getElementById("stage-pro-toolbar")?.classList.toggle("hidden", !showFab);
+    };
+
+    // ----------------------------------------------------------------------------
+    // 10.3 COPIAR / COLAR / DUPLICAR E EDITAR SLIDES NA ABA MIDI & HOLYRICS
+    // ----------------------------------------------------------------------------
+    function syncMidiSlidesBackToRawTextarea() {
+      const ta = document.getElementById("midi-raw-lyrics");
+      if (!ta || midiSlides.length === 0) return;
+      ta.value = midiSlides.map(s => s.text).join("\n\n");
+    }
+
+    function copyMidiSlideToClipboard(idx) {
+      if (!midiSlides[idx]) return;
+      copiedMidiSlideClipboard = {
+        text: midiSlides[idx].text,
+        cueType: midiSlides[idx].cueType || ""
+      };
+      renderMidiSlidesList();
+    }
+
+    function pasteCopiedMidiSlideAfter(idx) {
+      if (!copiedMidiSlideClipboard) {
+        alert("Primeiro clique em '📋 Copiar' no slide que você quer repetir (ex: o Refrão), e depois clique em '⤵️ Colar' onde ele deve entrar!");
+        return;
+      }
+      const refTime = Number(midiSlides[idx]?.timeSec) || 0;
+      const newSlide = {
+        text: copiedMidiSlideClipboard.text,
+        timeSec: refTime > 0 ? Math.round((refTime + 2.0) * 10) / 10 : 0,
+        midiNote: 60,
+        cueType: copiedMidiSlideClipboard.cueType || ""
+      };
+      midiSlides.splice(idx + 1, 0, newSlide);
+      midiTapIndex = idx + 1;
+      recalculateMidiSlideNotes();
+      syncMidiSlidesBackToRawTextarea();
+    }
+
+    function duplicateMidiSlideAtEndOrAfter(idx) {
+      if (!midiSlides[idx]) return;
+      copyMidiSlideToClipboard(idx);
+      pasteCopiedMidiSlideAfter(idx);
+    }
+
+    function editSingleMidiSlideText(idx) {
+      if (!midiSlides[idx]) return;
+      const novoTexto = prompt(`Editar texto do Slide ${idx + 1}:`, midiSlides[idx].text);
+      if (novoTexto !== null && novoTexto.trim() !== "") {
+        midiSlides[idx].text = novoTexto.trim();
+        renderMidiSlidesList();
+        syncMidiSlidesBackToRawTextarea();
+      }
+    }
+
+    const _prevRenderMidiSlidesListWithCopy = renderMidiSlidesList;
+    renderMidiSlidesList = function() {
+      _prevRenderMidiSlidesListWithCopy();
+      if (midiSlides.length === 0) return;
+
+      midiSlides.forEach((sl, idx) => {
+        const row = document.getElementById(`midi-slide-row-${idx}`);
+        if (!row) return;
+        const rightBox = row.querySelector("div.flex.items-center.gap-1\\.5.shrink-0");
+        if (rightBox && !rightBox.querySelector(".btn-copy-slide")) {
+          const toolsWrap = document.createElement("div");
+          toolsWrap.className = "flex items-center gap-1";
+          const hasClip = !!copiedMidiSlideClipboard;
+
+          toolsWrap.innerHTML = `
+            <button type="button" onclick="editSingleMidiSlideText(${idx})" class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[10px] font-bold" title="Editar letra deste slide">✏️</button>
+            <button type="button" onclick="copyMidiSlideToClipboard(${idx})" class="btn-copy-slide px-2 py-1 rounded-lg bg-indigo-600/25 hover:bg-indigo-600 text-indigo-200 hover:text-white border border-indigo-500/40 text-[10px] font-extrabold" title="Copiar este slide (ex: Refrão) para colar mais abaixo">📋 Copiar</button>
+            ${hasClip ? `<button type="button" onclick="pasteCopiedMidiSlideAfter(${idx})" class="px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-extrabold shadow" title="Colar o slide copiado logo abaixo deste">⤵️ Colar Aqui</button>` : `<button type="button" onclick="duplicateMidiSlideAtEndOrAfter(${idx})" class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-700 border border-slate-700 text-cyan-300 text-[10px] font-bold" title="Duplicar este slide logo abaixo">➕</button>`}
+          `;
+          rightBox.prepend(toolsWrap);
+        }
+      });
+    };
+
+    // Inicializa os botões na aba Músicas imediatamente
+    renderSongs();
+    document.getElementById("stage-pro-toolbar")?.classList.remove("hidden");
   </script>
 </body>
 </html>
-<!-- FIM DO ARQUIVO DOXA v3.2 -->
+<!-- FIM DO ARQUIVO DOXA v4.3 -->
