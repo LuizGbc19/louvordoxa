@@ -7274,6 +7274,785 @@
     };
 
     injectHolyricsTxtExportButtons();
+// ============================================================================
+    // 13. CORREÇÃO DEFINITIVA:
+    //     1) MIDI HOLYRICS PADRÃO C2 (NOTA 36 = PASSAR) E D2 (NOTA 38 = TELA PRETA / INSTRUMENTAL)
+    //     2) CRIAÇÃO GARANTIDA DAS TRACKS 'Guia' E 'Continuous Pad' NO ARQUIVO .RPP DO REAPER
+    // ============================================================================
+
+    // 13.1 Configura o seletor de modo MIDI para usar C2 (Passar Slide) e D2 (Tela Preta / Instrumental) por padrão
+    function setupC2D2MidiTriggerMode() {
+      const sel = document.getElementById("midi-trigger-mode");
+      if (!sel) return;
+      if (!sel.querySelector("option[value='HOLYRICS_C2_D2_36']")) {
+        sel.innerHTML = `
+          <option value="HOLYRICS_C2_D2_36" selected>Padrão Holyrics: C2 (36 = Passar) | D2 (38 = Tela Preta/Instr.)</option>
+          <option value="HOLYRICS_C2_D2_48">Oitava Acima: C2/C3 (48 = Passar) | D2/D3 (50 = Tela Preta/Instr.)</option>
+          <option value="SLIDE_NOTE">Nota = Nº do Slide (Nota 1 = Slide 1...)</option>
+          <option value="OFFSET_36">Sequencial a partir de C2 (Nota 36, 37...)</option>
+          <option value="FIXED_60">Nota Fixa C4 (Nota 60 = Próximo Slide)</option>
+        `;
+        sel.value = "HOLYRICS_C2_D2_36";
+      }
+    }
+
+    // Verifica se um slide é Instrumental / Tela Preta
+    function isInstrumentalOrBlackoutSlide(slideObj) {
+      if (!slideObj) return false;
+      const txt = String(slideObj.text || "").trim();
+      if (slideObj.cueType === "INSTRUMENTAL") return true;
+      if (/^\[\s*(instrumental|solo|interl[uú]dio|tela\s*preta|blackout)\s*\]$/i.test(txt)) return true;
+      if (txt === ".") return true;
+      return false;
+    }
+
+    // Sobrescreve o cálculo de nota MIDI: C2 (36) para letra e D2 (38) para Instrumental/Tela Preta
+    computeMidiNoteForSlide = function(slideIdx) {
+      const mode = document.getElementById("midi-trigger-mode")?.value || "HOLYRICS_C2_D2_36";
+      const sl = midiSlides && midiSlides[slideIdx] ? midiSlides[slideIdx] : null;
+      const isInstr = isInstrumentalOrBlackoutSlide(sl);
+
+      if (mode === "HOLYRICS_C2_D2_36") {
+        return isInstr ? 38 : 36; // 36 = C2 (Passar slide), 38 = D2 (Tela preta no Instrumental)
+      }
+      if (mode === "HOLYRICS_C2_D2_48") {
+        return isInstr ? 50 : 48; // 48 = C (Passar slide), 50 = D (Tela preta no Instrumental)
+      }
+      if (mode === "FIXED_60") return 60;
+      if (mode === "OFFSET_36") return Math.min(127, 36 + slideIdx);
+      return Math.min(127, slideIdx + 1);
+    };
+
+    // Garante que ao mudar o tipo de Cue para "🎸 Instrumental / Solo" ou adicionar slide instrumental a nota mude para D2 na hora!
+    const _prevRecalculateMidiNotesC2D2 = recalculateMidiSlideNotes;
+    recalculateMidiSlideNotes = function() {
+      if (Array.isArray(midiSlides)) {
+        midiSlides.forEach((sl, idx) => {
+          sl.midiNote = computeMidiNoteForSlide(idx);
+        });
+      }
+      renderMidiSlidesList();
+    };
+
+    const _prevRenderMidiSlidesC2D2 = renderMidiSlidesList;
+    renderMidiSlidesList = function() {
+      setupC2D2MidiTriggerMode();
+      if (Array.isArray(midiSlides)) {
+        midiSlides.forEach((sl, idx) => {
+          sl.midiNote = computeMidiNoteForSlide(idx);
+        });
+      }
+      _prevRenderMidiSlidesC2D2();
+
+      // Mostra no crachá se é C2 (Passar) ou D2 (Tela Preta) e atualiza a nota se mudar o select de Cue
+      if (!Array.isArray(midiSlides)) return;
+      midiSlides.forEach((sl, idx) => {
+        const row = document.getElementById(`midi-slide-row-${idx}`);
+        if (!row) return;
+        const noteBadge = Array.from(row.querySelectorAll("span")).find(el => el.textContent.startsWith("Nota "));
+        if (noteBadge) {
+          const isD2 = (sl.midiNote === 38 || sl.midiNote === 50);
+          const noteName = (sl.midiNote === 36 || sl.midiNote === 48) ? `C2 (${sl.midiNote})` : (isD2 ? `D2 (${sl.midiNote} • Preta)` : `Nota ${sl.midiNote}`);
+          noteBadge.textContent = noteName;
+          noteBadge.className = isD2
+            ? "text-[10px] px-2 py-1 rounded bg-amber-500/25 border border-amber-500/40 text-amber-300 font-mono font-bold"
+            : "text-[10px] px-2 py-1 rounded bg-slate-900 text-cyan-300 font-mono font-bold";
+        }
+        const cueSel = row.querySelector(".midi-cue-select");
+        if (cueSel) {
+          cueSel.onchange = (ev) => {
+            midiSlides[idx].cueType = ev.target.value;
+            midiSlides[idx].midiNote = computeMidiNoteForSlide(idx);
+            renderMidiSlidesList();
+          };
+        }
+      });
+    };
+
+    // Ao exportar o .TXT para o Holyrics no modo C2/D2, remove os blocos "[ Instrumental ]" do TXT
+    // (pois o D2 apenas deixa a tela preta sem precisar de um slide vazio na letra do Holyrics!)
+    buildHolyricsSlidesTxtContent = function() {
+      const mode = document.getElementById("midi-trigger-mode")?.value || "HOLYRICS_C2_D2_36";
+      const isC2D2Mode = mode.startsWith("HOLYRICS_C2_D2");
+
+      if (Array.isArray(midiSlides) && midiSlides.length > 0) {
+        const blocks = [];
+        midiSlides.forEach(sl => {
+          const raw = String(sl.text || "").trim();
+          if (!raw) return;
+          if (isInstrumentalOrBlackoutSlide(sl) && isC2D2Mode) {
+            return; // No modo C2/D2, o D2 aciona tela preta direto no Holyrics, não cria slide de texto
+          }
+          blocks.push(raw);
+        });
+        return blocks.join("\r\n\r\n");
+      }
+      const rawTa = (document.getElementById("midi-raw-lyrics")?.value || "").trim();
+      return rawTa.replace(/\r?\n/g, "\r\n");
+    };
+
+    // ----------------------------------------------------------------------------
+    // 13.2 CORREÇÃO DO EXPORTADOR REAPER (.RPP): CRIAR SEMPRE AS TRACKS 'Guia' E 'Continuous Pad'
+    // ----------------------------------------------------------------------------
+    generateReaperRppFile = async function(downloadFromCloudToDisk = false) {
+      if (!reaperTargetPayload || !reaperTargetPayload.items.length) return;
+      const basePath = document.getElementById("reaper-base-path").value.trim().replace(/[\\/]+$/, "");
+      localStorage.setItem("doxa_reaper_base_path", basePath);
+      const routing = document.getElementById("reaper-routing-mode").value;
+      const fallbackSec = Math.max(120, Number(document.getElementById("reaper-slot-sec").value) || 270);
+      const autoStop = document.getElementById("reaper-auto-stop").checked;
+      const autoBpm = document.getElementById("reaper-auto-bpm").checked;
+      const includePad = document.getElementById("reaper-include-continuous-pad") ? document.getElementById("reaper-include-continuous-pad").checked : true;
+      const chosenPackId = document.getElementById("reaper-pad-pack-select")?.value || padActivePackId;
+      const padPack = getAllPadPacks().find(p => p.id === chosenPackId) || PAD_BUILTIN_PACKS[0];
+
+      const savedMidis = (await dbGet("catalog", "midiAutomations")) || {};
+      const savedGuides = (await dbGet("catalog", "guideAutomations")) || {};
+      customMidiMemory = savedMidis;
+      customGuideMemory = savedGuides;
+
+      const statusBox = document.getElementById("reaper-export-status");
+      const btn = document.getElementById("btn-run-reaper-export");
+      const btnPack = document.getElementById("btn-download-reaper-pack");
+      const progWrap = document.getElementById("reaper-progress-wrap");
+      const progBar = document.getElementById("reaper-progress-bar");
+      const progTxt = document.getElementById("reaper-progress-text");
+      const progPct = document.getElementById("reaper-progress-pct");
+
+      statusBox.classList.remove("hidden");
+      btn.disabled = true; if (btnPack) btnPack.disabled = true;
+      statusBox.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1 text-purple-400"></i>Montando tracks de VS, Guia, Continuous Pad e MIDI no projeto .RPP...`;
+
+      try {
+        // Garante que GUIA e CONTINUOUS_PAD existam e NÃO sejam ocultadas
+        const slotsList = REAPER_FIXED_SLOTS.map(s => {
+          if (s.id === "GUIA" || s.id === "CONTINUOUS_PAD") {
+            return Object.assign({}, s, { optional: false, itemsRpp: [] });
+          }
+          return Object.assign({ itemsRpp: [] }, s);
+        });
+
+        const getOrCreateLane = (slotId, usedInThisSong) => {
+          let count = (usedInThisSong[slotId] || 0) + 1;
+          usedInThisSong[slotId] = count;
+          if (count === 1) return slotsList.find(l => l.id === slotId) || slotsList.find(l => l.id === "OTHERS");
+          const extraId = `${slotId}_${count}`;
+          let extraLane = slotsList.find(l => l.id === extraId);
+          if (!extraLane) {
+            const baseSlot = slotsList.find(l => l.id === slotId) || slotsList[0];
+            const baseIdx = slotsList.lastIndexOf(baseSlot);
+            extraLane = Object.assign({}, baseSlot, { id: extraId, name: `${baseSlot.name} ${count}`, itemsRpp: [] });
+            slotsList.splice(baseIdx + 1, 0, extraLane);
+          }
+          return extraLane;
+        };
+
+        let markersRpp = "", tempoPoints = "", firstBpm = 120, cursorSec = 0, logHtml = "";
+        const regionColor = rgbToReaperNative(42, 157, 178);
+        const items = reaperTargetPayload.items;
+        const sep = (!basePath || basePath.includes("\\") || /^[a-zA-Z]:/.test(basePath)) ? "\\" : "/";
+
+        for (let i = 0; i < items.length; i++) {
+          const rawIt = items[i];
+          const info = getResolvedSongDetails(rawIt);
+          const songKey = normalizeSongKey(info.musica);
+          const chosenRef = rawIt.selectedFolderRef || "";
+          const bpmNum = parseFloat(String(info.tempo || rawIt.tempo || "").replace(",", ".").replace(/[^0-9.]/g, "")) || 120;
+          let songLenSec = fallbackSec;
+          let songFiles = [];
+          let folderTitleForPaths = sanitizeFileSystemName(info.musica, `Musica_${i + 1}`, "");
+          let songDirHandle = null;
+
+          // 1. Lê faixas da pasta Local ou do Google Drive
+          if (chosenRef.startsWith("LOCAL::")) {
+            const localFolder = localVsSubfolders.find(f => f.folderRef === chosenRef);
+            if (localFolder) {
+              folderTitleForPaths = localFolder.nome;
+              songDirHandle = localFolder.handle;
+              progWrap?.classList.remove("hidden");
+              let maxDur = 0;
+
+              for (let fIdx = 0; fIdx < localFolder.files.length; fIdx++) {
+                const f = localFolder.files[fIdx];
+                let inlineMidiBlock = null;
+                try {
+                  const fileObj = await f.handle.getFile();
+                  if (/\.(mid|midi)$/i.test(f.name)) {
+                    const mBytes = new Uint8Array(await fileObj.arrayBuffer());
+                    inlineMidiBlock = parseStandardMidiBytesToReaperSource(mBytes, songLenSec, bpmNum);
+                  } else {
+                    const d = await measureBlobAudioDuration(fileObj);
+                    if (d > maxDur) maxDur = d;
+                  }
+                } catch (e) {}
+
+                songFiles.push({
+                  displayName: f.name,
+                  filePath: basePath ? `${basePath}\\${localFolder.nome}\\${f.relPath}` : `${localFolder.nome}\\${f.relPath}`,
+                  srcTag: getReaperSourceTagByFilename(f.name),
+                  slotId: classifyTrackSlotForReaper(f.name, localFolder.nome),
+                  inlineMidiBlock
+                });
+              }
+              if (maxDur > 15) songLenSec = Math.ceil(maxDur);
+            }
+          } else if (chosenRef) {
+            const driveFolder = vsFolders.find(f => f.folderRef === chosenRef);
+            if (driveFolder) {
+              folderTitleForPaths = driveFolder.nome;
+              let faixasData = await dbGet("catalog", "vsFolder_" + driveFolder.folderRef);
+              if (!faixasData || !faixasData.faixas || navigator.onLine) {
+                try {
+                  const r = await fetch(`${scriptUrl}?action=listarFaixasVs&folderRef=${encodeURIComponent(driveFolder.folderRef)}`);
+                  const fresh = await r.json();
+                  if (fresh && fresh.status === "ok") { faixasData = fresh; await dbPut("catalog", "vsFolder_" + driveFolder.folderRef, fresh); }
+                } catch (e) {}
+              }
+              const faixas = (faixasData && faixasData.faixas) || [];
+
+              if (downloadFromCloudToDisk && localVsRootHandle) {
+                const safeFolderName = sanitizeFileSystemName(driveFolder.nome, `Musica_${i + 1}`, "");
+                folderTitleForPaths = safeFolderName;
+                try {
+                  songDirHandle = await localVsRootHandle.getDirectoryHandle(safeFolderName, { create: true });
+                } catch (eDir) {}
+
+                let maxMeasuredSec = 0;
+                progWrap?.classList.remove("hidden");
+
+                for (let fIdx = 0; fIdx < faixas.length; fIdx++) {
+                  const fx = faixas[fIdx];
+                  const defaultExt = fx.extensao || "m4a";
+                  const realName = sanitizeFileSystemName(fx.nomeArquivo || fx.nomeFaixa, `Faixa_${fIdx + 1}`, defaultExt);
+                  const overallPct = Math.round((((i) + ((fIdx + 1) / faixas.length)) / items.length) * 100);
+                  if (progBar) progBar.style.width = `${overallPct}%`;
+                  if (progPct) progPct.textContent = `${overallPct}%`;
+                  if (progTxt) progTxt.textContent = `Baixando (${i + 1}/${items.length}): ${realName}...`;
+
+                  const rawAudio = await fetchTrackCachedOrNetwork(fx.audioRef, true);
+                  const fileBytes = base64ToUint8Array(rawAudio.base64);
+                  const fileBlob = new Blob([fileBytes], { type: rawAudio.mimeType || "audio/mp4" });
+
+                  let wroteToDisk = false;
+                  if (songDirHandle) {
+                    try {
+                      const fHandle = await songDirHandle.getFileHandle(realName, { create: true });
+                      const w = await fHandle.createWritable();
+                      await w.write(fileBlob);
+                      await w.close();
+                      wroteToDisk = true;
+                    } catch (eW) {}
+                  }
+
+                  let inlineMidiBlock = null;
+                  if (/\.(mid|midi)$/i.test(realName)) {
+                    inlineMidiBlock = parseStandardMidiBytesToReaperSource(fileBytes, fallbackSec, bpmNum);
+                  } else {
+                    const dur = await measureBlobAudioDuration(fileBlob);
+                    if (dur > maxMeasuredSec) maxMeasuredSec = dur;
+                  }
+
+                  const finalPath = wroteToDisk
+                    ? `${safeFolderName}\\${realName}`
+                    : (basePath ? `${basePath}${sep}${driveFolder.nome}${sep}${realName}` : `${driveFolder.nome}${sep}${realName}`);
+
+                  songFiles.push({
+                    displayName: realName,
+                    filePath: finalPath,
+                    srcTag: getReaperSourceTagByFilename(realName),
+                    slotId: classifyTrackSlotForReaper(realName, driveFolder.nome),
+                    inlineMidiBlock
+                  });
+                }
+                if (maxMeasuredSec > 15) songLenSec = Math.ceil(maxMeasuredSec);
+              } else {
+                const refAudioTrack = faixas.find(fx => !/\.(mid|midi)$/i.test(fx.nomeArquivo || ""));
+                if (refAudioTrack) {
+                  try {
+                    const rawRef = await fetchTrackCachedOrNetwork(refAudioTrack.audioRef, false);
+                    const realDur = await measureBlobAudioDuration(new Blob([base64ToUint8Array(rawRef.base64)], { type: rawRef.mimeType || "audio/mp4" }));
+                    if (realDur > 15) songLenSec = Math.ceil(realDur);
+                  } catch (e) {}
+                }
+                for (let fIdx = 0; fIdx < faixas.length; fIdx++) {
+                  const fx = faixas[fIdx];
+                  const realName = fx.nomeArquivo || `${fx.nomeFaixa || "Faixa_" + (fIdx + 1)}.m4a`;
+                  songFiles.push({
+                    displayName: realName,
+                    filePath: basePath ? `${basePath}${sep}${driveFolder.nome}${sep}${realName}` : `${driveFolder.nome}${sep}${realName}`,
+                    srcTag: getReaperSourceTagByFilename(realName),
+                    slotId: classifyTrackSlotForReaper(realName, driveFolder.nome),
+                    inlineMidiBlock: null
+                  });
+                }
+              }
+            }
+          } else if (downloadFromCloudToDisk && localVsRootHandle) {
+            try {
+              songDirHandle = await localVsRootHandle.getDirectoryHandle(folderTitleForPaths, { create: true });
+            } catch (e) {}
+          }
+
+          // 2. INJETA A FAIXA 'Guia.wav' NA TRACK 'GUIA' DO REAPER (SE GERADA NO APP E A PASTA NÃO TIVER GUIA)
+          const appGuide = customGuideMemory[songKey];
+          const alreadyHasGuiaInFolder = songFiles.some(sf => sf.slotId === "GUIA");
+          if (appGuide && appGuide.wavBase64 && !alreadyHasGuiaInFolder) {
+            const safeGuideName = sanitizeFileSystemName(`${info.musica} - Guia.wav`, "Guia.wav", "wav");
+            const guideBlob = new Blob([base64ToUint8Array(appGuide.wavBase64)], { type: "audio/wav" });
+            let guidePath = basePath ? `${basePath}${sep}${folderTitleForPaths}${sep}${safeGuideName}` : `${folderTitleForPaths}${sep}${safeGuideName}`;
+
+            if (songDirHandle) {
+              try {
+                const gHandle = await songDirHandle.getFileHandle(safeGuideName, { create: true });
+                const w = await gHandle.createWritable();
+                await w.write(guideBlob);
+                await w.close();
+                guidePath = `${folderTitleForPaths}\\${safeGuideName}`;
+              } catch (eG) {}
+            }
+
+            songFiles.push({
+              displayName: safeGuideName,
+              filePath: guidePath,
+              srcTag: "WAVE",
+              slotId: "GUIA",
+              inlineMidiBlock: null
+            });
+          }
+
+          // 3. INJETA O 'Continuous Pad' NO TOM DA MÚSICA NA TRACK 'CONTINUOUS_PAD' DO REAPER
+          const alreadyHasPadInFolder = songFiles.some(sf => sf.slotId === "CONTINUOUS_PAD");
+          if (includePad && !alreadyHasPadInFolder) {
+            const padNote = resolvePadRootKeyFromSongTom(info.tom);
+            let padExt = "wav";
+            let padBlobToSave = null;
+
+            if (!padPack.isBuiltin && padPack.tons && padPack.tons[padNote]) {
+              const toneInfo = padPack.tons[padNote];
+              padExt = toneInfo.extensao || "mp3";
+              if (songDirHandle) {
+                try {
+                  const rawPad = await fetchTrackCachedOrNetwork(toneInfo.audioRef, true);
+                  padBlobToSave = new Blob([base64ToUint8Array(rawPad.base64)], { type: rawPad.mimeType || "audio/mpeg" });
+                } catch (eP) {}
+              }
+            } else if (songDirHandle) {
+              padBlobToSave = buildSynthesizedPadLoopWavBytes(padNote, padPack);
+            }
+
+            const padFileName = `Continuous_Pad_${padNote.replace("#", "s")}.${padExt}`;
+            let padFilePath = basePath ? `${basePath}${sep}${folderTitleForPaths}${sep}${padFileName}` : `${folderTitleForPaths}${sep}${padFileName}`;
+
+            if (songDirHandle && padBlobToSave) {
+              try {
+                const pHandle = await songDirHandle.getFileHandle(padFileName, { create: true });
+                const w = await pHandle.createWritable();
+                await w.write(padBlobToSave);
+                await w.close();
+                padFilePath = `${folderTitleForPaths}\\${padFileName}`;
+              } catch (ePW) {}
+            }
+
+            songFiles.push({
+              displayName: `Pad (${padNote}) - ${info.musica}`,
+              filePath: padFilePath,
+              srcTag: getReaperSourceTagByFilename(padFileName),
+              slotId: "CONTINUOUS_PAD",
+              isContinuousPadLoop: true,
+              inlineMidiBlock: null
+            });
+          }
+
+          // 4. INJETA O 'Holyrics MIDI' NA TRACK 'HOLYRICS_MIDI' DO REAPER
+          const appMidi = customMidiMemory[songKey];
+          const alreadyHasMidiInFolder = songFiles.some(sf => sf.slotId === "HOLYRICS_MIDI");
+          if (appMidi && appMidi.base64 && !alreadyHasMidiInFolder) {
+            const mBytes = base64ToUint8Array(appMidi.base64);
+            const inlineMidiBlock = parseStandardMidiBytesToReaperSource(mBytes, songLenSec, bpmNum);
+            if (inlineMidiBlock) {
+              songFiles.unshift({
+                displayName: `${info.musica}_Holyrics.mid`,
+                filePath: "",
+                srcTag: "MIDI",
+                slotId: "HOLYRICS_MIDI",
+                inlineMidiBlock
+              });
+            }
+          }
+
+          if (autoBpm && bpmNum >= 40 && bpmNum <= 240) {
+            if (i === 0) firstBpm = bpmNum;
+            tempoPoints += `    PT ${cursorSec.toFixed(6)} ${bpmNum} 1\n`;
+          }
+
+          const regionTitle = `${i + 1}. ${info.musica} (${info.tom})`.replace(/"/g, "'");
+          const endSec = cursorSec + songLenSec;
+          const GAP_ENTRE_MUSICAS_SEG = 20;
+
+          markersRpp += `  MARKER ${i + 1} ${cursorSec.toFixed(6)} "${regionTitle}" 1 ${regionColor} 1 R\n`;
+          markersRpp += `  MARKER ${i + 1} ${endSec.toFixed(6)} "" 1\n`;
+          if (autoStop) {
+            markersRpp += `  MARKER ${100 + i} ${(endSec + 0.5).toFixed(6)} "!1016" 0 0 1 R\n`;
+          }
+
+          const usedSlotsInSong = {};
+          songFiles.forEach(sf => {
+            const lane = getOrCreateLane(sf.slotId, usedSlotsInSong);
+            const sourceBlock = sf.inlineMidiBlock
+              ? sf.inlineMidiBlock
+              : `      <SOURCE ${sf.srcTag}\n        FILE "${sf.filePath}"\n      >\n`;
+            const loopFlag = sf.isContinuousPadLoop ? 1 : 0;
+            const fadeInSec = sf.isContinuousPadLoop ? "3.00" : "0.01";
+            const fadeOutSec = sf.isContinuousPadLoop ? "4.00" : "0.05";
+
+            lane.itemsRpp.push(
+              `    <ITEM\n` +
+              `      POSITION ${cursorSec.toFixed(6)}\n` +
+              `      LENGTH ${songLenSec.toFixed(6)}\n` +
+              `      LOOP ${loopFlag}\n` +
+              `      FADEIN 1 ${fadeInSec} 0 1 0 0 0\n` +
+              `      FADEOUT 1 ${fadeOutSec} 0 1 0 0 0\n` +
+              `      NAME "${sf.displayName.replace(/"/g, "'")}"\n` +
+              sourceBlock +
+              `    >\n`
+            );
+          });
+
+          logHtml += `<div class="text-emerald-400">✓ <strong>Região ${i + 1} (${info.musica}):</strong> ${songFiles.length} pistas (Guia + Pad ${resolvePadRootKeyFromSongTom(info.tom)} inclusos) • <strong>${formatSeconds(songLenSec)}</strong></div>`;
+          cursorSec = endSec + GAP_ENTRE_MUSICAS_SEG;
+        }
+
+        let tracksRpp = "";
+        slotsList.forEach(lane => {
+          if (lane.optional && lane.itemsRpp.length === 0) return;
+          const peakCol = rgbToReaperNative(lane.r, lane.g, lane.b);
+          const panVal = (routing === "SPLIT_LR" && !lane.isMidi) ? (lane.isClickGuide ? -1 : 1) : 0;
+          const routingLines = (routing === "MULTI_OUT" && lane.isClickGuide)
+            ? `    MAINSEND 0 0\n    HWOUT 2 0 1 0 0 0 1 -1:U -1\n`
+            : `    MAINSEND 1 0\n`;
+
+          tracksRpp +=
+            `  <TRACK\n` +
+            `    NAME "${lane.name}"\n` +
+            `    PEAKCOL ${peakCol}\n` +
+            `    VOLPAN 1 ${panVal} -1 -1 1\n` +
+            `    MUTESOLO 0 0 0\n` +
+            routingLines +
+            lane.itemsRpp.join("") +
+            `  >\n`;
+        });
+
+        const tempoEnvBlock = tempoPoints ? `  <TEMPOENVEX\n${tempoPoints}  >\n` : "";
+        const rppContent = `<REAPER_PROJECT 0.1 "7.0" 1730000000\n  TEMPO ${firstBpm} 4 4\n${tempoEnvBlock}${markersRpp}${tracksRpp}>\n`;
+        const safeRppName = sanitizeFileSystemName(reaperTargetPayload.fileName, "Culto_DOXA.rpp", "rpp");
+
+        let savedDirectly = false;
+        if (localVsRootHandle) {
+          try {
+            const fileHandle = await localVsRootHandle.getFileHandle(safeRppName, { create: true });
+            const writable = await fileHandle.createWritable();
+            await writable.write(rppContent);
+            await writable.close();
+            savedDirectly = true;
+            statusBox.innerHTML = `<p class="font-bold text-emerald-300 mb-1">✅ Projeto guardado em "${localVsRootHandle.name}\\${safeRppName}" com tracks Guia e Continuous Pad!</p>${logHtml}`;
+          } catch (eSaveRpp) {}
+        }
+
+        if (!savedDirectly) {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(new Blob([rppContent], { type: "application/octet-stream" }));
+          a.download = safeRppName;
+          a.click();
+          statusBox.innerHTML = `<p class="font-bold text-white mb-1">✅ Ficheiro "${safeRppName}" transferido com tracks Guia e Continuous Pad!</p>${logHtml}`;
+        }
+      } catch (e) {
+        statusBox.innerHTML = `<div class="text-rose-400">Erro ao gerar projeto: ${e.message || e}</div>`;
+      } finally {
+        progWrap?.classList.add("hidden");
+        btn.disabled = false; if (btnPack) btnPack.disabled = false;
+      }
+    };
+
+    setupC2D2MidiTriggerMode();
+// ============================================================================
+    // 14. CORREÇÃO DE ÁUDIO CONTINUOUS PAD + SUPORTE MP3 DRIVE/PC + TRACK SEPARADA NO REAPER
+    // ============================================================================
+    let localPcPadPacks = []; // Permite carregar pastas de Pads (.mp3/.wav) direto do PC também!
+
+    // 14.1 Corrige o classificador do Reaper para que 'Continuous_Pad_D.wav/.mp3' NUNCA caia em 'Keys' ou 'Keys 2'!
+    classifyTrackSlotForReaper = function(fileName, folderName = "") {
+      const f = String(fileName || "");
+      if (/\.(mid|midi)$/i.test(f)) return "HOLYRICS_MIDI";
+      if (/continuous[_\s-]*pad/i.test(f) || /^pad\s*\([a-g][#b]?\)/i.test(f)) return "CONTINUOUS_PAD";
+      if (/\b(guia|guide|cue|cues|regencia)\b/i.test(f)) return "GUIA";
+
+      let clean = f.replace(/\.[a-z0-9]+$/i, "");
+      if (folderName && clean.toLowerCase().startsWith(folderName.toLowerCase())) {
+        clean = clean.slice(folderName.length);
+      }
+      const parts = clean.split(/[-–—_]+/).map(p => p.trim()).filter(Boolean);
+      const tail = parts.length > 0 ? parts[parts.length - 1] : clean;
+
+      const matchToken = (txt) => {
+        const n = txt.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, " ");
+        if (/\b(metronome|metronomo|click|bpm)\b/.test(n)) return "METRONOME";
+        if (/\b(guia|guide|cue|cues|regencia)\b/.test(n)) return "GUIA";
+        if (/\b(vocals|vocal|voz|vozes|back|backing|bgv|choir|coro)\b/.test(n)) return "VOCALS";
+        if (/\b(piano|rhodes|wurli)\b/.test(n)) return "PIANO";
+        if (/\b(keys|key|teclado|pad|pads|synth|organ|orgao)\b/.test(n)) return "KEYS";
+        if (/\b(drums|drum|bateria|batera|perc|percussao|kick|snare|hihat)\b/.test(n)) return "DRUMS";
+        if (/\b(bass|baixo|contrabaixo)\b/.test(n)) return "BASS";
+        if (/\b(strings|string|cordas|violino|cello|orquestra|brass|metais)\b/.test(n)) return "STRINGS";
+        if (/\b(guitar|guitars|guitarra|violao|acoustic|acustico|ag|eg|eg1|eg2|gtr|gt|lead|rhythm)\b/.test(n)) return "GUITAR";
+        if (/\b(others|other|outros|outro|loop|fx|efeito|sub|track)\b/.test(n)) return "OTHERS";
+        return null;
+      };
+
+      return matchToken(tail) || matchToken(clean) || "OTHERS";
+    };
+
+    // 14.2 Corrige o gerador de WAV do Pad Nativo para sair com som encorpado, quente e audível no Reaper!
+    buildSynthesizedPadLoopWavBytes = function(noteKey, packObj) {
+      const sampleRate = 22050;
+      const durSec = 16; // Loop longo e suave de 16 segundos
+      const totalSamples = durSec * sampleRate;
+      const pcmL = new Float32Array(totalSamples);
+      const pcmR = new Float32Array(totalSamples);
+
+      const rootNote = resolvePadRootKeyFromSongTom(noteKey);
+      const baseFreq = PAD_KEY_FREQS[rootNote] || 130.81;
+      const shimmer = (packObj && packObj.shimmer !== undefined) ? packObj.shimmer : 0.35;
+
+      // Harmônicos exatos de um Warm Worship Pad (Sub-Oitava, Tônica, Quinta Justa, Oitava, Décima Maior e Quinta aguda)
+      const harmonics = [
+        { mult: 0.5,    amp: 0.34, panL: 0.9,  panR: 0.9  },
+        { mult: 1.0,    amp: 0.32, panL: 1.0,  panR: 0.85 },
+        { mult: 1.002,  amp: 0.24, panL: 0.8,  panR: 1.0  },
+        { mult: 1.4983, amp: 0.22, panL: 0.95, panR: 0.75 },
+        { mult: 2.0,    amp: 0.16, panL: 0.75, panR: 0.95 },
+        { mult: 2.5198, amp: 0.10 * (0.4 + shimmer), panL: 0.9, panR: 0.6 },
+        { mult: 2.9966, amp: 0.09 * shimmer,         panL: 0.6, panR: 0.9 }
+      ];
+
+      for (let i = 0; i < totalSamples; i++) {
+        const t = i / sampleRate;
+        // Modulação lenta (Chorus/Warmth) que fecha ciclo exato em 16s
+        const slowModL = 0.88 + 0.12 * Math.sin((2 * Math.PI * t) / 8.0);
+        const slowModR = 0.88 + 0.12 * Math.cos((2 * Math.PI * t) / 8.0);
+
+        let sumL = 0;
+        let sumR = 0;
+
+        for (let h = 0; h < harmonics.length; h++) {
+          const hm = harmonics[h];
+          // Garante número inteiro de ciclos em durSec para loop 100% sem estalo
+          const cycles = Math.max(1, Math.round(baseFreq * hm.mult * durSec));
+          const exactFreq = cycles / durSec;
+          const phase = 2 * Math.PI * exactFreq * t;
+          const sig = Math.sin(phase + h * 0.6) + 0.25 * Math.sin(phase * 2 + h);
+          sumL += sig * hm.amp * hm.panL;
+          sumR += sig * hm.amp * hm.panR;
+        }
+
+        // Crossfade suave nas bordas de 0.15s para perfeição absoluta no LOOP 1 do Reaper
+        let edgeEnv = 1.0;
+        if (t < 0.08) edgeEnv = t / 0.08;
+        else if (t > durSec - 0.08) edgeEnv = (durSec - t) / 0.08;
+
+        pcmL[i] = Math.max(-0.95, Math.min(0.95, Math.tanh(sumL * slowModL * 0.9) * edgeEnv));
+        pcmR[i] = Math.max(-0.95, Math.min(0.95, Math.tanh(sumR * slowModR * 0.9) * edgeEnv));
+      }
+
+      return encodeStereoWav16(pcmL, pcmR, sampleRate);
+    };
+
+    // 14.3 Extrator de nota no cliente para permitir carregar pastas de Pads (.mp3/.wav) direto do PC ou Drive!
+    function extractPadNoteClient(fileName) {
+      const noExt = String(fileName || "").replace(/\.[a-z0-9]+$/i, "").trim();
+      const cleaned = noExt
+        .replace(/\b(continuous|continuo|pad|pads|worship|ambient|atmos|warm|shimmer|soft|drone|loop|track|faixa|tom|key)\b/gi, " ")
+        .replace(/^\s*\d{1,2}\s*[-_.\s)\]]*\s*/, " ")
+        .trim();
+
+      const m = cleaned.match(/(?:^|[^A-Za-z])([A-G](?:#|b|s)?)(?:m|maj|min|7|9)?(?:$|[^A-Za-z])/i)
+             || noExt.match(/([A-G](?:#|b)?)\s*$/i);
+      if (!m || !m[1]) return null;
+      const raw = m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase().replace("s", "#");
+      const map = { "C": "C", "B#": "C", "C#": "C#", "Db": "C#", "D": "D", "D#": "Eb", "Eb": "Eb", "E": "E", "F": "F", "F#": "F#", "Gb": "F#", "G": "G", "G#": "Ab", "Ab": "Ab", "A": "A", "A#": "Bb", "Bb": "Bb", "B": "B" };
+      return map[raw] || null;
+    }
+
+    // Permite selecionar a sua pasta local de Pads (.mp3/.wav) direto do computador!
+    async function pickLocalPcPadFolder() {
+      if (!window.showDirectoryPicker) {
+        alert("Use o Chrome ou Edge no computador para carregar uma pasta local de Pads.");
+        return;
+      }
+      try {
+        const rootDir = await window.showDirectoryPicker({ mode: "read" });
+        const foundPacks = [];
+
+        const scanPackFolder = async (dirHandle, label) => {
+          const tons = {};
+          for await (const entry of dirHandle.values()) {
+            if (entry.kind === "file" && /\.(mp3|wav|m4a|ogg|flac|aac)$/i.test(entry.name)) {
+              const nota = extractPadNoteClient(entry.name);
+              if (nota) {
+                tons[nota] = {
+                  isLocalFile: true,
+                  fileHandle: entry,
+                  nomeArquivo: entry.name,
+                  extensao: (entry.name.match(/\.([a-z0-9]+)$/i) || ["", "mp3"])[1].toLowerCase()
+                };
+              }
+            }
+          }
+          if (Object.keys(tons).length > 0) {
+            foundPacks.push({
+              id: "localpad_" + label.replace(/\W+/g, "_"),
+              nome: "💻 PC: " + label,
+              rawName: label,
+              isBuiltin: false,
+              isLocalPc: true,
+              tons
+            });
+          }
+        };
+
+        await scanPackFolder(rootDir, rootDir.name);
+        for await (const entry of rootDir.values()) {
+          if (entry.kind === "directory") {
+            await scanPackFolder(entry, entry.name);
+          }
+        }
+
+        if (foundPacks.length === 0) {
+          alert(`Nenhum arquivo de Pad (.mp3/.wav com notas C, D, E...) encontrado em "${rootDir.name}".`);
+          return;
+        }
+
+        localPcPadPacks = foundPacks;
+        padActivePackId = foundPacks[0].id;
+        populatePadPackDropdowns();
+        updatePadUiState();
+        alert(`✅ ${foundPacks.length} Pack(s) de Pads carregados do seu PC! Agora você já pode tocar ao vivo ou exportar para o Reaper.`);
+      } catch (e) {}
+    }
+
+    // Atualiza getAllPadPacks para incluir os Packs do PC + Packs do Google Drive + Nativos
+    getAllPadPacks = function() {
+      const driveMapped = padDrivePacks.map(dp => ({
+        id: "drive_" + dp.folderRef,
+        folderRef: dp.folderRef,
+        nome: "☁️ Drive: " + dp.nome,
+        rawName: dp.nome,
+        isBuiltin: false,
+        tons: dp.tons || {}
+      }));
+      return [...localPcPadPacks, ...driveMapped, ...PAD_BUILTIN_PACKS];
+    };
+
+    // Atualiza o diagnóstico de sincronização do Drive para avisar caso falte publicar Nova Versão no Código.gs
+    syncPadPacksFromDrive = async function(showAlert = true) {
+      if (!scriptUrl || !navigator.onLine) return;
+      const icon = document.getElementById("pad-sync-icon");
+      icon?.classList.add("fa-spin");
+      try {
+        const res = await fetch(`${scriptUrl}?action=listarPacksPads&t=${Date.now()}`);
+        const data = await res.json();
+
+        // Se o Código.gs ainda não foi publicado em Nova Versão, ele devolve { songs: [...] } em vez de { packs: [...] }
+        if (data && Array.isArray(data.songs) && data.packs === undefined) {
+          if (showAlert) {
+            alert("⚠️ O seu Google Apps Script (Código.gs) ainda está rodando a versão antiga!\n\nPara aparecerem as pastas do Google Drive:\n1. No editor do Código.gs, clique em 'Implantar' > 'Gerenciar implantações'\n2. Clique no ícone de Lápis (Editar)\n3. Mude a Versão para 'Nova versão' e clique em 'Implantar'.\n\nEnquanto isso, você também pode usar o botão '💻 Ler Pasta Pads do PC' ao lado!");
+          }
+          return;
+        }
+
+        if (data && data.status === "ok" && Array.isArray(data.packs)) {
+          padDrivePacks = data.packs;
+          await dbPut("catalog", "padDrivePacks", padDrivePacks);
+          if (padDrivePacks.length > 0 && padActivePackId.startsWith("synth_")) {
+            padActivePackId = "drive_" + padDrivePacks[0].folderRef;
+          }
+          populatePadPackDropdowns();
+          updatePadUiState();
+          if (showAlert) {
+            if (padDrivePacks.length > 0) {
+              alert(`✅ Sincronizado! ${padDrivePacks.length} pack(s) encontrados na pasta 'Pads' do seu Google Drive.`);
+            } else {
+              alert("A pasta 'Pads' foi acessada no seu Drive, mas ainda não há arquivos .mp3/.wav com nomes de notas (C, C#, D, Eb...) dentro dela.");
+            }
+          }
+        }
+      } catch (e) {
+        if (showAlert) alert("Erro ao consultar pasta Pads do Drive: " + (e.message || e));
+      } finally {
+        icon?.classList.remove("fa-spin");
+      }
+    };
+
+    // Permite que o player da aba Pads toque também os arquivos .mp3 carregados da pasta do PC!
+    const _prevTriggerPadKey = triggerPadKey;
+    triggerPadKey = async function(targetKey) {
+      const normalizedKey = resolvePadRootKeyFromSongTom(targetKey);
+      const pack = getAllPadPacks().find(p => p.id === padActivePackId);
+      if (pack && pack.isLocalPc && pack.tons && pack.tons[normalizedKey]) {
+        const toneInfo = pack.tons[normalizedKey];
+        const ctx = ensurePadAudioGraph();
+        if (ctx && toneInfo.fileHandle) {
+          try {
+            const fileObj = await toneInfo.fileHandle.getFile();
+            const ab = await fileObj.arrayBuffer();
+            const decoded = await decodeBufferCrossBrowser(ctx, ab);
+            const fakeRef = "local_" + pack.id + "_" + normalizedKey;
+            toneInfo.audioRef = fakeRef;
+            padDecodedDriveCache[fakeRef] = decoded;
+          } catch (e) {}
+        }
+      }
+      return _prevTriggerPadKey(targetKey);
+    };
+
+    // Injeta o botão "💻 Ler Pasta Pads do PC" no topo da aba Pads
+    function injectLocalPcPadButton() {
+      const syncBtn = document.querySelector("#view-pads button[onclick*='syncPadPacksFromDrive']");
+      if (syncBtn && !document.getElementById("btn-pick-local-pad-folder")) {
+        const btnPc = document.createElement("button");
+        btnPc.type = "button";
+        btnPc.id = "btn-pick-local-pad-folder";
+        btnPc.onclick = () => pickLocalPcPadFolder();
+        btnPc.className = "px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow";
+        btnPc.innerHTML = `<i class="fa-solid fa-folder-open"></i><span>💻 Ler Pasta Pads do PC (.mp3/.wav)</span>`;
+        syncBtn.insertAdjacentElement("beforebegin", btnPc);
+      }
+    }
+
+    // Garante que ao exportar o .RPP usando um Pack do PC, ele copie o .mp3 do seu Pack para a pasta da música no Reaper!
+    const _prevGenReaperRppPadFix = generateReaperRppFile;
+    generateReaperRppFile = async function(downloadFromCloudToDisk = false) {
+      const chosenPackId = document.getElementById("reaper-pad-pack-select")?.value || padActivePackId;
+      const pack = getAllPadPacks().find(p => p.id === chosenPackId);
+
+      // Se for um Pack do PC, pré-carrega os bytes em cache para o exportador do Reaper salvar o .mp3 real!
+      if (pack && pack.isLocalPc && pack.tons) {
+        for (const [nota, info] of Object.entries(pack.tons)) {
+          if (info.fileHandle && !info.audioRef) {
+            try {
+              const fObj = await info.fileHandle.getFile();
+              const u8 = new Uint8Array(await fObj.arrayBuffer());
+              const refKey = "local_reaper_pad_" + pack.id + "_" + nota;
+              info.audioRef = refKey;
+              await dbPut("vsTracks", refKey, { base64: uint8ArrayToBase64(u8), mimeType: fObj.type || "audio/mpeg" });
+            } catch (e) {}
+          }
+        }
+      }
+      return _prevGenReaperRppPadFix(downloadFromCloudToDisk);
+    };
+
+    ensurePadsDomAndFloatingWidget();
+    injectLocalPcPadButton();
   </script>
 </body>
 </html>
