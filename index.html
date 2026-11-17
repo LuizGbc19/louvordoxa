@@ -8053,6 +8053,329 @@
 
     ensurePadsDomAndFloatingWidget();
     injectLocalPcPadButton();
+    // ============================================================================
+    // 15. REBRANDING OFICIAL DOXA v5.0 (PRETO ÔNIX & OURO METÁLICO + NOVO LOGO)
+    //     + REVISÃO E LIMPEZA AUTOMÁTICA DE ELEMENTOS DUPLICADOS DO DOM
+    // ============================================================================
+    const DOXA_LOGO_DRIVE_ID = "1XP3Mv54mNbDhzPbIzwjJPMv8PlOMjxFv";
+    const DOXA_LOGO_PRIMARY_URL = `https://drive.google.com/thumbnail?id=${DOXA_LOGO_DRIVE_ID}&sz=w1200`;
+    const DOXA_LOGO_FALLBACK_URL = `https://lh3.googleusercontent.com/d/${DOXA_LOGO_DRIVE_ID}=w1200`;
+
+    function applyDoxaLuxuryRebrandingAndCleanup() {
+      // 1. LIMPEZA DE ELEMENTOS DUPLICADOS ENCONTRADOS NA REVISÃO DO CÓDIGO:
+      // Remove o segundo #reaper-progress-wrap duplicado no modal do Reaper
+      const progressWraps = document.querySelectorAll("#reaper-progress-wrap");
+      if (progressWraps.length > 1) {
+        for (let i = 1; i < progressWraps.length; i++) progressWraps[i].remove();
+      }
+      // Remove botões duplicados de Modo Interativo caso o hook antigo tenha rodado 2x
+      document.querySelectorAll(".btn-interactive-chord + .btn-interactive-chord").forEach(el => el.remove());
+
+      // 2. INJETA A FOLHA DE ESTILO DO REBRANDING (PRETO ABSOLUTO + DOURADO METÁLICO #D4AF37)
+      if (!document.getElementById("doxa-v5-rebrand-styles")) {
+        const st = document.createElement("style");
+        st.id = "doxa-v5-rebrand-styles";
+        st.textContent = `
+          :root {
+            --doxa-black: #030305;
+            --doxa-surface: #0a0b0e;
+            --doxa-card: #0f1015;
+            --doxa-gold: #d4af37;
+            --doxa-gold-light: #f3e5ab;
+            --doxa-gold-dark: #997a2c;
+            --doxa-border: rgba(212, 175, 55, 0.22);
+          }
+
+          html, body {
+            background-color: var(--doxa-black) !important;
+            color: #f8fafc !important;
+          }
+
+          /* Cabeçalho, Menu Lateral e Barra Inferior em Preto Ônix com filete Dourado */
+          header, #side-drawer, #mobile-bottom-nav {
+            background-color: rgba(5, 5, 8, 0.96) !important;
+            border-color: rgba(212, 175, 55, 0.20) !important;
+          }
+
+          /* Transforma todos os Cards principais (slate-900 / zinc-950) no padrão Luxo DOXA */
+          .bg-slate-900, .bg-slate-900\\/95, .bg-slate-900\\/90, .bg-zinc-950 {
+            background-color: var(--doxa-card) !important;
+            border-color: rgba(212, 175, 55, 0.16) !important;
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.85) !important;
+          }
+
+          /* Campos de busca, selects e sub-cards em tom grafite escuro */
+          .bg-slate-800, .bg-slate-800\\/90, .bg-slate-800\\/80, .bg-slate-800\\/75, .bg-slate-800\\/70, .bg-slate-800\\/60 {
+            background-color: #14151c !important;
+            border-color: rgba(212, 175, 55, 0.15) !important;
+          }
+
+          input:focus, select:focus, textarea:focus {
+            outline: none !important;
+            border-color: var(--doxa-gold) !important;
+            box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.20) !important;
+          }
+
+          /* Converte botões e abas que eram Azul/Índigo para o Dourado Metálico DOXA */
+          .bg-indigo-600 {
+            background: linear-gradient(135deg, #e5c158 0%, #c59b27 55%, #9b7419 100%) !important;
+            color: #050505 !important;
+            font-weight: 800 !important;
+            border: 1px solid rgba(255, 238, 170, 0.45) !important;
+            box-shadow: 0 4px 16px rgba(212, 175, 55, 0.25) !important;
+          }
+          .bg-indigo-600:hover {
+            filter: brightness(1.08) !important;
+          }
+          .bg-indigo-800 {
+            background-color: rgba(0, 0, 0, 0.35) !important;
+            color: #fff !important;
+          }
+          .text-indigo-400, .text-indigo-300, .text-indigo-200 {
+            color: #e6c665 !important;
+          }
+          .border-indigo-500\\/40, .border-indigo-500\\/30 {
+            border-color: rgba(212, 175, 55, 0.35) !important;
+          }
+
+          /* Scrollbar e Sliders Dourados */
+          input[type="range"] { accent-color: var(--doxa-gold) !important; }
+          .custom-scroll::-webkit-scrollbar-track { background: #07070a !important; }
+          .custom-scroll::-webkit-scrollbar-thumb { background: #4a3b18 !important; border-radius: 9999px; }
+          .custom-scroll::-webkit-scrollbar-thumb:hover { background: var(--doxa-gold) !important; }
+        `;
+        document.head.appendChild(st);
+      }
+
+      // 3. APLICA O NOVO LOGOTIPO OFICIAL NA TELA INICIAL, CABEÇALHO E MENU LATERAL
+      const landingImg = document.getElementById("landing-custom-logo");
+      const landingSvg = document.getElementById("landing-vector-logo");
+      if (landingImg) {
+        const logoContainer = landingImg.parentElement;
+        if (logoContainer) {
+          logoContainer.className = "relative w-72 h-56 sm:w-96 sm:h-64 flex items-center justify-center";
+        }
+        landingImg.onload = () => {
+          landingImg.classList.remove("hidden");
+          if (landingSvg) landingSvg.classList.add("hidden");
+        };
+        landingImg.onerror = () => {
+          if (landingImg.src !== DOXA_LOGO_FALLBACK_URL) {
+            landingImg.src = DOXA_LOGO_FALLBACK_URL;
+          }
+        };
+        landingImg.src = DOXA_LOGO_PRIMARY_URL;
+        landingImg.className = "w-full h-full object-contain drop-shadow-[0_12px_35px_rgba(212,175,55,0.28)]";
+      }
+
+      // Estiliza o botão "Acessar Aplicativo" da Tela Inicial em Ouro Metálico
+      const enterBtn = document.querySelector("#landing-screen button[onclick='enterApplication()']");
+      if (enterBtn) {
+        enterBtn.className = "w-full py-3.5 px-6 rounded-2xl bg-indigo-600 text-black font-black text-sm sm:text-base tracking-wider uppercase shadow-2xl flex items-center justify-center gap-3 transition transform active:scale-95";
+      }
+
+      // Adiciona miniatura da nova logo no topo do Menu Lateral (Drawer)
+      const drawerLogoBox = document.querySelector("#side-drawer .w-9.h-9");
+      if (drawerLogoBox) {
+        drawerLogoBox.className = "w-10 h-10 rounded-xl bg-black border border-amber-500/40 flex items-center justify-center overflow-hidden p-0.5 shadow";
+        drawerLogoBox.innerHTML = `<img src="${DOXA_LOGO_PRIMARY_URL}" onerror="this.src='${DOXA_LOGO_FALLBACK_URL}'" alt="DOXA" class="w-full h-full object-contain" />`;
+      }
+
+      // Atualiza o tema da barra de status do celular para Preto Absoluto
+      const themeMeta = document.querySelector("meta[name='theme-color']");
+      if (themeMeta) themeMeta.setAttribute("content", "#030305");
+    }
+
+    // Executa imediatamente e garante que os cartões sigam o novo visual
+    applyDoxaLuxuryRebrandingAndCleanup();
+    // ============================================================================
+    // 15. CONSOLIDAÇÃO FINAL DOXA v5.0:
+    //     - CONEXÃO DIRETA POR LINK DA PASTA PADS DO GOOGLE DRIVE NA TELA
+    //     - SALVAMENTO DO .TXT HOLYRICS NO PACOTE DO REAPER (.RPP)
+    //     - REBRANDING OFICIAL PRETO ÔNIX & OURO METÁLICO + NOVO LOGO
+    // ============================================================================
+    const DOXA_LOGO_DRIVE_ID = "1XP3Mv54mNbDhzPbIzwjJPMv8PlOMjxFv";
+    const DOXA_LOGO_PRIMARY_URL = `https://drive.google.com/thumbnail?id=${DOXA_LOGO_DRIVE_ID}&sz=w1200`;
+    const DOXA_LOGO_FALLBACK_URL = `https://lh3.googleusercontent.com/d/${DOXA_LOGO_DRIVE_ID}=w1200`;
+
+    // Extrai o ID da pasta de qualquer link do Google Drive colado pelo usuário
+    function extractDriveFolderIdClient(urlOrId) {
+      if (!urlOrId) return "";
+      const s = String(urlOrId).trim();
+      const m = s.match(/\/folders\/([a-zA-Z0-9_-]{15,})/) || s.match(/[?&]id=([a-zA-Z0-9_-]{15,})/);
+      if (m && m[1]) return m[1];
+      if (/^[a-zA-Z0-9_-]{18,}$/.test(s)) return s;
+      return "";
+    }
+
+    // Permite colar o link da pasta Pads do Drive direto na tela do aplicativo!
+    async function promptAndSetPadDriveFolderLink() {
+      const current = localStorage.getItem("doxa_pads_folder_link") || "";
+      const novo = prompt("Cole aqui o Link (ou ID) da sua pasta de PADS do Google Drive:", current);
+      if (novo === null) return;
+      localStorage.setItem("doxa_pads_folder_link", novo.trim());
+      await syncPadPacksFromDrive(true);
+    }
+
+    // Sobrescreve syncPadPacksFromDrive enviando o folderId da sua pasta diretamente na URL!
+    syncPadPacksFromDrive = async function(showAlert = true) {
+      if (!scriptUrl || !navigator.onLine) return;
+      const icon = document.getElementById("pad-sync-icon");
+      icon?.classList.add("fa-spin");
+      try {
+        const savedLink = localStorage.getItem("doxa_pads_folder_link") || "";
+        const folderIdParam = extractDriveFolderIdClient(savedLink);
+        const queryUrl = `${scriptUrl}?action=listarPacksPads&folderId=${encodeURIComponent(folderIdParam)}&t=${Date.now()}`;
+        const res = await fetch(queryUrl);
+        const data = await res.json();
+
+        if (data && Array.isArray(data.songs) && data.packs === undefined) {
+          if (showAlert) {
+            alert("⚠️ O seu Google Apps Script (Código.gs) ainda não foi publicado com a Nova Versão!\n\nNo editor do Código.gs, vá em:\nImplantar -> Gerenciar implantações -> Editar (Lápis) -> Nova versão -> Implantar.");
+          }
+          return;
+        }
+
+        if (data && data.status === "ok" && Array.isArray(data.packs)) {
+          padDrivePacks = data.packs;
+          await dbPut("catalog", "padDrivePacks", padDrivePacks);
+          if (padDrivePacks.length > 0) {
+            padActivePackId = "drive_" + padDrivePacks[0].folderRef;
+          }
+          populatePadPackDropdowns();
+          updatePadUiState();
+          if (showAlert) {
+            if (padDrivePacks.length > 0) {
+              alert(`✅ Sucesso! ${padDrivePacks.length} Pack(s) de Pads carregados da pasta "${data.folderName || 'Pads'}" do seu Google Drive!`);
+            } else {
+              alert(`A pasta "${data.folderName || 'Pads'}" foi aberta no Drive (${data.debugFilesCount || 0} arquivos de áudio vistos), mas nenhum tinha nome de nota musical (C, C#, D, Eb... ou Dó, Ré, Mi).\n\nExemplos vistos na pasta: ${(data.debugSample || []).join(", ") || "Nenhum arquivo de áudio"}`);
+            }
+          }
+        } else if (data && data.status === "error" && showAlert) {
+          alert("Erro retornado pelo Drive: " + data.message);
+        }
+      } catch (e) {
+        if (showAlert) alert("Falha ao conectar com a pasta Pads do Drive: " + (e.message || e));
+      } finally {
+        icon?.classList.remove("fa-spin");
+      }
+    };
+
+    // Injeta o botão "🔗 Link da Pasta Drive" no topo da aba Pads
+    function injectPadDriveLinkButton() {
+      const syncBtn = document.querySelector("#view-pads button[onclick*='syncPadPacksFromDrive']");
+      if (syncBtn && !document.getElementById("btn-set-pad-drive-link")) {
+        const btnLink = document.createElement("button");
+        btnLink.type = "button";
+        btnLink.id = "btn-set-pad-drive-link";
+        btnLink.onclick = () => promptAndSetPadDriveLinkAndSync();
+        btnLink.className = "px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-amber-500/40 text-amber-300 text-xs font-extrabold flex items-center gap-1.5";
+        btnLink.innerHTML = `<i class="fa-solid fa-link"></i><span>Vincular Link da Pasta Pads</span>`;
+        syncBtn.insertAdjacentElement("beforebegin", btnLink);
+      }
+    }
+    function promptAndSetPadDriveLinkAndSync() { promptAndSetPadDriveFolderLink(); }
+
+    // Garante que o arquivo _Holyrics.txt também seja salvo na subpasta da música ao exportar o pacote do Reaper
+    const _baseReaperGenV5 = generateReaperRppFile;
+    generateReaperRppFile = async function(downloadFromCloudToDisk = false) {
+      if (downloadFromCloudToDisk && localVsRootHandle && reaperTargetPayload && reaperTargetPayload.items) {
+        const savedMidis = (await dbGet("catalog", "midiAutomations")) || {};
+        for (let i = 0; i < reaperTargetPayload.items.length; i++) {
+          const it = reaperTargetPayload.items[i];
+          const info = getResolvedSongDetails(it);
+          const mObj = savedMidis[normalizeSongKey(info.musica)];
+          if (mObj && mObj.slidesTxt) {
+            const chosenRef = it.selectedFolderRef || "";
+            const driveFolder = vsFolders.find(f => f.folderRef === chosenRef);
+            const folderTitle = driveFolder ? driveFolder.nome : info.musica;
+            const safeFolderName = sanitizeFileSystemName(folderTitle, `Musica_${i + 1}`, "");
+            const safeTxtName = sanitizeFileSystemName(`${info.musica}_Holyrics.txt`, "Letra_Holyrics.txt", "txt");
+            try {
+              const songDirHandle = await localVsRootHandle.getDirectoryHandle(safeFolderName, { create: true });
+              const fHandle = await songDirHandle.getFileHandle(safeTxtName, { create: true });
+              const w = await fHandle.createWritable();
+              await w.write(new Blob([mObj.slidesTxt], { type: "text/plain;charset=utf-8" }));
+              await w.close();
+            } catch (eTxt) {}
+          }
+        }
+      }
+      return _baseReaperGenV5(downloadFromCloudToDisk);
+    };
+
+    // Aplica o Rebranding Oficial (Preto Ônix + Ouro Metálico + Nova Logo) e limpa duplicatas do DOM
+    function applyDoxaLuxuryRebrandingAndCleanup() {
+      const progressWraps = document.querySelectorAll("#reaper-progress-wrap");
+      if (progressWraps.length > 1) {
+        for (let i = 1; i < progressWraps.length; i++) progressWraps[i].remove();
+      }
+      document.querySelectorAll(".btn-interactive-chord + .btn-interactive-chord").forEach(el => el.remove());
+
+      if (!document.getElementById("doxa-v5-rebrand-styles")) {
+        const st = document.createElement("style");
+        st.id = "doxa-v5-rebrand-styles";
+        st.textContent = `
+          :root {
+            --doxa-black: #030305;
+            --doxa-card: #0c0d12;
+            --doxa-gold: #d4af37;
+          }
+          html, body { background-color: var(--doxa-black) !important; color: #f8fafc !important; }
+          header, #side-drawer, #mobile-bottom-nav {
+            background-color: rgba(4, 4, 7, 0.96) !important;
+            border-color: rgba(212, 175, 55, 0.22) !important;
+          }
+          .bg-slate-900, .bg-slate-900\\/95, .bg-slate-900\\/90, .bg-zinc-950 {
+            background-color: var(--doxa-card) !important;
+            border-color: rgba(212, 175, 55, 0.16) !important;
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.85) !important;
+          }
+          .bg-slate-800, .bg-slate-800\\/90, .bg-slate-800\\/80, .bg-slate-800\\/75, .bg-slate-800\\/70, .bg-slate-800\\/60 {
+            background-color: #13141c !important;
+            border-color: rgba(212, 175, 55, 0.15) !important;
+          }
+          input:focus, select:focus, textarea:focus {
+            outline: none !important;
+            border-color: var(--doxa-gold) !important;
+            box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.20) !important;
+          }
+          .bg-indigo-600 {
+            background: linear-gradient(135deg, #e5c158 0%, #c59b27 55%, #9b7419 100%) !important;
+            color: #050505 !important;
+            font-weight: 800 !important;
+            border: 1px solid rgba(255, 238, 170, 0.45) !important;
+            box-shadow: 0 4px 16px rgba(212, 175, 55, 0.25) !important;
+          }
+          .bg-indigo-800 { background-color: rgba(0, 0, 0, 0.35) !important; color: #fff !important; }
+          .text-indigo-400, .text-indigo-300, .text-indigo-200 { color: #e6c665 !important; }
+          .border-indigo-500\\/40, .border-indigo-500\\/30 { border-color: rgba(212, 175, 55, 0.35) !important; }
+          input[type="range"] { accent-color: var(--doxa-gold) !important; }
+          .custom-scroll::-webkit-scrollbar-track { background: #07070a !important; }
+          .custom-scroll::-webkit-scrollbar-thumb { background: #4a3b18 !important; border-radius: 9999px; }
+        `;
+        document.head.appendChild(st);
+      }
+
+      const landingImg = document.getElementById("landing-custom-logo");
+      const landingSvg = document.getElementById("landing-vector-logo");
+      if (landingImg) {
+        if (landingImg.parentElement) landingImg.parentElement.className = "relative w-72 h-56 sm:w-96 sm:h-64 flex items-center justify-center";
+        landingImg.onload = () => { landingImg.classList.remove("hidden"); if (landingSvg) landingSvg.classList.add("hidden"); };
+        landingImg.onerror = () => { if (landingImg.src !== DOXA_LOGO_FALLBACK_URL) landingImg.src = DOXA_LOGO_FALLBACK_URL; };
+        landingImg.src = DOXA_LOGO_PRIMARY_URL;
+        landingImg.className = "w-full h-full object-contain drop-shadow-[0_12px_35px_rgba(212,175,55,0.28)]";
+      }
+
+      const drawerLogoBox = document.querySelector("#side-drawer .w-9.h-9");
+      if (drawerLogoBox) {
+        drawerLogoBox.className = "w-10 h-10 rounded-xl bg-black border border-amber-500/40 flex items-center justify-center overflow-hidden p-0.5 shadow";
+        drawerLogoBox.innerHTML = `<img src="${DOXA_LOGO_PRIMARY_URL}" onerror="this.src='${DOXA_LOGO_FALLBACK_URL}'" alt="DOXA" class="w-full h-full object-contain" />`;
+      }
+    }
+
+    injectPadDriveLinkButton();
+    applyDoxaLuxuryRebrandingAndCleanup();
   </script>
 </body>
 </html>
