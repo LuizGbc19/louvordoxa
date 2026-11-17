@@ -3,8 +3,8 @@
   "short_name": "DOXA",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#05070e",
-  "theme_color": "#05070e",
+  "background_color": "#030305",
+  "theme_color": "#030305",
   "orientation": "portrait-primary",
   "icons": [
     {

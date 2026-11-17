@@ -776,17 +776,6 @@
           </div>
         </div>
 
-        <!-- BARRA DE PROGRESSO DE DOWNLOAD OFFLINE PARA O REAPER -->
-        <div id="reaper-progress-wrap" class="hidden bg-slate-950 border border-purple-500/40 rounded-xl p-3 space-y-1.5">
-          <div class="flex items-center justify-between text-[11px] font-bold text-purple-300">
-            <span id="reaper-progress-text">Baixando arquivos do VS...</span>
-            <span id="reaper-progress-pct">0%</span>
-          </div>
-          <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-            <div id="reaper-progress-bar" class="h-full bg-gradient-to-r from-purple-500 to-emerald-400 transition-all" style="width:0%"></div>
-          </div>
-        </div>
-
         <div id="reaper-export-status" class="hidden p-3 bg-slate-800 rounded-xl space-y-1 text-slate-300 max-h-44 overflow-y-auto custom-scroll"></div>
       </div>
 
@@ -1609,33 +1598,6 @@
       return "MP3";
     }
 
-    function classifyTrackSlotForReaper(fileName, folderName = "") {
-      if (/\.(mid|midi)$/i.test(fileName)) return "HOLYRICS_MIDI";
-      let clean = String(fileName).replace(/\.[a-z0-9]+$/i, "");
-      if (folderName && clean.toLowerCase().startsWith(folderName.toLowerCase())) {
-        clean = clean.slice(folderName.length);
-      }
-      const parts = clean.split(/[-–—_]+/).map(p => p.trim()).filter(Boolean);
-      const tail = parts.length > 0 ? parts[parts.length - 1] : clean;
-
-      const matchToken = (txt) => {
-        const n = txt.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, " ");
-        if (/\b(metronome|metronomo|click|bpm)\b/.test(n)) return "METRONOME";
-        if (/\b(guia|guide|cue|cues|regencia)\b/.test(n)) return "GUIA";
-        if (/\b(vocals|vocal|voz|vozes|back|backing|bgv|choir|coro)\b/.test(n)) return "VOCALS";
-        if (/\b(piano|rhodes|wurli)\b/.test(n)) return "PIANO";
-        if (/\b(keys|key|teclado|pad|pads|synth|organ|orgao)\b/.test(n)) return "KEYS";
-        if (/\b(drums|drum|bateria|batera|perc|percussao|kick|snare|hihat)\b/.test(n)) return "DRUMS";
-        if (/\b(bass|baixo|contrabaixo)\b/.test(n)) return "BASS";
-        if (/\b(strings|string|cordas|violino|cello|orquestra|brass|metais)\b/.test(n)) return "STRINGS";
-        if (/\b(guitar|guitars|guitarra|violao|acoustic|acustico|ag|eg|eg1|eg2|gtr|gt|lead|rhythm)\b/.test(n)) return "GUITAR";
-        if (/\b(others|other|outros|outro|loop|fx|efeito|sub|track)\b/.test(n)) return "OTHERS";
-        return null;
-      };
-
-      return matchToken(tail) || matchToken(clean) || "OTHERS";
-    }
-
     function cleanTitleForMatch(str) {
       return String(str || "")
         .toLowerCase()
@@ -1920,314 +1882,6 @@
       await generateReaperRppFile(true);
     }
 
-    async function generateReaperRppFile(downloadFromCloudToDisk = false) {
-      if (!reaperTargetPayload || !reaperTargetPayload.items.length) return;
-      const basePath = document.getElementById("reaper-base-path").value.trim().replace(/[\\/]+$/, "");
-      localStorage.setItem("doxa_reaper_base_path", basePath);
-      const routing = document.getElementById("reaper-routing-mode").value;
-      const fallbackSec = Math.max(120, Number(document.getElementById("reaper-slot-sec").value) || 270);
-      const autoStop = document.getElementById("reaper-auto-stop").checked;
-      const autoBpm = document.getElementById("reaper-auto-bpm").checked;
-
-      const statusBox = document.getElementById("reaper-export-status");
-      const btn = document.getElementById("btn-run-reaper-export");
-      const btnPack = document.getElementById("btn-download-reaper-pack");
-      const progWrap = document.getElementById("reaper-progress-wrap");
-      const progBar = document.getElementById("reaper-progress-bar");
-      const progTxt = document.getElementById("reaper-progress-text");
-      const progPct = document.getElementById("reaper-progress-pct");
-
-      statusBox.classList.remove("hidden");
-      btn.disabled = true; if (btnPack) btnPack.disabled = true;
-      statusBox.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1 text-purple-400"></i>A preparar faixas, a medir a duração real e a montar regiões...`;
-
-      try {
-        const trackLanes = REAPER_FIXED_SLOTS.map(s => Object.assign({ itemsRpp: [] }, s));
-        const getOrCreateLane = (slotId, usedInThisSong) => {
-          let count = (usedInThisSong[slotId] || 0) + 1;
-          usedInThisSong[slotId] = count;
-          if (count === 1) return trackLanes.find(l => l.id === slotId);
-          const extraId = `${slotId}_${count}`;
-          let extraLane = trackLanes.find(l => l.id === extraId);
-          if (!extraLane) {
-            const baseSlot = trackLanes.find(l => l.id === slotId);
-            const baseIdx = trackLanes.lastIndexOf(baseSlot);
-            extraLane = Object.assign({}, baseSlot, { id: extraId, name: `${baseSlot.name} ${count}`, itemsRpp: [] });
-            trackLanes.splice(baseIdx + 1, 0, extraLane);
-          }
-          return extraLane;
-        };
-
-        let markersRpp = "", tempoPoints = "", firstBpm = 120, cursorSec = 0, logHtml = "";
-        const regionColor = rgbToReaperNative(42, 157, 178);
-        const items = reaperTargetPayload.items;
-
-        for (let i = 0; i < items.length; i++) {
-          const rawIt = items[i];
-          const info = getResolvedSongDetails(rawIt);
-          const chosenRef = rawIt.selectedFolderRef || "";
-          const bpmNum = parseFloat(String(info.tempo || rawIt.tempo || "").replace(",", ".").replace(/[^0-9.]/g, "")) || 120;
-          let songLenSec = fallbackSec;
-          let songFiles = [];
-          let folderNameUsed = "";
-
-          if (chosenRef.startsWith("LOCAL::")) {
-            const localFolder = localVsSubfolders.find(f => f.folderRef === chosenRef);
-            if (localFolder) {
-              folderNameUsed = localFolder.nome;
-              progWrap?.classList.remove("hidden");
-              let maxDur = 0;
-
-              for (let fIdx = 0; fIdx < localFolder.files.length; fIdx++) {
-                const f = localFolder.files[fIdx];
-                const overallPct = Math.round((((i) + ((fIdx + 1) / localFolder.files.length)) / items.length) * 100);
-                if (progBar) progBar.style.width = `${overallPct}%`;
-                if (progPct) progPct.textContent = `${overallPct}%`;
-                if (progTxt) progTxt.textContent = `A ler do PC (${i + 1}/${items.length}): ${localFolder.nome} — ${f.name}...`;
-
-                let inlineMidiBlock = null;
-                try {
-                  const fileObj = await f.handle.getFile();
-                  if (/\.(mid|midi)$/i.test(f.name)) {
-                    const mBytes = new Uint8Array(await fileObj.arrayBuffer());
-                    inlineMidiBlock = parseStandardMidiBytesToReaperSource(mBytes, songLenSec, bpmNum);
-                  } else {
-                    const d = await measureBlobAudioDuration(fileObj);
-                    if (d > maxDur) maxDur = d;
-                  }
-                } catch (e) {}
-
-                songFiles.push({
-                  displayName: f.name,
-                  filePath: basePath ? `${basePath}\\${localFolder.nome}\\${f.relPath}` : `${localFolder.nome}\\${f.relPath}`,
-                  srcTag: getReaperSourceTagByFilename(f.name),
-                  slotId: classifyTrackSlotForReaper(f.name, localFolder.nome),
-                  inlineMidiBlock
-                });
-              }
-              if (maxDur > 15) songLenSec = Math.ceil(maxDur);
-            }
-          } else if (chosenRef) {
-            const driveFolder = vsFolders.find(f => f.folderRef === chosenRef);
-            if (driveFolder) {
-              folderNameUsed = driveFolder.nome;
-              let faixasData = await dbGet("catalog", "vsFolder_" + driveFolder.folderRef);
-              if (!faixasData || !faixasData.faixas || navigator.onLine) {
-                try {
-                  const r = await fetch(`${scriptUrl}?action=listarFaixasVs&folderRef=${encodeURIComponent(driveFolder.folderRef)}`);
-                  const fresh = await r.json();
-                  if (fresh && fresh.status === "ok") { faixasData = fresh; await dbPut("catalog", "vsFolder_" + driveFolder.folderRef, fresh); }
-                } catch (e) {}
-              }
-
-              const faixas = (faixasData && faixasData.faixas) || [];
-              const sep = (!basePath || basePath.includes("\\") || /^[a-zA-Z]:/.test(basePath)) ? "\\" : "/";
-
-              if (downloadFromCloudToDisk && localVsRootHandle && faixas.length > 0) {
-                progWrap?.classList.remove("hidden");
-                const safeFolderName = sanitizeFileSystemName(driveFolder.nome, `Musica_${i + 1}`, "");
-                let songDirHandle = null;
-                try {
-                  songDirHandle = await localVsRootHandle.getDirectoryHandle(safeFolderName, { create: true });
-                } catch (eDir) {}
-
-                let maxMeasuredSec = 0;
-
-                for (let fIdx = 0; fIdx < faixas.length; fIdx++) {
-                  const fx = faixas[fIdx];
-                  const defaultExt = fx.extensao || "m4a";
-                  const realName = sanitizeFileSystemName(fx.nomeArquivo || fx.nomeFaixa, `Faixa_${fIdx + 1}`, defaultExt);
-                  const overallPct = Math.round((((i) + ((fIdx + 1) / faixas.length)) / items.length) * 100);
-                  if (progBar) progBar.style.width = `${overallPct}%`;
-                  if (progPct) progPct.textContent = `${overallPct}%`;
-                  if (progTxt) progTxt.textContent = `Música ${i + 1}/${items.length} (${info.musica}): A transferir ${realName} (${fIdx + 1}/${faixas.length})...`;
-
-                  const rawAudio = await fetchTrackCachedOrNetwork(fx.audioRef, true);
-                  const fileBytes = base64ToUint8Array(rawAudio.base64);
-                  const fileBlob = new Blob([fileBytes], { type: rawAudio.mimeType || "audio/mp4" });
-
-                  let wroteToDisk = false;
-                  if (songDirHandle) {
-                    try {
-                      const fHandle = await songDirHandle.getFileHandle(realName, { create: true });
-                      const w = await fHandle.createWritable();
-                      await w.write(fileBlob);
-                      await w.close();
-                      wroteToDisk = true;
-                    } catch (eWrite) {}
-                  }
-
-                  let inlineMidiBlock = null;
-                  if (/\.(mid|midi)$/i.test(realName)) {
-                    inlineMidiBlock = parseStandardMidiBytesToReaperSource(fileBytes, fallbackSec, bpmNum);
-                  } else {
-                    const dur = await measureBlobAudioDuration(fileBlob);
-                    if (dur > maxMeasuredSec) maxMeasuredSec = dur;
-                  }
-
-                  const finalPath = wroteToDisk
-                    ? `${safeFolderName}\\${realName}`
-                    : (basePath ? `${basePath}${sep}${driveFolder.nome}${sep}${fx.nomeArquivo || realName}` : `${driveFolder.nome}${sep}${fx.nomeArquivo || realName}`);
-
-                  songFiles.push({
-                    displayName: realName,
-                    filePath: finalPath,
-                    srcTag: getReaperSourceTagByFilename(realName),
-                    slotId: classifyTrackSlotForReaper(realName, driveFolder.nome),
-                    inlineMidiBlock
-                  });
-                }
-                if (maxMeasuredSec > 15) songLenSec = Math.ceil(maxMeasuredSec);
-              } else {
-                const refAudioTrack = faixas.find(fx => !/\.(mid|midi)$/i.test(fx.nomeArquivo || ""));
-                if (refAudioTrack) {
-                  try {
-                    progWrap?.classList.remove("hidden");
-                    if (progTxt) progTxt.textContent = `A medir a duração real de: ${info.musica}...`;
-                    const pctVal = Math.round(((i + 0.5) / items.length) * 100);
-                    if (progBar) progBar.style.width = `${pctVal}%`;
-                    if (progPct) progPct.textContent = `${pctVal}%`;
-                    const rawRef = await fetchTrackCachedOrNetwork(refAudioTrack.audioRef, false);
-                    const refBlob = new Blob([base64ToUint8Array(rawRef.base64)], { type: rawRef.mimeType || "audio/mp4" });
-                    const realDur = await measureBlobAudioDuration(refBlob);
-                    if (realDur > 15) songLenSec = Math.ceil(realDur);
-                  } catch (e) {}
-                }
-
-                for (let fIdx = 0; fIdx < faixas.length; fIdx++) {
-                  const fx = faixas[fIdx];
-                  const realName = fx.nomeArquivo || `${fx.nomeFaixa || "Faixa_" + (fIdx + 1)}.m4a`;
-                  let inlineMidiBlock = null;
-                  if (/\.(mid|midi)$/i.test(realName)) {
-                    try {
-                      const rawMidi = await fetchTrackCachedOrNetwork(fx.audioRef, true);
-                      inlineMidiBlock = parseStandardMidiBytesToReaperSource(base64ToUint8Array(rawMidi.base64), songLenSec, bpmNum);
-                    } catch (e) {}
-                  }
-                  songFiles.push({
-                    displayName: realName,
-                    filePath: basePath ? `${basePath}${sep}${driveFolder.nome}${sep}${realName}` : `${driveFolder.nome}${sep}${realName}`,
-                    srcTag: getReaperSourceTagByFilename(realName),
-                    slotId: classifyTrackSlotForReaper(realName, driveFolder.nome),
-                    inlineMidiBlock
-                  });
-                }
-              }
-            }
-          }
-
-          const appMidi = customMidiMemory[normalizeSongKey(info.musica)];
-          const alreadyHasMidiInFolder = songFiles.some(sf => sf.slotId === "HOLYRICS_MIDI");
-          if (appMidi && appMidi.base64 && !alreadyHasMidiInFolder) {
-            const mBytes = base64ToUint8Array(appMidi.base64);
-            const inlineMidiBlock = parseStandardMidiBytesToReaperSource(mBytes, songLenSec, bpmNum);
-            if (inlineMidiBlock) {
-              songFiles.unshift({
-                displayName: `${info.musica}_Holyrics.mid`,
-                filePath: "",
-                srcTag: "MIDI",
-                slotId: "HOLYRICS_MIDI",
-                inlineMidiBlock
-              });
-            }
-          }
-
-          if (autoBpm && bpmNum >= 40 && bpmNum <= 240) {
-            if (i === 0) firstBpm = bpmNum;
-            tempoPoints += `    PT ${cursorSec.toFixed(6)} ${bpmNum} 1\n`;
-          }
-
-          const regionTitle = `${i + 1}. ${info.musica} (${info.tom})`.replace(/"/g, "'");
-          const endSec = cursorSec + songLenSec;
-          const GAP_ENTRE_MUSICAS_SEG = 20; // 20 segundos de silêncio entre cada música na timeline
-
-          markersRpp += `  MARKER ${i + 1} ${cursorSec.toFixed(6)} "${regionTitle}" 1 ${regionColor} 1 R\n`;
-          markersRpp += `  MARKER ${i + 1} ${endSec.toFixed(6)} "" 1\n`;
-
-          // Coloca o marcador !1016 (Stop) meio segundo após o fim da música, já dentro do silêncio
-          if (autoStop) {
-            markersRpp += `  MARKER ${100 + i} ${(endSec + 0.5).toFixed(6)} "!1016" 0 0 1 R\n`;
-          }
-
-          if (songFiles.length === 0) {
-            logHtml += `<div class="text-amber-300">⚠️ <strong>${info.musica}:</strong> Sem ficheiros associados (Região ${i + 1} criada com ${formatSeconds(songLenSec)})</div>`;
-          } else {
-            const usedSlotsInSong = {};
-            songFiles.forEach(sf => {
-              const lane = getOrCreateLane(sf.slotId, usedSlotsInSong);
-              const sourceBlock = sf.inlineMidiBlock
-                ? sf.inlineMidiBlock
-                : `      <SOURCE ${sf.srcTag}\n        FILE "${sf.filePath}"\n      >\n`;
-
-              lane.itemsRpp.push(
-                `    <ITEM\n` +
-                `      POSITION ${cursorSec.toFixed(6)}\n` +
-                `      LENGTH ${songLenSec.toFixed(6)}\n` +
-                `      LOOP 0\n` +
-                `      FADEIN 1 0.01 0 1 0 0 0\n` +
-                `      FADEOUT 1 0.05 0 1 0 0 0\n` +
-                `      NAME "${sf.displayName.replace(/"/g, "'")}"\n` +
-                sourceBlock +
-                `    >\n`
-              );
-            });
-            logHtml += `<div class="text-emerald-400">✓ <strong>Região ${i + 1} (${info.musica}):</strong> ${songFiles.length} faixas • Duração: <strong>${formatSeconds(songLenSec)}</strong> (+${GAP_ENTRE_MUSICAS_SEG}s de intervalo)</div>`;
-          }
-
-          // Avança o cursor para o fim da música + 20 segundos de espaço vazio antes da próxima
-          cursorSec = endSec + GAP_ENTRE_MUSICAS_SEG;
-        }
-
-        let tracksRpp = "";
-        trackLanes.forEach(lane => {
-          if (lane.optional && lane.itemsRpp.length === 0) return;
-          const peakCol = rgbToReaperNative(lane.r, lane.g, lane.b);
-          const panVal = (routing === "SPLIT_LR" && !lane.isMidi) ? (lane.isClickGuide ? -1 : 1) : 0;
-          const routingLines = (routing === "MULTI_OUT" && lane.isClickGuide)
-            ? `    MAINSEND 0 0\n    HWOUT 2 0 1 0 0 0 1 -1:U -1\n`
-            : `    MAINSEND 1 0\n`;
-
-          tracksRpp +=
-            `  <TRACK\n` +
-            `    NAME "${lane.name}"\n` +
-            `    PEAKCOL ${peakCol}\n` +
-            `    VOLPAN 1 ${panVal} -1 -1 1\n` +
-            `    MUTESOLO 0 0 0\n` +
-            routingLines +
-            lane.itemsRpp.join("") +
-            `  >\n`;
-        });
-
-        const tempoEnvBlock = tempoPoints ? `  <TEMPOENVEX\n${tempoPoints}  >\n` : "";
-        const rppContent = `<REAPER_PROJECT 0.1 "7.0" 1730000000\n  TEMPO ${firstBpm} 4 4\n${tempoEnvBlock}${markersRpp}${tracksRpp}>\n`;
-        const safeRppName = sanitizeFileSystemName(reaperTargetPayload.fileName, "Culto_DOXA.rpp", "rpp");
-
-        let savedDirectly = false;
-        if (localVsRootHandle) {
-          try {
-            const fileHandle = await localVsRootHandle.getFileHandle(safeRppName, { create: true });
-            const writable = await fileHandle.createWritable();
-            await writable.write(rppContent);
-            await writable.close();
-            savedDirectly = true;
-            statusBox.innerHTML = `<p class="font-bold text-emerald-300 mb-1">✅ Projeto guardado em "${localVsRootHandle.name}\\${safeRppName}"! Pronto a abrir 100% offline no Reaper.</p>${logHtml}`;
-          } catch (eSaveRpp) {}
-        }
-
-        if (!savedDirectly) {
-          const a = document.createElement("a");
-          a.href = URL.createObjectURL(new Blob([rppContent], { type: "application/octet-stream" }));
-          a.download = safeRppName;
-          a.click();
-          statusBox.innerHTML = `<p class="font-bold text-white mb-1">✅ Ficheiro "${safeRppName}" transferido com durações reais!</p>${logHtml}`;
-        }
-      } catch (e) {
-        statusBox.innerHTML = `<div class="text-rose-400">Erro ao gerar projeto: ${e.message || e}</div>`;
-      } finally {
-        progWrap?.classList.add("hidden");
-        btn.disabled = false; if (btnPack) btnPack.disabled = false;
-      }
-    }
 
     // WHATSAPP COM ENCURTADOR AUTOMÁTICO
     async function shortenUrlFast(longUrl) {
@@ -3902,53 +3556,6 @@
       _origRenderPalco();
       document.getElementById("stage-pro-toolbar")?.classList.remove("hidden");
 
-      const sel = document.getElementById("palco-select-repertorio");
-      const rep = repertorios.find(r => r.id === Number(sel?.value || selectedRepertorioId)) || findNextUpcomingRepertorio();
-      if (!rep) return;
-
-      const cards = document.querySelectorAll("#palco-content > div");
-      cards.forEach((card, i) => {
-        card.id = `stage-song-card-${i}`;
-        const it = (rep.itens || [])[i];
-        if (!it) return;
-        const info = getResolvedSongDetails(it);
-        const bpmVal = extractNumericBpm(info.tempo) || 120;
-        const safeTom = String(info.tom || "-").replace(/'/g, "\\'");
-
-        // Adiciona botões "⛶ Tela Cheia" e "⚡ Modo Cifra Club" na barra de botões da música
-        const btnRow = card.querySelector("div.flex.flex-wrap.items-center.gap-2.pt-1");
-        if (btnRow && !btnRow.querySelector(".btn-interactive-chord")) {
-          const btnFs = document.createElement("button");
-          btnFs.type = "button";
-          btnFs.onclick = () => openSongChordFullscreen(i);
-          btnFs.className = "px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow";
-          btnFs.innerHTML = `<i class="fa-solid fa-expand"></i><span>Tela Cheia</span>`;
-          btnRow.appendChild(btnFs);
-
-          const btnCc = document.createElement("button");
-          btnCc.type = "button";
-          btnCc.onclick = () => activateInteractiveChordMode(i, false);
-          btnCc.className = "btn-interactive-chord px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-extrabold flex items-center gap-1.5";
-          btnCc.innerHTML = `<i class="fa-solid fa-bolt"></i><span>Modo Interativo (Transpor Tom)</span>`;
-          btnRow.appendChild(btnCc);
-        }
-
-        const tomBoxes = card.querySelectorAll("span.text-2xl");
-        if (tomBoxes[0]) {
-          tomBoxes[0].id = `stage-tom-val-${i}`;
-          const parentBox = tomBoxes[0].parentElement;
-          if (parentBox && !parentBox.querySelector(".tom-shift-controls")) {
-            const ctrl = document.createElement("div");
-            ctrl.className = "tom-shift-controls flex items-center justify-center gap-1 mt-1.5 pt-1 border-t border-slate-700";
-            ctrl.innerHTML = `
-              <button type="button" onclick="shiftStageSongKey(${i}, '${safeTom}', -1)" class="w-7 h-6 rounded bg-slate-900 hover:bg-amber-500 hover:text-black text-slate-200 text-xs font-black" title="Baixar meio tom (-1) na cifra inteira">-</button>
-              <button type="button" onclick="startStageMetronomeAt(${bpmVal})" class="px-2 h-6 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-extrabold" title="Tocar Metrônomo neste BPM">🥁 ${bpmVal}</button>
-              <button type="button" onclick="shiftStageSongKey(${i}, '${safeTom}', 1)" class="w-7 h-6 rounded bg-slate-900 hover:bg-amber-500 hover:text-black text-slate-200 text-xs font-black" title="Subir meio tom (+1) na cifra inteira">+</button>
-            `;
-            parentBox.appendChild(ctrl);
-          }
-        }
-      });
     };
 
     function toggleStageAutoScroll() {
@@ -5163,120 +4770,6 @@
       });
     };
 
-    // Sintetiza o arquivo Guia.wav completo (Avisos Sonoros Distintos + Contagem "1, 2, 3, 4" 1 compasso antes de cada seção)
-    function buildSynthesizedGuideWavBytes(slidesList, bpm, totalDurationSec) {
-      const sampleRate = 22050;
-      const beatSec = 60 / (bpm || 120);
-      const maxSlideSec = slidesList.reduce((acc, s) => Math.max(acc, Number(s.timeSec) || 0), 0);
-      const durationSec = Math.max(totalDurationSec || 0, maxSlideSec + 8, 30);
-      const totalSamples = Math.ceil(durationSec * sampleRate);
-      const pcmFloat = new Float32Array(totalSamples);
-
-      // Função auxiliar para desenhar um tom/bipe limpo com envelope suave no buffer WAV
-      const addTone = (startSec, durSec, freqHz, endFreqHz, amp = 0.6) => {
-        if (startSec < 0 || startSec >= durationSec) return;
-        const startIdx = Math.floor(startSec * sampleRate);
-        const len = Math.floor(durSec * sampleRate);
-        for (let i = 0; i < len && (startIdx + i) < totalSamples; i++) {
-          const t = i / sampleRate;
-          const progress = i / len;
-          const curFreq = freqHz + (endFreqHz - freqHz) * progress;
-          const env = Math.sin(Math.min(1, progress * 8) * (Math.PI / 2)) * Math.pow(1 - progress, 1.6);
-          pcmFloat[startIdx + i] += Math.sin(2 * Math.PI * curFreq * t) * amp * env;
-        }
-      };
-
-      // Se houver espaço antes do primeiro slide, coloca uma contagem inicial de Intro no segundo 0
-      const cues = slidesList.filter(s => s.cueType && s.timeSec > 0);
-      if (cues.length === 0 && slidesList.length > 0) {
-        cues.push({ timeSec: slidesList[0].timeSec || (beatSec * 4), cueType: "INTRO" });
-      }
-
-      // Padrões melódicos de Guia (Cues inconfundíveis no fone + 4 tempos de contagem cravados no BPM)
-      const CUE_MOTIFS = {
-        INTRO:        [[523.25, 659.25], [659.25, 783.99]],         // Dó -> Mi -> Sol (Subida brilhante)
-        VERSO:        [[440, 440], [554.37, 554.37]],               // Lá -> Dó# (Suave)
-        PRE_REFRAO:   [[587.33, 698.46], [698.46, 880]],            // Ré -> Fá -> Lá (Tensão crescente)
-        REFRAO:       [[523.25, 783.99], [783.99, 1046.5]],         // Oitava forte de Refrão!
-        INSTRUMENTAL: [[659.25, 523.25], [783.99, 659.25]],         // Arpejo de Solo
-        PONTE:        [[493.88, 659.25], [659.25, 987.77]],         // Si -> Mi -> Si (Ponte)
-        SUBIR:        [[440, 880], [587.33, 1174.66]],              // Glissando ascendente ("Sobe!")
-        DESCE:        [[880, 440], [659.25, 329.63]],               // Glissando descendente ("Desce!")
-        FINAL:        [[1046.5, 523.25], [523.25, 261.63]]          // Cadência final
-      };
-
-      cues.forEach(cue => {
-        const enterSec = Number(cue.timeSec) || 0;
-        const countStartSec = enterSec - (4 * beatSec); // Exatamente 1 compasso (4 tempos) antes da seção entrar!
-
-        // 1. Toca o sinal melódico da Seção no tempo 1 da contagem (4 tempos antes da entrada)
-        const motif = CUE_MOTIFS[cue.cueType] || CUE_MOTIFS.VERSO;
-        if (countStartSec >= 0) {
-          addTone(countStartSec, 0.11, motif[0][0], motif[0][1], 0.65);
-          addTone(countStartSec + 0.12, 0.14, motif[1][0], motif[1][1], 0.70);
-        }
-
-        // 2. Contagem regressiva nos 4 tempos antes da entrada ("1, 2, 3, 4" -> Entra!)
-        for (let b = 0; b < 4; b++) {
-          const tickSec = countStartSec + (b * beatSec);
-          if (tickSec >= 0) {
-            // Tempo 1, 2, 3 e 4 (o 4º tempo é mais agudo avisando a virada de entrada)
-            const f = (b === 3) ? 1318.5 : (b === 0 ? 1046.5 : 880);
-            addTone(tickSec, 0.065, f, f * 0.92, 0.75);
-          }
-        }
-      });
-
-      // Codifica para WAV Mono 16-bit super leve
-      const dataSize = totalSamples * 2;
-      const buf = new ArrayBuffer(44 + dataSize);
-      const view = new DataView(buf);
-      const writeStr = (off, s) => { for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); };
-      writeStr(0, "RIFF"); view.setUint32(4, 36 + dataSize, true); writeStr(8, "WAVE");
-      writeStr(12, "fmt "); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
-      view.setUint32(24, sampleRate, true); view.setUint32(28, sampleRate * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true);
-      writeStr(36, "data"); view.setUint32(40, dataSize, true);
-      const pcm16 = new Int16Array(buf, 44);
-      for (let i = 0; i < totalSamples; i++) {
-        const s = Math.max(-1, Math.min(1, pcmFloat[i]));
-        pcm16[i] = s < 0 ? s * 32768 : s * 32767;
-      }
-      return new Uint8Array(buf);
-    }
-
-    async function downloadAndSaveAutoGuideWav() {
-      if (midiSlides.length === 0) {
-        alert("Gere os slides e marque os tempos primeiro para criar a faixa Guia.wav.");
-        return;
-      }
-      const bpm = Math.max(40, Math.min(240, Number(document.getElementById("midi-bpm-input")?.value) || 120));
-      const songTitle = midiStudioSong ? midiStudioSong.musica : (prompt("Nome da música para a faixa Guia:") || "Musica_DOXA");
-      const wavBytes = buildSynthesizedGuideWavBytes(midiSlides, bpm, 0);
-
-      // 1. Baixa o arquivo Guia.wav para o computador (pronto para jogar na pasta do Moises!)
-      const safeTitle = songTitle.replace(/[\\/:*?"<>|]/g, "");
-      const blob = new Blob([wavBytes], { type: "audio/wav" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `${safeTitle} - Guia.wav`;
-      a.click();
-
-      // 2. Salva na memória do aplicativo para incluir automaticamente na track 'Guia' do Reaper (.RPP)
-      const key = normalizeSongKey(songTitle);
-      const savedGuides = (await dbGet("catalog", "guideAutomations")) || {};
-      savedGuides[key] = {
-        musica: songTitle,
-        bpm,
-        wavBase64: uint8ArrayToBase64(wavBytes),
-        cues: midiSlides.filter(s => s.cueType).map(s => ({ cueType: s.cueType, timeSec: s.timeSec })),
-        updatedAt: Date.now()
-      };
-      await dbPut("catalog", "guideAutomations", savedGuides);
-      customGuideMemory = savedGuides;
-
-      alert(`✅ Faixa "${safeTitle} - Guia.wav" gerada e vinculada ao Reaper!\n\nQuando você clicar em "Baixar VS + MIDI Offline & Gerar .RPP", o aplicativo já salvará a Guia.wav dentro da pasta da música e colocará na track 'Guia' do Reaper automaticamente!`);
-    }
-
     // Prévia ao vivo com Voz em Português (Web Speech API) sincronizada com o relógio da aba MIDI!
     let guideVoicePreviewActive = false;
     let guideSpokenCuesSet = new Set();
@@ -5348,33 +4841,6 @@
       return _origOpenReaperModal(repId);
     };
 
-    const _origGenerateReaperRppFile = generateReaperRppFile;
-    generateReaperRppFile = async function(downloadFromCloudToDisk = false) {
-      const savedGuides = await dbGet("catalog", "guideAutomations");
-      if (savedGuides) customGuideMemory = savedGuides;
-
-      // Se o usuário pediu para baixar o pacote Offline para a pasta local, grava também as Guia.wav geradas dentro da subpasta de cada música!
-      if (downloadFromCloudToDisk && localVsRootHandle && reaperTargetPayload && reaperTargetPayload.items) {
-        for (let i = 0; i < reaperTargetPayload.items.length; i++) {
-          const it = reaperTargetPayload.items[i];
-          const info = getResolvedSongDetails(it);
-          const guideObj = customGuideMemory[normalizeSongKey(info.musica)];
-          const chosenRef = it.selectedFolderRef || "";
-          const driveFolder = vsFolders.find(f => f.folderRef === chosenRef);
-          if (guideObj && guideObj.wavBase64 && driveFolder) {
-            try {
-              const safeFolderName = sanitizeFileSystemName(driveFolder.nome, `Musica_${i + 1}`, "");
-              const songDirHandle = await localVsRootHandle.getDirectoryHandle(safeFolderName, { create: true });
-              const fHandle = await songDirHandle.getFileHandle("Guia.wav", { create: true });
-              const w = await fHandle.createWritable();
-              await w.write(new Blob([base64ToUint8Array(guideObj.wavBase64)], { type: "audio/wav" }));
-              await w.close();
-            } catch (e) {}
-          }
-        }
-      }
-      return _origGenerateReaperRppFile(downloadFromCloudToDisk);
-    };
 
     injectEtapa2UiElements();
 // ============================================================================
@@ -6528,17 +5994,6 @@
       return PAD_CHROMATIC_KEYS[idx];
     }
 
-    function getAllPadPacks() {
-      const driveMapped = padDrivePacks.map(dp => ({
-        id: "drive_" + dp.folderRef,
-        folderRef: dp.folderRef,
-        nome: "☁️ " + dp.nome,
-        rawName: dp.nome,
-        isBuiltin: false,
-        tons: dp.tons || {}
-      }));
-      return [...driveMapped, ...PAD_BUILTIN_PACKS];
-    }
 
     function ensurePadAudioGraph() {
       const ctx = ensureAudioContext();
@@ -6729,26 +6184,6 @@
       }
     }
 
-    async function syncPadPacksFromDrive(showAlert = true) {
-      if (!scriptUrl || !navigator.onLine) return;
-      const icon = document.getElementById("pad-sync-icon");
-      icon?.classList.add("fa-spin");
-      try {
-        const res = await fetch(`${scriptUrl}?action=listarPacksPads&t=${Date.now()}`);
-        const data = await res.json();
-        if (data && data.status === "ok" && Array.isArray(data.packs)) {
-          padDrivePacks = data.packs;
-          await dbPut("catalog", "padDrivePacks", padDrivePacks);
-          populatePadPackDropdowns();
-          updatePadUiState();
-          if (showAlert) {
-            alert(`Sincronizado com a pasta 'Pads' do Google Drive (${padDrivePacks.length} packs encontrados)!`);
-          }
-        }
-      } catch (e) {} finally {
-        icon?.classList.remove("fa-spin");
-      }
-    }
 
     async function saveCurrentPadPackOffline() {
       const pack = getAllPadPacks().find(p => p.id === padActivePackId);
@@ -7027,37 +6462,6 @@
     // ----------------------------------------------------------------------------
     // 11.2 GERADOR DE ARQUIVO WAV DE CONTINUOUS PAD + INJEÇÃO AUTOMÁTICA NO REAPER (.RPP)
     // ----------------------------------------------------------------------------
-    // Caso você escolha um Pack Nativo (ou falte o arquivo no Drive), gera um loop WAV perfeito de 12 segundos no tom da música!
-    function buildSynthesizedPadLoopWavBytes(noteKey, packObj) {
-      const sampleRate = 22050;
-      const durSec = 12; // 12 segundos em loop contínuo (super leve no disco e roda pelo tempo todo da música no Reaper com LOOP 1!)
-      const totalSamples = durSec * sampleRate;
-      const pcmL = new Float32Array(totalSamples);
-      const pcmR = new Float32Array(totalSamples);
-
-      const baseFreq = PAD_KEY_FREQS[resolvePadRootKeyFromSongTom(noteKey)] || 130.81;
-      const shimmer = (packObj && packObj.shimmer !== undefined) ? packObj.shimmer : 0.35;
-      // Frequências ajustadas para ciclo inteiro em 12s (zero clique no ponto de loop!)
-      const freqs = [baseFreq * 0.5, baseFreq, baseFreq * 1.5, baseFreq * 2.0, baseFreq * 2.5];
-      const amps  = [0.28, 0.24, 0.18, 0.12 * (0.5 + shimmer), 0.08 * shimmer];
-
-      for (let i = 0; i < totalSamples; i++) {
-        const t = i / sampleRate;
-        const lfoL = 1 + 0.08 * Math.sin((2 * Math.PI * t) / 6.0);
-        const lfoR = 1 + 0.08 * Math.cos((2 * Math.PI * t) / 6.0);
-        let sL = 0, sR = 0;
-        for (let h = 0; h < freqs.length; h++) {
-          const f = Math.round(freqs[h] * durSec) / durSec;
-          sL += Math.sin(2 * Math.PI * f * t + h * 0.7) * amps[h];
-          sR += Math.sin(2 * Math.PI * f * t + h * 1.3) * amps[h];
-        }
-        pcmL[i] = Math.tanh(sL * lfoL * 0.85);
-        pcmR[i] = Math.tanh(sR * lfoR * 0.85);
-      }
-
-      const wavBlob = encodeStereoWav16(pcmL, pcmR, sampleRate);
-      return wavBlob;
-    }
 
     // Adiciona o slot "CONTINUOUS_PAD" na lista fixa de tracks do Reaper para sair no canal da Banda (R no Split L/R)
     if (!REAPER_FIXED_SLOTS.some(s => s.id === "CONTINUOUS_PAD")) {
@@ -7067,62 +6471,6 @@
       else REAPER_FIXED_SLOTS.push(padSlot);
     }
 
-    const _origClassifyTrackSlotPad = classifyTrackSlotForReaper;
-    classifyTrackSlotForReaper = function(fileName, folderName = "") {
-      if (/\bcontinuous[_\s-]*pad\b/i.test(fileName)) return "CONTINUOUS_PAD";
-      return _origClassifyTrackSlotPad(fileName, folderName);
-    };
-
-    // Intercepta a geração do Reaper (.RPP) para baixar/incluir automaticamente o Continuous Pad no Tom de cada música!
-    const _prevGenerateReaperRppWithPads = generateReaperRppFile;
-    generateReaperRppFile = async function(downloadFromCloudToDisk = false) {
-      const includePad = document.getElementById("reaper-include-continuous-pad")?.checked;
-      const chosenPackId = document.getElementById("reaper-pad-pack-select")?.value || padActivePackId;
-      const pack = getAllPadPacks().find(p => p.id === chosenPackId) || PAD_BUILTIN_PACKS[0];
-
-      // Se o usuário marcou "Baixar VS + MIDI Offline & Gerar .RPP" e ativou o Continuous Pad, salva o arquivo do Pad dentro da subpasta de cada música!
-      if (includePad && downloadFromCloudToDisk && localVsRootHandle && reaperTargetPayload && reaperTargetPayload.items) {
-        const progTxt = document.getElementById("reaper-progress-text");
-        const progWrap = document.getElementById("reaper-progress-wrap");
-        progWrap?.classList.remove("hidden");
-
-        for (let i = 0; i < reaperTargetPayload.items.length; i++) {
-          const it = reaperTargetPayload.items[i];
-          const info = getResolvedSongDetails(it);
-          const padNote = resolvePadRootKeyFromSongTom(info.tom);
-          const chosenRef = it.selectedFolderRef || "";
-          const driveFolder = vsFolders.find(f => f.folderRef === chosenRef);
-          const folderTitle = driveFolder ? driveFolder.nome : info.musica;
-          const safeFolderName = sanitizeFileSystemName(folderTitle, `Musica_${i + 1}`, "");
-
-          try {
-            const songDirHandle = await localVsRootHandle.getDirectoryHandle(safeFolderName, { create: true });
-            if (progTxt) progTxt.textContent = `Preparando Continuous Pad em ${padNote} (${info.tom}) para: ${info.musica}...`;
-
-            if (!pack.isBuiltin && pack.tons && pack.tons[padNote]) {
-              const toneInfo = pack.tons[padNote];
-              const rawPad = await fetchTrackCachedOrNetwork(toneInfo.audioRef, true);
-              const ext = toneInfo.extensao || "mp3";
-              const padFileName = `Continuous_Pad_${padNote.replace("#", "s")}.${ext}`;
-              const fHandle = await songDirHandle.getFileHandle(padFileName, { create: true });
-              const w = await fHandle.createWritable();
-              await w.write(new Blob([base64ToUint8Array(rawPad.base64)], { type: rawPad.mimeType || "audio/mpeg" }));
-              await w.close();
-            } else {
-              const wavBlob = buildSynthesizedPadLoopWavBytes(padNote, pack);
-              const padFileName = `Continuous_Pad_${padNote.replace("#", "s")}.wav`;
-              const fHandle = await songDirHandle.getFileHandle(padFileName, { create: true });
-              const w = await fHandle.createWritable();
-              await w.write(wavBlob);
-              await w.close();
-            }
-          } catch (ePadDisk) {}
-        }
-      }
-
-      // Executa o gerador original do .RPP
-      await _prevGenerateReaperRppWithPads(downloadFromCloudToDisk);
-    };
 
     // Inicializa os packs salvos e injeta a aba + controles flutuantes
     dbGet("catalog", "padDrivePacks").then(saved => {
@@ -7137,24 +6485,6 @@
     // ============================================================================
 
     // Monta o conteúdo final em texto puro (separado por linha em branco dupla) a partir dos slides editados
-    function buildHolyricsSlidesTxtContent(keepInstrumentalLabel = false) {
-      if (Array.isArray(midiSlides) && midiSlides.length > 0) {
-        const blocks = midiSlides.map(sl => {
-          const raw = String(sl.text || "").trim();
-          // Se for um slide instrumental, garante que o bloco exista no Holyrics para não deslocar o número dos slides seguintes no MIDI!
-          if (/^\[\s*instrumental\s*\]$/i.test(raw) && !keepInstrumentalLabel) {
-            return "."; // Ponto discreto ou slide de respiro para manter a contagem exata de slides no Holyrics
-          }
-          return raw;
-        }).filter(Boolean);
-        return blocks.join("\r\n\r\n");
-      }
-
-      // Fallback caso o usuário clique antes de gerar a lista da direita
-      const rawTa = (document.getElementById("midi-raw-lyrics")?.value || "").trim();
-      return rawTa.replace(/\r?\n/g, "\r\n");
-    }
-
     // Faz o download imediato do arquivo .TXT pronto para importar/copiar no Holyrics
     function downloadHolyricsSlidesTxtFile() {
       const txtContent = buildHolyricsSlidesTxtTxtWithHeader(false);
@@ -7246,32 +6576,6 @@
     };
 
     // Quando baixar o pacote do Reaper (.RPP) para a pasta local do PC, já salva o arquivo _Holyrics.txt na pasta da música!
-    const _prevGenerateReaperRppWithTxt = generateReaperRppFile;
-    generateReaperRppFile = async function(downloadFromCloudToDisk = false) {
-      if (downloadFromCloudToDisk && localVsRootHandle && reaperTargetPayload && reaperTargetPayload.items) {
-        const savedMidis = (await dbGet("catalog", "midiAutomations")) || {};
-        for (let i = 0; i < reaperTargetPayload.items.length; i++) {
-          const it = reaperTargetPayload.items[i];
-          const info = getResolvedSongDetails(it);
-          const mObj = savedMidis[normalizeSongKey(info.musica)];
-          if (mObj && mObj.slidesTxt) {
-            const chosenRef = it.selectedFolderRef || "";
-            const driveFolder = vsFolders.find(f => f.folderRef === chosenRef);
-            const folderTitle = driveFolder ? driveFolder.nome : info.musica;
-            const safeFolderName = sanitizeFileSystemName(folderTitle, `Musica_${i + 1}`, "");
-            const safeTxtName = sanitizeFileSystemName(`${info.musica}_Holyrics.txt`, "Letra_Holyrics.txt", "txt");
-            try {
-              const songDirHandle = await localVsRootHandle.getDirectoryHandle(safeFolderName, { create: true });
-              const fHandle = await songDirHandle.getFileHandle(safeTxtName, { create: true });
-              const w = await fHandle.createWritable();
-              await w.write(new Blob([mObj.slidesTxt], { type: "text/plain;charset=utf-8" }));
-              await w.close();
-            } catch (eTxt) {}
-          }
-        }
-      }
-      return _prevGenerateReaperRppWithTxt(downloadFromCloudToDisk);
-    };
 
     injectHolyricsTxtExportButtons();
 // ============================================================================
@@ -8053,6 +7357,203 @@
 
     ensurePadsDomAndFloatingWidget();
     injectLocalPcPadButton();
+    // ============================================================================
+    // 15. CONSOLIDAÇÃO FINAL DOXA v5.0 (SEM DUPLICATAS):
+    //     - LOGO OFICIAL DOURADA EMBUTIDA EM BASE64 (CARREGA 100% OFFLINE E ONLINE)
+    //     - CONEXÃO DIRETA DA PASTA PADS DO GOOGLE DRIVE + DIAGNÓSTICO AUTOMÁTICO
+    //     - SALVAMENTO DO .TXT HOLYRICS NO PACOTE DO REAPER (.RPP)
+    //     - REBRANDING LUXO PRETO ÔNIX (#030305) & OURO METÁLICO (#D4AF37)
+    // ============================================================================
+    const DOXA_LOGO_EMBEDDED_URI = "data:image/webp;base64,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";
+    const DOXA_LOGO_DRIVE_ID = "1XP3Mv54mNbDhzPbIzwjJPMv8PlOMjxFv";
+    const DOXA_LOGO_PRIMARY_URL = `https://drive.google.com/thumbnail?id=${DOXA_LOGO_DRIVE_ID}&sz=w1200`;
+
+    function extractDriveFolderIdClient(urlOrId) {
+      if (!urlOrId) return "";
+      const s = String(urlOrId).trim();
+      const m = s.match(/\/folders\/([a-zA-Z0-9_-]{15,})/) || s.match(/[?&]id=([a-zA-Z0-9_-]{15,})/);
+      if (m && m[1]) return m[1];
+      if (/^[a-zA-Z0-9_-]{18,}$/.test(s)) return s;
+      return "";
+    }
+
+    async function promptAndSetPadDriveFolderLink() {
+      const current = localStorage.getItem("doxa_pads_folder_link") || "https://drive.google.com/drive/folders/1j1XhrSdZ-3R7HxGz1EBDhrDfOf_igsnf";
+      const novo = prompt("Cole aqui o Link (ou ID) da sua pasta de PADS do Google Drive:", current);
+      if (novo === null) return;
+      localStorage.setItem("doxa_pads_folder_link", novo.trim());
+      await syncPadPacksFromDrive(true);
+    }
+
+    syncPadPacksFromDrive = async function(showAlert = true) {
+      if (!scriptUrl || !navigator.onLine) return;
+      const icon = document.getElementById("pad-sync-icon");
+      icon?.classList.add("fa-spin");
+      try {
+        const savedLink = localStorage.getItem("doxa_pads_folder_link") || "https://drive.google.com/drive/folders/1j1XhrSdZ-3R7HxGz1EBDhrDfOf_igsnf";
+        const folderIdParam = extractDriveFolderIdClient(savedLink);
+        const queryUrl = `${scriptUrl}?action=listarPacksPads&folderId=${encodeURIComponent(folderIdParam)}&t=${Date.now()}`;
+        const res = await fetch(queryUrl);
+        const data = await res.json();
+
+        if (data && Array.isArray(data.songs) && data.packs === undefined) {
+          if (showAlert) {
+            alert("⚠️ O seu Google Apps Script (Código.gs) ainda está com o erro da chave '}' ou não foi publicado em Nova Versão!\n\nSubstitua pelo arquivo Código.gs corrigido e vá em:\nImplantar -> Gerenciar implantações -> Editar (Lápis) -> Nova versão -> Implantar.");
+          }
+          return;
+        }
+
+        if (data && data.status === "ok" && Array.isArray(data.packs)) {
+          padDrivePacks = data.packs;
+          await dbPut("catalog", "padDrivePacks", padDrivePacks);
+          if (padDrivePacks.length > 0) {
+            padActivePackId = "drive_" + padDrivePacks[0].folderRef;
+          }
+          populatePadPackDropdowns();
+          updatePadUiState();
+          if (showAlert) {
+            if (padDrivePacks.length > 0) {
+              alert(`✅ Sucesso! ${padDrivePacks.length} Pack(s) de Pads carregados da pasta "${data.folderName || 'Pads'}" do seu Google Drive!`);
+            } else {
+              alert(`A pasta "${data.folderName || 'Pads'}" foi aberta no Drive (${data.debugFilesCount || 0} arquivos vistos), mas nenhum tinha nome de nota musical (C, C#, D, Eb... ou Dó, Ré, Mi).\n\nArquivos vistos: ${(data.debugSample || []).join(", ") || "Nenhum arquivo de áudio"}`);
+            }
+          }
+        } else if (data && data.status === "error" && showAlert) {
+          alert("Erro retornado pelo Drive: " + data.message);
+        }
+      } catch (e) {
+        if (showAlert) alert("Falha ao conectar com a pasta Pads do Drive: " + (e.message || e));
+      } finally {
+        icon?.classList.remove("fa-spin");
+      }
+    };
+
+    function injectPadDriveLinkButton() {
+      const syncBtn = document.querySelector("#view-pads button[onclick*='syncPadPacksFromDrive']");
+      if (syncBtn && !document.getElementById("btn-set-pad-drive-link")) {
+        const btnLink = document.createElement("button");
+        btnLink.type = "button";
+        btnLink.id = "btn-set-pad-drive-link";
+        btnLink.onclick = () => promptAndSetPadDriveFolderLink();
+        btnLink.className = "px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-amber-500/40 text-amber-300 text-xs font-extrabold flex items-center gap-1.5";
+        btnLink.innerHTML = `<i class="fa-solid fa-link"></i><span>Vincular Link da Pasta Pads</span>`;
+        syncBtn.insertAdjacentElement("beforebegin", btnLink);
+      }
+    }
+
+    const _baseReaperGenV5 = generateReaperRppFile;
+    generateReaperRppFile = async function(downloadFromCloudToDisk = false) {
+      if (downloadFromCloudToDisk && localVsRootHandle && reaperTargetPayload && reaperTargetPayload.items) {
+        const savedMidis = (await dbGet("catalog", "midiAutomations")) || {};
+        for (let i = 0; i < reaperTargetPayload.items.length; i++) {
+          const it = reaperTargetPayload.items[i];
+          const info = getResolvedSongDetails(it);
+          const mObj = savedMidis[normalizeSongKey(info.musica)];
+          if (mObj && mObj.slidesTxt) {
+            const chosenRef = it.selectedFolderRef || "";
+            const driveFolder = vsFolders.find(f => f.folderRef === chosenRef);
+            const folderTitle = driveFolder ? driveFolder.nome : info.musica;
+            const safeFolderName = sanitizeFileSystemName(folderTitle, `Musica_${i + 1}`, "");
+            const safeTxtName = sanitizeFileSystemName(`${info.musica}_Holyrics.txt`, "Letra_Holyrics.txt", "txt");
+            try {
+              const songDirHandle = await localVsRootHandle.getDirectoryHandle(safeFolderName, { create: true });
+              const fHandle = await songDirHandle.getFileHandle(safeTxtName, { create: true });
+              const w = await fHandle.createWritable();
+              await w.write(new Blob([mObj.slidesTxt], { type: "text/plain;charset=utf-8" }));
+              await w.close();
+            } catch (eTxt) {}
+          }
+        }
+      }
+      return _baseReaperGenV5(downloadFromCloudToDisk);
+    };
+
+    function applyDoxaLuxuryRebrandingAndCleanup() {
+      const progressWraps = document.querySelectorAll("#reaper-progress-wrap");
+      if (progressWraps.length > 1) {
+        for (let i = 1; i < progressWraps.length; i++) progressWraps[i].remove();
+      }
+      document.querySelectorAll(".btn-interactive-chord + .btn-interactive-chord").forEach(el => el.remove());
+
+      if (!document.getElementById("doxa-v5-rebrand-styles")) {
+        const st = document.createElement("style");
+        st.id = "doxa-v5-rebrand-styles";
+        st.textContent = `
+          :root {
+            --doxa-black: #030305;
+            --doxa-card: #0b0c10;
+            --doxa-gold: #d4af37;
+          }
+          html, body { background-color: var(--doxa-black) !important; color: #f8fafc !important; }
+          header, #side-drawer, #mobile-bottom-nav {
+            background-color: rgba(4, 4, 7, 0.96) !important;
+            border-color: rgba(212, 175, 55, 0.24) !important;
+          }
+          .bg-slate-900, .bg-slate-900\\/95, .bg-slate-900\\/90, .bg-zinc-950 {
+            background-color: var(--doxa-card) !important;
+            border-color: rgba(212, 175, 55, 0.18) !important;
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.85) !important;
+          }
+          .bg-slate-800, .bg-slate-800\\/90, .bg-slate-800\\/80, .bg-slate-800\\/75, .bg-slate-800\\/70, .bg-slate-800\\/60 {
+            background-color: #12131a !important;
+            border-color: rgba(212, 175, 55, 0.15) !important;
+          }
+          input:focus, select:focus, textarea:focus {
+            outline: none !important;
+            border-color: var(--doxa-gold) !important;
+            box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.22) !important;
+          }
+          .bg-indigo-600 {
+            background: linear-gradient(135deg, #f0d078 0%, #d4af37 52%, #9a741c 100%) !important;
+            color: #050505 !important;
+            font-weight: 800 !important;
+            border: 1px solid rgba(255, 238, 170, 0.5) !important;
+            box-shadow: 0 4px 18px rgba(212, 175, 55, 0.28) !important;
+          }
+          .bg-indigo-600:hover { filter: brightness(1.08) !important; }
+          .bg-indigo-800 { background-color: rgba(0, 0, 0, 0.4) !important; color: #fff !important; }
+          .text-indigo-400, .text-indigo-300, .text-indigo-200 { color: #e8c86b !important; }
+          .border-indigo-500\\/40, .border-indigo-500\\/30 { border-color: rgba(212, 175, 55, 0.35) !important; }
+          input[type="range"] { accent-color: var(--doxa-gold) !important; }
+          .custom-scroll::-webkit-scrollbar-track { background: #07070a !important; }
+          .custom-scroll::-webkit-scrollbar-thumb { background: #4a3b18 !important; border-radius: 9999px; }
+        `;
+        document.head.appendChild(st);
+      }
+
+      const landingImg = document.getElementById("landing-custom-logo");
+      const landingSvg = document.getElementById("landing-vector-logo");
+      if (landingImg) {
+        if (landingImg.parentElement) {
+          landingImg.parentElement.className = "relative w-72 h-56 sm:w-96 sm:h-64 flex items-center justify-center";
+        }
+        landingImg.src = DOXA_LOGO_EMBEDDED_URI;
+        landingImg.classList.remove("hidden");
+        if (landingSvg) landingSvg.classList.add("hidden");
+        landingImg.className = "w-full h-full object-contain drop-shadow-[0_12px_35px_rgba(212,175,55,0.32)]";
+      }
+
+      const enterBtn = document.querySelector("#landing-screen button[onclick='enterApplication()']");
+      if (enterBtn) {
+        enterBtn.className = "w-full py-3.5 px-6 rounded-2xl bg-indigo-600 text-black font-black text-sm sm:text-base tracking-wider uppercase shadow-2xl flex items-center justify-center gap-3 transition transform active:scale-95";
+      }
+
+      const drawerLogoBox = document.querySelector("#side-drawer .w-9.h-9, #side-drawer .w-10.h-10");
+      if (drawerLogoBox) {
+        drawerLogoBox.className = "w-10 h-10 rounded-xl bg-black border border-amber-500/40 flex items-center justify-center overflow-hidden p-0.5 shadow";
+        drawerLogoBox.innerHTML = `<img src="${DOXA_LOGO_EMBEDDED_URI}" alt="DOXA" class="w-full h-full object-contain" />`;
+      }
+
+      const themeMeta = document.querySelector("meta[name='theme-color']");
+      if (themeMeta) themeMeta.setAttribute("content", "#030305");
+    }
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.update()));
+    }
+
+    injectPadDriveLinkButton();
+    applyDoxaLuxuryRebrandingAndCleanup();
   </script>
 </body>
 </html>

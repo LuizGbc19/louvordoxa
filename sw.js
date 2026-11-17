@@ -1,13 +1,9 @@
-const CACHE_NAME = "doxa-pwa-v2.5";
+const CACHE_NAME = "doxa-pwa-v5.0";
 const ASSETS = [
   "./",
   "./index.html",
-  "./manifest.json",
-  "https://cdn.tailwindcss.com",
-  "https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js",
-  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
-  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",
-  "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+  "./Logo.png",
+  "./manifest.json"
 ];
 
 self.addEventListener("install", (e) => {
