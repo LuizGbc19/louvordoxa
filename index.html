@@ -1200,7 +1200,7 @@
           if (data && data.status === "ok") { faixasData = data; await dbPut("catalog", "vsFolder_" + folderRef, data); }
         }
         if (faixasData && Array.isArray(faixasData.faixas)) {
-          activeVsTracks = faixasData.faixas;
+          activeVsTracks = faixasData.faixas.filter(t => !t.isMidi && !/\.(mid|midi)$/i.test(t.nomeArquivo || "") && t.categoria !== "Automação MIDI");
           await refreshOfflineKeysCache();
           activeVsTracks.forEach(t => {
             const defPan = (t.categoria === "Click" || t.categoria === "Guia") ? "L" : "R";
@@ -1306,7 +1306,7 @@
       ensureAudioContext();
       const wrap = document.getElementById("vs-loading-bar-wrap"), bar = document.getElementById("vs-loading-bar"), txt = document.getElementById("vs-loading-text"), pct = document.getElementById("vs-loading-percent");
       wrap.classList.remove("hidden");
-      const pending = activeVsTracks.filter(t => !vsTracksState[t.audioRef].loaded);
+      const pending = activeVsTracks.filter(t => !t.isMidi && !/\.(mid|midi)$/i.test(t.nomeArquivo || "") && !vsTracksState[t.audioRef].loaded);
       const total = pending.length; let done = 0;
       if (total > 0) {
         bar.style.width = "15%"; pct.textContent = `0/${total}`;
@@ -1435,6 +1435,7 @@
     async function generateIosSingleMix() {
       const anySolo = Object.values(vsTracksState).some(s => s.solo);
       const selectedTracks = activeVsTracks.filter(t => {
+        if (t.isMidi || /\.(mid|midi)$/i.test(t.nomeArquivo || "")) return false;
         const st = vsTracksState[t.audioRef];
         return st && !st.muted && (!anySolo || st.solo) && st.volume > 0;
       });
@@ -6813,6 +6814,7 @@
                 } catch (e) {}
               }
               const faixas = (faixasData && faixasData.faixas) || [];
+              const outrosArquivos = (faixasData && faixasData.outrosArquivos) || [];
 
               if (downloadFromCloudToDisk && localVsRootHandle) {
                 const safeFolderName = sanitizeFileSystemName(driveFolder.nome, `Musica_${i + 1}`, "");
@@ -6822,13 +6824,16 @@
                 } catch (eDir) {}
 
                 let maxMeasuredSec = 0;
+                const totalFilesInFolder = Math.max(1, faixas.length + outrosArquivos.length);
+                let completedInFolder = 0;
                 progWrap?.classList.remove("hidden");
 
                 for (let fIdx = 0; fIdx < faixas.length; fIdx++) {
                   const fx = faixas[fIdx];
                   const defaultExt = fx.extensao || "m4a";
                   const realName = sanitizeFileSystemName(fx.nomeArquivo || fx.nomeFaixa, `Faixa_${fIdx + 1}`, defaultExt);
-                  const overallPct = Math.round((((i) + ((fIdx + 1) / faixas.length)) / items.length) * 100);
+                  completedInFolder++;
+                  const overallPct = Math.round((((i) + (completedInFolder / totalFilesInFolder)) / items.length) * 100);
                   if (progBar) progBar.style.width = `${overallPct}%`;
                   if (progPct) progPct.textContent = `${overallPct}%`;
                   if (progTxt) progTxt.textContent = `Baixando (${i + 1}/${items.length}): ${realName}...`;
@@ -6867,6 +6872,30 @@
                     slotId: classifyTrackSlotForReaper(realName, driveFolder.nome),
                     inlineMidiBlock
                   });
+                }
+
+                // Baixa TODOS os demais arquivos da pasta da música (TXT, PDF, letras, imagens, etc.) sem adicioná-los como tracks no .RPP
+                if (songDirHandle && outrosArquivos.length > 0) {
+                  for (let eIdx = 0; eIdx < outrosArquivos.length; eIdx++) {
+                    const extra = outrosArquivos[eIdx];
+                    const extraExt = extra.extensao || "";
+                    const extraName = sanitizeFileSystemName(extra.nomeArquivo, `Arquivo_${eIdx + 1}`, extraExt);
+                    completedInFolder++;
+                    const overallPct = Math.round((((i) + (completedInFolder / totalFilesInFolder)) / items.length) * 100);
+                    if (progBar) progBar.style.width = `${overallPct}%`;
+                    if (progPct) progPct.textContent = `${overallPct}%`;
+                    if (progTxt) progTxt.textContent = `Baixando arquivo extra (${i + 1}/${items.length}): ${extraName}...`;
+
+                    try {
+                      const rawExtra = await fetchTrackCachedOrNetwork(extra.audioRef, false);
+                      const extraBytes = base64ToUint8Array(rawExtra.base64);
+                      const extraBlob = new Blob([extraBytes], { type: rawExtra.mimeType || extra.mimeType || "application/octet-stream" });
+                      const fHandle = await songDirHandle.getFileHandle(extraName, { create: true });
+                      const w = await fHandle.createWritable();
+                      await w.write(extraBlob);
+                      await w.close();
+                    } catch (eExtra) {}
+                  }
                 }
                 if (maxMeasuredSec > 15) songLenSec = Math.ceil(maxMeasuredSec);
               } else {
