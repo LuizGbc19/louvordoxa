@@ -3,42 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#05070e" />
+  <meta name="theme-color" content="#030305" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DOXA" />
   <title>DOXA — Equipe de Louvor e Adoração</title>
+  <link rel="manifest" href="./manifest.json?v=5.3" />
+  <link rel="icon" type="image/png" sizes="512x512" href="./Logo.png?v=5.3" />
+  <link rel="apple-touch-icon" sizes="512x512" href="./Logo.png?v=5.3" />
   <script>
-    (function() {
-      try {
-        var c = document.createElement("canvas"); c.width = 512; c.height = 512;
-        var ctx = c.getContext("2d");
-        ctx.fillStyle = "#05070e"; ctx.fillRect(0, 0, 512, 512);
-        ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 18;
-        ctx.beginPath(); ctx.arc(256, 210, 135, 0.2 * Math.PI, 0.8 * Math.PI, true); ctx.stroke();
-        ctx.lineWidth = 12;
-        ctx.beginPath(); ctx.arc(256, 210, 152, 0.25 * Math.PI, 0.75 * Math.PI, true); ctx.stroke();
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(242, 110, 28, 195); ctx.fillRect(190, 165, 132, 26);
-        ctx.fillStyle = "#05070e"; ctx.fillRect(60, 320, 392, 120);
-        ctx.fillStyle = "#ffffff"; ctx.textAlign = "center";
-        ctx.font = "900 96px Montserrat, Arial, sans-serif"; ctx.fillText("DOXA", 256, 405);
-        ctx.font = "700 20px Montserrat, Arial, sans-serif"; ctx.fillText("LOUVOR E ADORAÇÃO", 256, 442);
-        var pngUrl = c.toDataURL("image/png");
-        window.__DOXA_ICON_PNG__ = pngUrl;
-        var aIcon = document.createElement("link"); aIcon.rel = "apple-touch-icon"; aIcon.href = pngUrl; document.head.appendChild(aIcon);
-        var fIcon = document.createElement("link"); fIcon.rel = "icon"; fIcon.type = "image/png"; fIcon.href = pngUrl; document.head.appendChild(fIcon);
-        var mObj = {
-          name: "DOXA — Equipe de Louvor e Adoração", short_name: "DOXA",
-          start_url: window.location.origin + window.location.pathname, display: "standalone",
-          background_color: "#05070e", theme_color: "#05070e", orientation: "portrait-primary",
-          icons: [{ src: pngUrl, sizes: "512x512", type: "image/png", purpose: "any maskable" }]
-        };
-        var mLink = document.createElement("link"); mLink.rel = "manifest";
-        mLink.href = URL.createObjectURL(new Blob([JSON.stringify(mObj)], { type: "application/manifest+json" }));
-        document.head.appendChild(mLink);
-      } catch (e) {}
-    })();
+    window.__DOXA_ICON_PNG__ = "./Logo.png";
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function() {
+        navigator.serviceWorker.register("./sw.js").catch(function() {});
+      });
+    }
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
@@ -1570,18 +1549,44 @@
     let localVsSubfolders = [];
     let customMidiMemory = {}; // chaveMusica -> { bpm, slides, midiBytes, base64 }
 
+    const REAPER_FOLDER_GROUPS = {
+      BATERIA:  { name: "BATERIA",                  r: 217, g: 145, b: 42  },
+      TRASTES:  { name: "INSTRUMENTOS COM TRASTES", r: 192, g: 102, b: 74  },
+      TECLADOS: { name: "TECLADOS",                 r: 146, g: 112, b: 214 }
+    };
+
     const REAPER_FIXED_SLOTS = [
-      { id: "HOLYRICS_MIDI", name: "Holyrics MIDI", r: 0,   g: 205, b: 255, isClickGuide: false, isMidi: true, optional: true },
-      { id: "METRONOME",     name: "Metronome",     r: 150, g: 58,  b: 198, isClickGuide: true },
-      { id: "GUIA",          name: "Guia",          r: 215, g: 75,  b: 125, isClickGuide: true, optional: true },
-      { id: "VOCALS",        name: "Vocals",        r: 198, g: 132, b: 74,  isClickGuide: false },
-      { id: "OTHERS",        name: "Others",        r: 98,  g: 58,  b: 142, isClickGuide: false },
-      { id: "PIANO",         name: "Piano",         r: 146, g: 112, b: 214, isClickGuide: false },
-      { id: "KEYS",          name: "Keys",          r: 108, g: 186, b: 152, isClickGuide: false },
-      { id: "DRUMS",         name: "Drums",         r: 212, g: 178, b: 122, isClickGuide: false },
-      { id: "GUITAR",        name: "Guitar",        r: 178, g: 116, b: 142, isClickGuide: false },
-      { id: "STRINGS",       name: "Strings",       r: 132, g: 196, b: 64,  isClickGuide: false },
-      { id: "BASS",          name: "Bass",          r: 172, g: 118, b: 92,  isClickGuide: false }
+      // Controle, Automação & Guia
+      { id: "HOLYRICS_MIDI",   name: "Holyrics MIDI",     r: 0,   g: 205, b: 255, isClickGuide: false, isMidi: true, optional: true },
+      { id: "METRONOME",       name: "Metronome",         r: 150, g: 58,  b: 198, isClickGuide: true },
+      { id: "GUIA",            name: "Guia",              r: 215, g: 75,  b: 125, isClickGuide: true },
+
+      // Grupo: BATERIA
+      { id: "KICK",            name: "Kick",              r: 212, g: 148, b: 64,  isClickGuide: false, group: "BATERIA" },
+      { id: "SNARE",           name: "Snare",             r: 222, g: 168, b: 82,  isClickGuide: false, group: "BATERIA" },
+      { id: "TOMS",            name: "Toms",              r: 204, g: 138, b: 58,  isClickGuide: false, group: "BATERIA" },
+      { id: "HIHAT",           name: "Hi-Hat",            r: 230, g: 188, b: 98,  isClickGuide: false, group: "BATERIA" },
+      { id: "CYMBALS",         name: "Cymbals",           r: 238, g: 202, b: 116, isClickGuide: false, group: "BATERIA" },
+      { id: "OTHER_KIT",       name: "Other Kit",         r: 190, g: 132, b: 54,  isClickGuide: false, group: "BATERIA" },
+
+      // Grupo: INSTRUMENTOS COM TRASTES
+      { id: "BASS",            name: "Bass",              r: 172, g: 108, b: 76,  isClickGuide: false, group: "TRASTES" },
+      { id: "ACOUSTIC_GUITAR", name: "Acoustic Guitars",  r: 198, g: 128, b: 94,  isClickGuide: false, group: "TRASTES" },
+      { id: "ELECTRIC_GUITAR", name: "Electric Guitars",  r: 178, g: 96,  b: 118, isClickGuide: false, group: "TRASTES" },
+
+      // Grupo: TECLADOS
+      { id: "PIANO",           name: "Piano",             r: 146, g: 112, b: 214, isClickGuide: false, group: "TECLADOS" },
+      { id: "KEYS",            name: "Keys",              r: 118, g: 162, b: 206, isClickGuide: false, group: "TECLADOS" },
+      { id: "CONTINUOUS_PAD",  name: "Continuous Pad",    r: 201, g: 164, b: 73,  isClickGuide: false, group: "TECLADOS" },
+
+      // Orquestra, Sopros & Outros
+      { id: "STRINGS",         name: "Strings",           r: 132, g: 196, b: 64,  isClickGuide: false },
+      { id: "WINDS",           name: "Winds",             r: 72,  g: 178, b: 168, isClickGuide: false },
+      { id: "OTHERS",          name: "Others",            r: 98,  g: 58,  b: 142, isClickGuide: false },
+
+      // Vozes
+      { id: "VOCALS",          name: "Vocals",            r: 198, g: 132, b: 74,  isClickGuide: false },
+      { id: "BGV",             name: "Background Vocals", r: 178, g: 112, b: 64,  isClickGuide: false }
     ];
 
     function rgbToReaperNative(r, g, b) {
@@ -7055,11 +7060,37 @@
           cursorSec = endSec + GAP_ENTRE_MUSICAS_SEG;
         }
 
+        const visibleLanes = slotsList.filter(lane => !lane.optional || lane.itemsRpp.length > 0);
         let tracksRpp = "";
-        slotsList.forEach(lane => {
-          if (lane.optional && lane.itemsRpp.length === 0) return;
+        let activeGroupKey = null;
+
+        visibleLanes.forEach((lane, idx) => {
+          const grp = lane.group || null;
+          const nextLane = visibleLanes[idx + 1] || null;
+          const nextGrp = nextLane ? (nextLane.group || null) : null;
+
+          // Abre uma Pasta/Grupo no REAPER (ISBUS 1 1) quando entra em um novo grupo (BATERIA, TRASTES, TECLADOS)
+          if (grp && grp !== activeGroupKey) {
+            const gMeta = REAPER_FOLDER_GROUPS[grp] || { name: grp, r: 201, g: 164, b: 73 };
+            const gCol = rgbToReaperNative(gMeta.r, gMeta.g, gMeta.b);
+            const gPan = (routing === "SPLIT_LR") ? 1 : 0;
+            tracksRpp +=
+              `  <TRACK\n` +
+              `    NAME "${gMeta.name}"\n` +
+              `    PEAKCOL ${gCol}\n` +
+              `    VOLPAN 1 ${gPan} -1 -1 1\n` +
+              `    MUTESOLO 0 0 0\n` +
+              `    ISBUS 1 1\n` +
+              `    MAINSEND 1 0\n` +
+              `  >\n`;
+            activeGroupKey = grp;
+          }
+
+          const isLastInGroup = !!(grp && nextGrp !== grp);
+          const isBusLine = grp ? (isLastInGroup ? `    ISBUS 2 -1\n` : `    ISBUS 0 0\n`) : `    ISBUS 0 0\n`;
           const peakCol = rgbToReaperNative(lane.r, lane.g, lane.b);
-          const panVal = (routing === "SPLIT_LR" && !lane.isMidi) ? (lane.isClickGuide ? -1 : 1) : 0;
+          // Se a track está dentro de um Grupo, o Pan do Split L/R já está na Pasta Pai (evita duplicar atenuação)
+          const panVal = grp ? 0 : ((routing === "SPLIT_LR" && !lane.isMidi) ? (lane.isClickGuide ? -1 : 1) : 0);
           const routingLines = (routing === "MULTI_OUT" && lane.isClickGuide)
             ? `    MAINSEND 0 0\n    HWOUT 2 0 1 0 0 0 1 -1:U -1\n`
             : `    MAINSEND 1 0\n`;
@@ -7070,9 +7101,12 @@
             `    PEAKCOL ${peakCol}\n` +
             `    VOLPAN 1 ${panVal} -1 -1 1\n` +
             `    MUTESOLO 0 0 0\n` +
+            isBusLine +
             routingLines +
             lane.itemsRpp.join("") +
             `  >\n`;
+
+          if (isLastInGroup) activeGroupKey = null;
         });
 
         const tempoEnvBlock = tempoPoints ? `  <TEMPOENVEX\n${tempoPoints}  >\n` : "";
@@ -7123,25 +7157,44 @@
       if (folderName && clean.toLowerCase().startsWith(folderName.toLowerCase())) {
         clean = clean.slice(folderName.length);
       }
-      const parts = clean.split(/[-–—_]+/).map(p => p.trim()).filter(Boolean);
-      const tail = parts.length > 0 ? parts[parts.length - 1] : clean;
 
       const matchToken = (txt) => {
-        const n = txt.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, " ");
-        if (/\b(metronome|metronomo|click|bpm)\b/.test(n)) return "METRONOME";
+        const n = txt.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+        // Controle & Guia
+        if (/\b(metronome|metronomo|click)\b/.test(n)) return "METRONOME";
         if (/\b(guia|guide|cue|cues|regencia)\b/.test(n)) return "GUIA";
-        if (/\b(vocals|vocal|voz|vozes|back|backing|bgv|choir|coro)\b/.test(n)) return "VOCALS";
-        if (/\b(piano|rhodes|wurli)\b/.test(n)) return "PIANO";
-        if (/\b(keys|key|teclado|pad|pads|synth|organ|orgao)\b/.test(n)) return "KEYS";
-        if (/\b(drums|drum|bateria|batera|perc|percussao|kick|snare|hihat)\b/.test(n)) return "DRUMS";
+
+        // Bateria (Grupo BATERIA)
+        if (/\b(other\s*kit|perc|percussao|drums|drum|bateria|batera)\b/.test(n)) return "OTHER_KIT";
+        if (/\b(kick|bumbo)\b/.test(n)) return "KICK";
+        if (/\b(snare|caixa)\b/.test(n)) return "SNARE";
+        if (/\b(toms|tom|surdo)\b/.test(n)) return "TOMS";
+        if (/\b(hi\s*hat|hihat|chimbal)\b/.test(n)) return "HIHAT";
+        if (/\b(cymbals|cymbal|pratos|prato|crash|ride|overheads|oh)\b/.test(n)) return "CYMBALS";
+
+        // Instrumentos com Trastes (Grupo TRASTES)
         if (/\b(bass|baixo|contrabaixo)\b/.test(n)) return "BASS";
-        if (/\b(strings|string|cordas|violino|cello|orquestra|brass|metais)\b/.test(n)) return "STRINGS";
-        if (/\b(guitar|guitars|guitarra|violao|acoustic|acustico|ag|eg|eg1|eg2|gtr|gt|lead|rhythm)\b/.test(n)) return "GUITAR";
-        if (/\b(others|other|outros|outro|loop|fx|efeito|sub|track)\b/.test(n)) return "OTHERS";
+        if (/\b(acoustic\s*guitar|acoustic\s*guitars|acoustic|violao|violoes|acustico|ag)\b/.test(n)) return "ACOUSTIC_GUITAR";
+        if (/\b(electric\s*guitar|electric\s*guitars|guitarra|guitarras|guitar|guitars|eg|eg1|eg2|gtr|gt)\b/.test(n)) return "ELECTRIC_GUITAR";
+
+        // Teclados (Grupo TECLADOS)
+        if (/\b(piano|rhodes|wurli)\b/.test(n)) return "PIANO";
+        if (/\b(keys|key|teclado|teclados|synth|organ|orgao|pad|pads)\b/.test(n)) return "KEYS";
+
+        // Orquestra, Sopros & Outros
+        if (/\b(strings|string|cordas|violino|cello|orquestra)\b/.test(n)) return "STRINGS";
+        if (/\b(winds|wind|sopros|sopro|brass|metais|flauta|sax|trompete)\b/.test(n)) return "WINDS";
+
+        // Vozes (Background Vocals ANTES de Vocals!)
+        if (/\b(background\s*vocals|background\s*vocal|backing\s*vocals|backing|back\s*vocals|bgv|choir|coro)\b/.test(n)) return "BGV";
+        if (/\b(vocals|vocal|voz|vozes|lead\s*vocal)\b/.test(n)) return "VOCALS";
+
+        if (/\b(others|other|outros|outro|loop|fx|efeito|sub)\b/.test(n)) return "OTHERS";
         return null;
       };
 
-      return matchToken(tail) || matchToken(clean) || "OTHERS";
+      // Testa primeiro no nome limpo completo (preserva 'Acoustic Guitars', 'Background Vocals', 'Hi-Hat', 'other_kit')
+      return matchToken(clean) || "OTHERS";
     };
 
     // 14.2 Corrige o gerador de WAV do Pad Nativo para sair com som encorpado, quente e audível no Reaper!

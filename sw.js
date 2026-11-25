@@ -1,4 +1,4 @@
-const CACHE_NAME = "doxa-pwa-v5.0";
+const CACHE_NAME = "doxa-pwa-v5.3";
 const ASSETS = [
   "./",
   "./index.html",
