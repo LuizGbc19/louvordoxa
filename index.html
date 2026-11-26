@@ -8,9 +8,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DOXA" />
   <title>DOXA — Equipe de Louvor e Adoração</title>
-  <link rel="manifest" href="./manifest.json?v=5.7" />
-  <link rel="icon" type="image/png" sizes="512x512" href="./Logo.png?v=5.7" />
-  <link rel="apple-touch-icon" sizes="512x512" href="./Logo.png?v=5.7" />
+  <link rel="manifest" href="./manifest.json?v=5.7.1" />
+  <link rel="icon" type="image/png" sizes="512x512" href="./Logo.png?v=5.7.1" />
+  <link rel="apple-touch-icon" sizes="512x512" href="./Logo.png?v=5.7.1" />
   <script>
     window.__DOXA_ICON_PNG__ = "./Logo.png";
     if ("serviceWorker" in navigator) {
@@ -7228,7 +7228,8 @@
       const f = String(fileName || "");
       if (/\.(mid|midi)$/i.test(f)) return "HOLYRICS_MIDI";
       if (/continuous[_\s-]*pad/i.test(f) || /^pad\s*\([a-g][#b]?\)/i.test(f)) return "CONTINUOUS_PAD";
-      if (/\b(guia|guide|cue|cues|regencia)\b/i.test(f)) return "GUIA";
+      const fNormSpace = f.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ");
+      if (/\b(guia|guias|guide|guides|cue|cues|regencia|direcao|voz\s*guia)\b/.test(fNormSpace)) return "GUIA";
 
       let clean = f.replace(/\.[a-z0-9]+$/i, "");
       if (folderName && clean.toLowerCase().startsWith(folderName.toLowerCase())) {
@@ -8375,6 +8376,7 @@
             if (localFolder) {
               folderTitleForPaths = localFolder.nome;
               songDirHandle = localFolder.handle;
+              try { localFolder.files = await scanAudioFilesRecursive(localFolder.handle, ""); } catch (eRescan) {}
               const realDur = await getMaxDurationFromLocalFiles(localFolder.files);
               if (realDur > 15) songLenSec = Math.ceil(realDur);
               for (const entry of localFolder.files) {
@@ -8396,10 +8398,12 @@
             if (driveFolder) {
               folderTitleForPaths = driveFolder.nome;
               let faixasData = await dbGet("catalog", "vsFolder_" + driveFolder.folderRef);
-              if (navigator.onLine && scriptUrl && (!faixasData || !faixasData.outrosArquivos)) {
-                const res = await fetch(`${scriptUrl}?action=listarFaixasVs&folderRef=${encodeURIComponent(driveFolder.folderRef)}`);
-                const d = await res.json();
-                if (d && d.status === "ok") { faixasData = d; await dbPut("catalog", "vsFolder_" + driveFolder.folderRef, d); }
+              if (navigator.onLine && scriptUrl) {
+                try {
+                  const res = await fetch(`${scriptUrl}?action=listarFaixasVs&folderRef=${encodeURIComponent(driveFolder.folderRef)}&t=${Date.now()}`);
+                  const d = await res.json();
+                  if (d && d.status === "ok") { faixasData = d; await dbPut("catalog", "vsFolder_" + driveFolder.folderRef, d); }
+                } catch (eRef) {}
               }
               const faixas = (faixasData && faixasData.faixas) || [];
               const outrosArquivos = (faixasData && faixasData.outrosArquivos) || [];
@@ -8476,12 +8480,21 @@
                 for (let fIdx = 0; fIdx < faixas.length; fIdx++) {
                   const fx = faixas[fIdx];
                   const realName = fx.nomeArquivo || `${fx.nomeFaixa || "Faixa_" + (fIdx + 1)}.m4a`;
+                  let inlineMidiBlock = null;
+                  if (/\.(mid|midi)$/i.test(realName) && navigator.onLine && scriptUrl && fx.audioRef) {
+                    try {
+                      const rawMid = await fetchTrackCachedOrNetwork(fx.audioRef, false);
+                      if (rawMid && rawMid.base64) {
+                        inlineMidiBlock = parseStandardMidiBytesToReaperSource(base64ToUint8Array(rawMid.base64), songLenSec, bpmNum);
+                      }
+                    } catch (eMid) {}
+                  }
                   songFiles.push({
                     displayName: realName,
                     filePath: basePath ? `${basePath}${sep}${driveFolder.nome}${sep}${realName}` : `${driveFolder.nome}${sep}${realName}`,
                     srcTag: getReaperSourceTagByFilename(realName),
                     slotId: classifyTrackSlotForReaper(realName, driveFolder.nome),
-                    inlineMidiBlock: null
+                    inlineMidiBlock
                   });
                 }
               }
@@ -9483,10 +9496,12 @@
             if (df) {
               folderTitle = df.nome;
               let faixasData = await dbGet("catalog", "vsFolder_" + df.folderRef);
-              if (!faixasData && navigator.onLine && scriptUrl) {
-                const res = await fetch(`${scriptUrl}?action=listarFaixasVs&folderRef=${encodeURIComponent(df.folderRef)}`);
-                const d = await res.json();
-                if (d && d.status === "ok") { faixasData = d; await dbPut("catalog", "vsFolder_" + df.folderRef, d); }
+              if (navigator.onLine && scriptUrl) {
+                try {
+                  const res = await fetch(`${scriptUrl}?action=listarFaixasVs&folderRef=${encodeURIComponent(df.folderRef)}&t=${Date.now()}`);
+                  const d = await res.json();
+                  if (d && d.status === "ok") { faixasData = d; await dbPut("catalog", "vsFolder_" + df.folderRef, d); }
+                } catch (eRefM) {}
               }
               const faixas = ((faixasData && faixasData.faixas) || []).filter(fx => !/\.(mid|midi)$/i.test(fx.nomeArquivo || ""));
 
