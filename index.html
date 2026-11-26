@@ -8,9 +8,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DOXA" />
   <title>DOXA — Equipe de Louvor e Adoração</title>
-  <link rel="manifest" href="./manifest.json?v=5.6" />
-  <link rel="icon" type="image/png" sizes="512x512" href="./Logo.png?v=5.6" />
-  <link rel="apple-touch-icon" sizes="512x512" href="./Logo.png?v=5.6" />
+  <link rel="manifest" href="./manifest.json?v=5.7" />
+  <link rel="icon" type="image/png" sizes="512x512" href="./Logo.png?v=5.7" />
+  <link rel="apple-touch-icon" sizes="512x512" href="./Logo.png?v=5.7" />
   <script>
     window.__DOXA_ICON_PNG__ = "./Logo.png";
     if ("serviceWorker" in navigator) {
@@ -8862,6 +8862,886 @@
     };
 
     injectMidiCloudSyncButton();
+
+  
+    // ============================================================================
+    // 19. CONSTRUTOR DE MEDLEYS DOXA (SUBPASTA 'VS/_Medleys' + EMENDA NO REAPER)
+    //     - BIBLIOTECA DE MEDLEYS SALVOS EM JSON NA SUBPASTA '_Medleys' DO DRIVE
+    //     - RECORTE NÃO-DESTRUTIVO (SOFFS/LENGTH), PITCH MELÓDICO (ELASTIQUE PRO)
+    //     - TRANSIÇÕES: CORTE SECO, PONTE CONTINUOUS PAD (4/8 COMP.), CROSSFADE
+    //     - EMENDA RÁPIDA ("UNIR C/ PRÓXIMA") DIRETO NO MODAL DO REAPER (.RPP)
+    // ============================================================================
+    let medleysLibrary = [];
+    let medleysFolderUrl = "";
+    let activeMedley = null; // { id, fileId, fileName, nome, targetKey, bpmMode, targetBpm, blocks: [...] }
+    let medleySectionsCache = {}; // folderRef/songKey -> [{ cueType, timeSec, text }]
+
+    const MEDLEY_MELODIC_SLOTS = new Set([
+      "VOCALS", "BGV", "BASS", "ACOUSTIC_GUITAR", "ELECTRIC_GUITAR",
+      "PIANO", "KEYS", "CONTINUOUS_PAD", "STRINGS", "WINDS", "OTHERS"
+    ]);
+
+    function createEmptyMedleyDraft() {
+      return {
+        id: "medley_" + Date.now(),
+        fileId: "",
+        fileName: "",
+        nome: "Novo Medley DOXA",
+        targetKey: "",
+        bpmMode: "PER_SONG",
+        targetBpm: 120,
+        blocks: []
+      };
+    }
+
+    function computeShortestSemitoneShift(fromTom, toTom) {
+      if (!fromTom || !toTom || fromTom === "-" || toTom === "-") return 0;
+      const fromKey = resolvePadRootKeyFromSongTom(fromTom);
+      const toKey = resolvePadRootKeyFromSongTom(toTom);
+      const i1 = PAD_CHROMATIC_KEYS.indexOf(fromKey);
+      const i2 = PAD_CHROMATIC_KEYS.indexOf(toKey);
+      if (i1 === -1 || i2 === -1) return 0;
+      let diff = (i2 - i1 + 12) % 12;
+      if (diff > 6) diff -= 12;
+      return diff;
+    }
+
+    function parseMmSsToSec(str) {
+      if (str === null || str === undefined) return 0;
+      const s = String(str).trim();
+      if (!s) return 0;
+      if (s.includes(":")) {
+        const parts = s.split(":");
+        const m = parseInt(parts[0], 10) || 0;
+        const sec = parseFloat(String(parts[1] || "0").replace(",", ".")) || 0;
+        return Math.max(0, m * 60 + sec);
+      }
+      return Math.max(0, parseFloat(s.replace(",", ".")) || 0);
+    }
+
+    function formatSecToMmSs(sec) {
+      if (!sec || sec <= 0 || isNaN(sec)) return "";
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    }
+
+    function ensureMedleysDomAndNav() {
+      const mainEl = document.querySelector("main");
+      if (mainEl && !document.getElementById("view-medleys")) {
+        const sec = document.createElement("section");
+        sec.id = "view-medleys";
+        sec.className = "hidden space-y-4 pb-20";
+        sec.innerHTML = `
+          <div class="bg-slate-900 border border-amber-500/40 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-xl">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 text-xl">
+                <i class="fa-solid fa-link"></i>
+              </div>
+              <div>
+                <h2 class="text-base sm:text-lg font-black text-white tracking-tight">Construtor de Medleys DOXA</h2>
+                <p class="text-xs text-slate-400">Salvo na subpasta <code>VS/_Medleys</code> do Drive • Zero duplicação de áudio • Exportação .RPP com élastique Pro</p>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <a id="btn-open-medleys-drive" href="#" target="_blank" class="hidden px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-amber-300 text-xs font-bold items-center gap-1.5">
+                <i class="fa-brands fa-google-drive"></i><span>Subpasta _Medleys</span>
+              </a>
+              <button type="button" onclick="loadMedleysFromDrive(true)" class="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5">
+                <i class="fa-solid fa-arrows-rotate" id="medleys-sync-icon"></i><span>Sincronizar</span>
+              </button>
+              <button type="button" onclick="startNewMedleyDraft()" class="px-3.5 py-2 rounded-xl bg-amber-500 text-black text-xs font-extrabold flex items-center gap-1.5 shadow">
+                <i class="fa-solid fa-plus"></i><span>Novo Medley</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <!-- COLUNA ESQUERDA: BIBLIOTECA DE MEDLEYS (SUBPASTA _Medleys) -->
+            <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-lg flex flex-col max-h-[76vh]">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-extrabold uppercase tracking-wider text-amber-300">Subpasta _Medleys (<span id="medleys-count">0</span>)</span>
+              </div>
+              <input type="text" id="medleys-search-input" oninput="renderMedleysLibraryList()" placeholder="Buscar medley salvo..." class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white" />
+              <div id="medleys-library-list" class="flex-1 overflow-y-auto custom-scroll space-y-2 pr-1"></div>
+            </div>
+
+            <!-- COLUNA DIREITA: EDITOR DO MEDLEY ATIVO -->
+            <div class="lg:col-span-8 bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg">
+              <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end border-b border-slate-800 pb-4">
+                <div class="sm:col-span-5">
+                  <label class="block text-[11px] font-bold text-amber-300 uppercase mb-1">Nome do Medley</label>
+                  <input type="text" id="medley-name-input" oninput="if(activeMedley) activeMedley.nome=this.value" placeholder="Ex: Medley Adoração em G" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white font-bold" />
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Tom Alvo</label>
+                  <select id="medley-target-key" onchange="onChangeMedleyTargetKey(this.value)" class="w-full px-2.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-amber-300 font-bold">
+                    <option value="">Original</option>
+                    ${PAD_CHROMATIC_KEYS.map(k => `<option value="${k}">${k}</option>`).join("")}
+                  </select>
+                </div>
+                <div class="sm:col-span-3">
+                  <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Andamento (BPM)</label>
+                  <select id="medley-bpm-mode" onchange="onChangeMedleyBpmMode(this.value)" class="w-full px-2.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white font-semibold">
+                    <option value="PER_SONG">Mapa de Tempo (Original)</option>
+                    <option value="LOCK_BPM">Travar BPM Único</option>
+                  </select>
+                </div>
+                <div class="sm:col-span-2" id="medley-lock-bpm-wrap">
+                  <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">BPM Fixo</label>
+                  <input type="number" id="medley-target-bpm" value="74" min="40" max="220" oninput="if(activeMedley) activeMedley.targetBpm=Number(this.value)||74" class="w-full px-2.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white font-bold text-center" />
+                </div>
+              </div>
+
+              <!-- ADICIONAR MÚSICA AO MEDLEY -->
+              <div class="bg-slate-800/60 border border-slate-700 rounded-xl p-3 space-y-2">
+                <label class="block text-[11px] font-extrabold uppercase text-amber-300">Adicionar Música ao Medley (Puxa VS, Tom, BPM e Seções Salvas)</label>
+                <div class="flex flex-wrap gap-2 relative">
+                  <div class="flex-1 min-w-[200px] relative">
+                    <input type="text" id="medley-add-song-search" autocomplete="off" onfocus="filterMedleySongPicker()" oninput="filterMedleySongPicker()" placeholder="Digite o nome da música ou pasta VS..." class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white" />
+                    <div id="medley-song-picker-drop" class="hidden absolute left-0 right-0 mt-1 bg-slate-950 border border-amber-500/50 rounded-xl shadow-2xl max-h-56 overflow-y-auto z-40 custom-scroll"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- BLOCOS DO MEDLEY -->
+              <div id="medley-blocks-container" class="space-y-2.5"></div>
+
+              <!-- BARRA DE PROGRESSO / LOG DO EXPORTADOR MEDLEY -->
+              <div id="medley-export-status" class="hidden p-3 bg-slate-950 border border-amber-500/40 rounded-xl text-xs text-slate-200 space-y-1 max-h-44 overflow-y-auto custom-scroll"></div>
+
+              <!-- BOTÕES FINAIS DO MEDLEY -->
+              <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-800">
+                <button type="button" onclick="saveActiveMedleyToDrive()" id="btn-save-medley-drive" class="px-4 py-2.5 rounded-xl bg-amber-500 text-black text-xs font-extrabold flex items-center gap-1.5 shadow">
+                  <i class="fa-brands fa-google-drive"></i><span>Salvar na Subpasta _Medleys (Drive)</span>
+                </button>
+                <div class="flex flex-wrap items-center gap-2">
+                  <button type="button" onclick="exportActiveMedleyToReaper(true)" id="btn-export-medley-offline" class="px-4 py-2.5 rounded-xl bg-slate-800 border border-amber-500/40 text-amber-300 text-xs font-extrabold flex items-center gap-1.5">
+                    <i class="fa-solid fa-cloud-arrow-down"></i><span>Baixar VS + Gerar .RPP</span>
+                  </button>
+                  <button type="button" onclick="exportActiveMedleyToReaper(false)" id="btn-export-medley-rpp" class="px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-600 text-white text-xs font-extrabold flex items-center gap-1.5">
+                    <i class="fa-solid fa-sliders"></i><span>Gerar Só .RPP</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>`;
+        mainEl.appendChild(sec);
+      }
+
+      // Botões de navegação (Topo, Drawer e atalho dentro da aba VS)
+      const topVs = document.getElementById("tab-vs");
+      if (topVs && !document.getElementById("tab-medleys")) {
+        const b = document.createElement("button");
+        b.id = "tab-medleys";
+        b.type = "button";
+        b.onclick = () => switchTab("medleys");
+        b.className = "px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 text-slate-300 hover:text-white";
+        b.innerHTML = `<i class="fa-solid fa-link text-amber-400"></i><span>Medleys</span>`;
+        topVs.insertAdjacentElement("afterend", b);
+      }
+
+      const drawerVs = document.getElementById("drawer-tab-vs");
+      if (drawerVs && !document.getElementById("drawer-tab-medleys")) {
+        const db = document.createElement("button");
+        db.id = "drawer-tab-medleys";
+        db.type = "button";
+        db.onclick = () => { if (typeof closeSideDrawer === "function") closeSideDrawer(); switchTab("medleys"); };
+        db.className = "w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold flex items-center justify-between text-slate-300 hover:bg-slate-800";
+        db.innerHTML = `<span class="flex items-center gap-3"><i class="fa-solid fa-link w-5 text-center text-amber-400"></i><span>Medleys (VS/_Medleys)</span></span><span id="drawer-badge-medleys" class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold">Novo</span>`;
+        drawerVs.insertAdjacentElement("afterend", db);
+      }
+
+      const vsHeaderBtns = document.querySelector("#view-vs > div:first-child > div:last-child");
+      if (vsHeaderBtns && !document.getElementById("btn-vs-open-medleys")) {
+        const mb = document.createElement("button");
+        mb.id = "btn-vs-open-medleys";
+        mb.type = "button";
+        mb.onclick = () => switchTab("medleys");
+        mb.className = "px-3 py-2 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-extrabold flex items-center gap-1.5";
+        mb.innerHTML = `<i class="fa-solid fa-link"></i><span>Medleys</span>`;
+        vsHeaderBtns.prepend(mb);
+      }
+    }
+
+    async function loadMedleysFromDrive(forceRefresh = false) {
+      ensureMedleysDomAndNav();
+      const icon = document.getElementById("medleys-sync-icon");
+      icon?.classList.add("fa-spin");
+      try {
+        const cached = await dbGet("catalog", "medleysLibrary_v1");
+        if (cached && Array.isArray(cached) && !forceRefresh) {
+          medleysLibrary = cached;
+          renderMedleysLibraryList();
+        }
+        if (!navigator.onLine || !scriptUrl) return;
+        const res = await fetch(`${scriptUrl}?action=listarMedleys&t=${Date.now()}`);
+        const data = await res.json();
+        if (data && data.status === "ok" && Array.isArray(data.medleys)) {
+          medleysLibrary = data.medleys;
+          if (data.folderUrl) {
+            medleysFolderUrl = data.folderUrl;
+            const linkBtn = document.getElementById("btn-open-medleys-drive");
+            if (linkBtn) {
+              linkBtn.href = medleysFolderUrl;
+              linkBtn.classList.remove("hidden");
+              linkBtn.classList.add("inline-flex");
+            }
+          }
+          await dbPut("catalog", "medleysLibrary_v1", medleysLibrary);
+          const badge = document.getElementById("drawer-badge-medleys");
+          if (badge) badge.textContent = medleysLibrary.length;
+          renderMedleysLibraryList();
+        }
+      } catch (e) {} finally {
+        icon?.classList.remove("fa-spin");
+      }
+    }
+
+    function renderMedleysLibraryList() {
+      const listEl = document.getElementById("medleys-library-list");
+      const countEl = document.getElementById("medleys-count");
+      if (!listEl) return;
+      const q = (document.getElementById("medleys-search-input")?.value || "").toLowerCase().trim();
+      const filtered = medleysLibrary.filter(m => !q || String(m.nome || "").toLowerCase().includes(q));
+      if (countEl) countEl.textContent = filtered.length;
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = `<div class="text-center py-8 text-xs text-slate-400">Nenhum medley salvo em <code>VS/_Medleys</code>.<br>Monte seu primeiro medley ao lado e clique em <strong>Salvar na Subpasta _Medleys</strong>.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = filtered.map((m, idx) => {
+        const isAct = activeMedley && activeMedley.id === m.id;
+        const nSongs = (m.blocks || []).length;
+        const keyBadge = m.targetKey ? `Tom: ${m.targetKey}` : "Tons Originais";
+        const bpmBadge = m.bpmMode === "LOCK_BPM" ? `${m.targetBpm || 120} BPM fixo` : "Mapa de BPM";
+        return `
+          <div class="p-3 rounded-xl border transition ${isAct ? 'bg-amber-500/15 border-amber-400' : 'bg-slate-800/70 border-slate-800 hover:bg-slate-800'} space-y-2">
+            <div class="flex items-start justify-between gap-2 cursor-pointer" onclick="openSavedMedleyInEditor('${m.id}')">
+              <div class="min-w-0">
+                <h4 class="text-xs sm:text-sm font-extrabold text-white truncate">${m.nome}</h4>
+                <p class="text-[10px] text-slate-400">${nSongs} música(s) • ${keyBadge} • ${bpmBadge}</p>
+              </div>
+              <button type="button" onclick="event.stopPropagation(); deleteSavedMedley('${m.id}')" class="w-7 h-7 rounded-lg bg-slate-900 text-rose-400 text-xs shrink-0" title="Excluir medley">×</button>
+            </div>
+            <div class="text-[10px] text-slate-300 truncate">${(m.blocks || []).map(b => b.musica).join(" → ")}</div>
+          </div>`;
+      }).join("");
+    }
+
+    function startNewMedleyDraft() {
+      activeMedley = createEmptyMedleyDraft();
+      syncMedleyEditorUi();
+      renderMedleysLibraryList();
+    }
+
+    function openSavedMedleyInEditor(medleyId) {
+      const found = medleysLibrary.find(m => m.id === medleyId);
+      if (!found) return;
+      activeMedley = JSON.parse(JSON.stringify(found));
+      syncMedleyEditorUi();
+      renderMedleysLibraryList();
+    }
+
+    async function deleteSavedMedley(medleyId) {
+      const found = medleysLibrary.find(m => m.id === medleyId);
+      if (!found || !confirm(`Excluir o medley "${found.nome}" da subpasta _Medleys?`)) return;
+      medleysLibrary = medleysLibrary.filter(m => m.id !== medleyId);
+      await dbPut("catalog", "medleysLibrary_v1", medleysLibrary);
+      if (activeMedley && activeMedley.id === medleyId) activeMedley = createEmptyMedleyDraft();
+      renderMedleysLibraryList();
+      syncMedleyEditorUi();
+      if (navigator.onLine && scriptUrl) {
+        fetch(scriptUrl, {
+          method: "POST", mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "excluirMedleyDrive", fileId: found.fileId || "", fileName: found.fileName || "" })
+        }).catch(() => {});
+      }
+    }
+
+    function syncMedleyEditorUi() {
+      if (!activeMedley) activeMedley = createEmptyMedleyDraft();
+      const nameInp = document.getElementById("medley-name-input");
+      const keySel = document.getElementById("medley-target-key");
+      const bpmModeSel = document.getElementById("medley-bpm-mode");
+      const bpmInp = document.getElementById("medley-target-bpm");
+      const bpmWrap = document.getElementById("medley-lock-bpm-wrap");
+
+      if (nameInp) nameInp.value = activeMedley.nome || "";
+      if (keySel) keySel.value = activeMedley.targetKey || "";
+      if (bpmModeSel) bpmModeSel.value = activeMedley.bpmMode || "PER_SONG";
+      if (bpmInp) bpmInp.value = activeMedley.targetBpm || 74;
+      if (bpmWrap) bpmWrap.classList.toggle("opacity-40", (activeMedley.bpmMode || "PER_SONG") !== "LOCK_BPM");
+
+      renderMedleyBlocksList();
+    }
+
+    function onChangeMedleyTargetKey(val) {
+      if (!activeMedley) return;
+      activeMedley.targetKey = val;
+      activeMedley.blocks.forEach(b => {
+        b.semitones = val ? computeShortestSemitoneShift(b.origKey, val) : 0;
+      });
+      renderMedleyBlocksList();
+    }
+
+    function onChangeMedleyBpmMode(val) {
+      if (!activeMedley) return;
+      activeMedley.bpmMode = val;
+      syncMedleyEditorUi();
+    }
+
+    function filterMedleySongPicker() {
+      const q = (document.getElementById("medley-add-song-search")?.value || "").toLowerCase().trim();
+      const drop = document.getElementById("medley-song-picker-drop");
+      if (!drop) return;
+
+      const folderList = getAvailableReaperFolderList();
+      const results = [];
+      const seenNorm = new Set();
+
+      songs.forEach(s => {
+        if (q && !(String(s.musica || "").toLowerCase().includes(q) || String(s.autor || "").toLowerCase().includes(q))) return;
+        const norm = normalizeSongKey(s.musica);
+        seenNorm.add(norm);
+        const fRef = findBestFolderMatch(s.musica, s.autor, folderList);
+        results.push({ musica: s.musica, autor: s.autor || "", tom: s.tom || "C", bpm: extractNumericBpm(s.tempo) || 120, folderRef: fRef });
+      });
+
+      folderList.forEach(f => {
+        if (q && !String(f.nome || "").toLowerCase().includes(q)) return;
+        const norm = normalizeSongKey(f.nome);
+        if (seenNorm.has(norm)) return;
+        results.push({ musica: f.nome, autor: "Pasta VS", tom: "C", bpm: 120, folderRef: f.folderRef || f.nome });
+      });
+
+      drop.innerHTML = results.slice(0, 35).map(r => {
+        const payload = encodeURIComponent(JSON.stringify(r));
+        return `
+          <button type="button" onclick="addSongBlockToMedley('${payload}')" class="w-full text-left px-3 py-2 text-xs text-white hover:bg-amber-500/20 flex items-center justify-between gap-2 border-b border-slate-800/60">
+            <span class="truncate"><strong>${r.musica}</strong> <span class="text-slate-400">(${r.autor || "DOXA"})</span></span>
+            <span class="text-[10px] font-bold ${r.folderRef ? 'text-amber-300' : 'text-slate-500'} shrink-0">${r.tom} • ${r.bpm} BPM ${r.folderRef ? '✓ VS' : ''}</span>
+          </button>`;
+      }).join("");
+      drop.classList.remove("hidden");
+    }
+
+    async function addSongBlockToMedley(encodedPayload) {
+      document.getElementById("medley-song-picker-drop")?.classList.add("hidden");
+      const inp = document.getElementById("medley-add-song-search");
+      if (inp) inp.value = "";
+      if (!activeMedley) activeMedley = createEmptyMedleyDraft();
+
+      const item = JSON.parse(decodeURIComponent(encodedPayload));
+      const semi = activeMedley.targetKey ? computeShortestSemitoneShift(item.tom, activeMedley.targetKey) : 0;
+      const block = {
+        musica: item.musica,
+        autor: item.autor || "",
+        folderRef: item.folderRef || "",
+        origKey: item.tom || "C",
+        semitones: semi,
+        origBpm: item.bpm || 120,
+        startSec: 0,
+        endSec: 0,
+        transitionType: "PAD_4"
+      };
+      activeMedley.blocks.push(block);
+      renderMedleyBlocksList();
+
+      // Busca seções do doxa_automacao.json no Drive em background para facilitar o recorte
+      const cacheKey = normalizeSongKey(block.musica);
+      if (!medleySectionsCache[cacheKey] && navigator.onLine && scriptUrl) {
+        try {
+          const res = await fetch(`${scriptUrl}?action=obterAutomacaoMusica&folderRef=${encodeURIComponent(block.folderRef || "")}&musica=${encodeURIComponent(block.musica)}`);
+          const data = await res.json();
+          if (data && data.status === "ok" && data.found && data.automacao) {
+            const cues = (data.automacao.cues && data.automacao.cues.length > 0)
+              ? data.automacao.cues
+              : (data.automacao.slides || []).filter(s => s.cueType && Number(s.timeSec) > 0);
+            if (cues.length > 0) {
+              medleySectionsCache[cacheKey] = cues;
+              renderMedleyBlocksList();
+            }
+          }
+        } catch (e) {}
+      }
+    }
+
+    function moveMedleyBlock(idx, dir) {
+      if (!activeMedley) return;
+      const target = idx + dir;
+      if (target < 0 || target >= activeMedley.blocks.length) return;
+      const tmp = activeMedley.blocks[idx];
+      activeMedley.blocks[idx] = activeMedley.blocks[target];
+      activeMedley.blocks[target] = tmp;
+      renderMedleyBlocksList();
+    }
+
+    function renderMedleyBlocksList() {
+      const container = document.getElementById("medley-blocks-container");
+      if (!container) return;
+      if (!activeMedley || !activeMedley.blocks || activeMedley.blocks.length === 0) {
+        container.innerHTML = `<div class="text-center py-8 bg-slate-950/60 border border-dashed border-slate-800 rounded-xl text-xs text-slate-400">Adicione 2 ou mais músicas acima para montar a sequência do medley.</div>`;
+        return;
+      }
+
+      const folderList = getAvailableReaperFolderList();
+      container.innerHTML = activeMedley.blocks.map((b, idx) => {
+        const isLast = idx === activeMedley.blocks.length - 1;
+        const folderOpts = `<option value="">-- Sem VS vinculado --</option>` + folderList.map(f => {
+          const val = f.folderRef || f.nome;
+          return `<option value="${String(val).replace(/"/g, '&quot;')}" ${val === b.folderRef ? 'selected' : ''}>${f.nome}</option>`;
+        }).join("");
+
+        const cachedCues = medleySectionsCache[normalizeSongKey(b.musica)] || [];
+        const sectionStartOpts = cachedCues.length > 0
+          ? `<select onchange="if(this.value!==''){activeMedley.blocks[${idx}].startSec=Number(this.value);renderMedleyBlocksList();}" class="px-2 py-1 bg-slate-950 border border-slate-700 rounded-lg text-[10px] text-amber-300"><option value="">Seção...</option><option value="0">Início (00:00)</option>${cachedCues.map(c => `<option value="${c.timeSec}">${c.cueType} (${formatSecToMmSs(c.timeSec)})</option>`).join("")}</select>`
+          : "";
+        const sectionEndOpts = cachedCues.length > 0
+          ? `<select onchange="if(this.value!==''){activeMedley.blocks[${idx}].endSec=Number(this.value);renderMedleyBlocksList();}" class="px-2 py-1 bg-slate-950 border border-slate-700 rounded-lg text-[10px] text-amber-300"><option value="">Seção...</option><option value="0">Fim da música</option>${cachedCues.map(c => `<option value="${c.timeSec}">Até ${c.cueType} (${formatSecToMmSs(c.timeSec)})</option>`).join("")}</select>`
+          : "";
+
+        const resultingKey = transposeChordToken(b.origKey || "C", b.semitones || 0);
+
+        return `
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-2.5">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="w-6 h-6 rounded-lg bg-amber-500 text-black font-black text-xs flex items-center justify-center shrink-0">${idx + 1}</span>
+                <div class="min-w-0">
+                  <span class="text-xs sm:text-sm font-extrabold text-white truncate block">${b.musica}</span>
+                  <span class="text-[10px] text-slate-400">Orig: ${b.origKey} → <strong class="text-amber-300">${resultingKey}</strong> (${b.semitones > 0 ? '+' + b.semitones : b.semitones} st) • ${b.origBpm} BPM</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-1">
+                <button type="button" onclick="activeMedley.blocks[${idx}].semitones=(activeMedley.blocks[${idx}].semitones||0)-1;renderMedleyBlocksList();" class="px-2 py-1 rounded bg-slate-800 text-xs font-bold text-white" title="Baixar meio tom">-1 st</button>
+                <button type="button" onclick="activeMedley.blocks[${idx}].semitones=(activeMedley.blocks[${idx}].semitones||0)+1;renderMedleyBlocksList();" class="px-2 py-1 rounded bg-slate-800 text-xs font-bold text-white" title="Subir meio tom">+1 st</button>
+                <button type="button" onclick="moveMedleyBlock(${idx},-1)" class="w-7 h-7 rounded bg-slate-800 text-slate-300 text-xs">↑</button>
+                <button type="button" onclick="moveMedleyBlock(${idx},1)" class="w-7 h-7 rounded bg-slate-800 text-slate-300 text-xs">↓</button>
+                <button type="button" onclick="activeMedley.blocks.splice(${idx},1);renderMedleyBlocksList();" class="w-7 h-7 rounded bg-rose-600/20 text-rose-400 text-xs">×</button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 text-[11px] items-center">
+              <div class="sm:col-span-5">
+                <select onchange="activeMedley.blocks[${idx}].folderRef=this.value" class="w-full px-2 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-[11px] text-slate-200">${folderOpts}</select>
+              </div>
+              <div class="sm:col-span-3 flex items-center gap-1">
+                <span class="text-slate-400 shrink-0">Início:</span>
+                <input type="text" value="${formatSecToMmSs(b.startSec)}" placeholder="00:00" onchange="activeMedley.blocks[${idx}].startSec=parseMmSsToSec(this.value)" class="w-16 px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-center font-mono text-white" />
+                ${sectionStartOpts}
+              </div>
+              <div class="sm:col-span-4 flex items-center gap-1">
+                <span class="text-slate-400 shrink-0">Fim:</span>
+                <input type="text" value="${formatSecToMmSs(b.endSec)}" placeholder="Final" onchange="activeMedley.blocks[${idx}].endSec=parseMmSsToSec(this.value)" class="w-16 px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-center font-mono text-white" />
+                ${sectionEndOpts}
+              </div>
+            </div>
+          </div>
+          ${!isLast ? `
+            <div class="flex items-center justify-center gap-2 py-0.5">
+              <span class="text-[10px] font-extrabold uppercase text-amber-400">↓ Transição p/ Música ${idx + 2}:</span>
+              <select onchange="activeMedley.blocks[${idx}].transitionType=this.value" class="px-2.5 py-1 bg-slate-900 border border-amber-500/40 rounded-lg text-[11px] text-amber-200 font-bold">
+                <option value="DRY_CUT" ${b.transitionType === 'DRY_CUT' ? 'selected' : ''}>⚡ Corte Seco no Tempo 1</option>
+                <option value="PAD_4" ${b.transitionType === 'PAD_4' ? 'selected' : ''}>🎹 Ponte Continuous Pad (4 compassos)</option>
+                <option value="PAD_8" ${b.transitionType === 'PAD_8' ? 'selected' : ''}>🎹 Ponte Continuous Pad (8 compassos)</option>
+                <option value="CROSSFADE_4" ${b.transitionType === 'CROSSFADE_4' ? 'selected' : ''}>🌊 Crossfade Direto (4s)</option>
+              </select>
+            </div>
+          ` : ""}`;
+      }).join("");
+    }
+
+    async function saveActiveMedleyToDrive() {
+      if (!activeMedley || !activeMedley.blocks || activeMedley.blocks.length < 2) {
+        alert("Adicione pelo menos 2 músicas para salvar um medley na subpasta _Medleys.");
+        return;
+      }
+      if (!activeMedley.nome || !activeMedley.nome.trim()) {
+        activeMedley.nome = activeMedley.blocks.map(b => b.musica).slice(0, 2).join(" + ");
+      }
+
+      const btn = document.getElementById("btn-save-medley-drive");
+      const orig = btn ? btn.innerHTML : "";
+      if (btn) { btn.disabled = true; btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Salvando em VS/_Medleys...</span>`; }
+
+      try {
+        activeMedley.updatedAt = new Date().toISOString();
+        const existingIdx = medleysLibrary.findIndex(m => m.id === activeMedley.id);
+        if (existingIdx > -1) medleysLibrary[existingIdx] = JSON.parse(JSON.stringify(activeMedley));
+        else medleysLibrary.unshift(JSON.parse(JSON.stringify(activeMedley)));
+        await dbPut("catalog", "medleysLibrary_v1", medleysLibrary);
+        renderMedleysLibraryList();
+
+        if (navigator.onLine && scriptUrl) {
+          await fetch(scriptUrl, {
+            method: "POST", mode: "no-cors",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "salvarMedleyDrive", medley: activeMedley })
+          });
+          setTimeout(() => loadMedleysFromDrive(true), 1500);
+        }
+        alert(`✅ Medley "${activeMedley.nome}" salvo na subpasta VS/_Medleys do Google Drive!`);
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = orig; }
+      }
+    }
+
+    // ============================================================================
+    // MOTOR .RPP DE MEDLEY (SOFFS + LENGTH + PLAYRATE ELASTIQUE PRO + PAD BRIDGE)
+    // ============================================================================
+    async function exportActiveMedleyToReaper(downloadOffline = false) {
+      if (!activeMedley || !activeMedley.blocks || activeMedley.blocks.length === 0) {
+        alert("Adicione músicas ao medley primeiro.");
+        return;
+      }
+      if (downloadOffline) {
+        if (!window.showDirectoryPicker) {
+          alert("Use o Chrome ou Edge no computador para baixar o VS offline direto na pasta.");
+          return;
+        }
+        try {
+          if (!localVsRootHandle) localVsRootHandle = await window.showDirectoryPicker({ mode: "readwrite" });
+        } catch (e) { return; }
+      }
+
+      const statusBox = document.getElementById("medley-export-status");
+      statusBox.classList.remove("hidden");
+      statusBox.innerHTML = `<p class="font-bold text-amber-300"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>Montando projeto REAPER do Medley "${activeMedley.nome}"...</p>`;
+
+      try {
+        if (vsFolders.length === 0 && localVsSubfolders.length === 0) await loadVsFolders(false);
+        const routing = document.getElementById("reaper-routing-mode")?.value || "STEREO_CENTER";
+        const muteFlags = getReaperLiveMuteFlags();
+        const basePath = (localStorage.getItem("doxa_reaper_base_path") || "").trim().replace(/[\\/]+$/, "");
+        const sep = basePath.includes("/") ? "/" : "\\";
+        const padPack = getAllPadPacks().find(p => p.id === padActivePackId) || PAD_BUILTIN_PACKS[0];
+
+        const slotsList = REAPER_FIXED_SLOTS.map(s => Object.assign({}, s, { itemsRpp: [] }));
+        const makeLane = (slotId, usedMap) => {
+          const count = (usedMap[slotId] || 0) + 1;
+          usedMap[slotId] = count;
+          const targetKey = count === 1 ? slotId : `${slotId}_${count}`;
+          let lane = slotsList.find(s => s.id === targetKey);
+          if (!lane) {
+            const base = slotsList.find(s => s.id === slotId) || slotsList[slotsList.length - 1];
+            lane = Object.assign({}, base, { id: targetKey, name: `${base.name} ${count}`, itemsRpp: [] });
+            const lastIdx = slotsList.map(s => s.id.replace(/_\d+$/, "")).lastIndexOf(slotId);
+            if (lastIdx > -1) slotsList.splice(lastIdx + 1, 0, lane);
+            else slotsList.push(lane);
+          }
+          return lane;
+        };
+
+        const runWithPool = async (taskList, concurrency, workerFn) => {
+          let cursor = 0;
+          const workers = Array.from({ length: Math.min(concurrency, taskList.length) }, async () => {
+            while (cursor < taskList.length) {
+              const curIdx = cursor++;
+              await workerFn(taskList[curIdx], curIdx);
+            }
+          });
+          await Promise.all(workers);
+        };
+
+        let cursorSec = 0, markersRpp = "", tempoPoints = "", firstBpm = 120, logHtml = "";
+        const blocks = activeMedley.blocks;
+
+        for (let i = 0; i < blocks.length; i++) {
+          const b = blocks[i];
+          const origBpm = Math.max(40, Math.min(240, Number(b.origBpm) || 120));
+          const targetBpm = activeMedley.bpmMode === "LOCK_BPM"
+            ? Math.max(40, Math.min(240, Number(activeMedley.targetBpm) || origBpm))
+            : origBpm;
+          const playRate = targetBpm / origBpm;
+          const semitones = Number(b.semitones) || 0;
+          const effectiveTom = transposeChordToken(b.origKey || "C", semitones);
+
+          if (i === 0) firstBpm = targetBpm;
+          tempoPoints += `    PT ${cursorSec.toFixed(6)} ${targetBpm} 1\n`;
+
+          let songFiles = [], fullDurSec = 240;
+          let folderTitle = sanitizeFileSystemName(b.musica, `Medley_${i + 1}`, "");
+          let songDirHandle = null;
+
+          if (b.folderRef && String(b.folderRef).startsWith("LOCAL::")) {
+            const lf = localVsSubfolders.find(f => f.folderRef === b.folderRef);
+            if (lf) {
+              folderTitle = lf.nome; songDirHandle = lf.handle;
+              const d = await getMaxDurationFromLocalFiles(lf.files);
+              if (d > 15) fullDurSec = d;
+              lf.files.forEach(entry => {
+                if (!/\.(mid|midi)$/i.test(entry.name)) {
+                  songFiles.push({ displayName: entry.name, filePath: `${lf.nome}\\${entry.relPath}`, srcTag: getReaperSourceTagByFilename(entry.name), slotId: classifyTrackSlotForReaper(entry.name, lf.nome) });
+                }
+              });
+            }
+          } else if (b.folderRef) {
+            const df = vsFolders.find(f => f.folderRef === b.folderRef);
+            if (df) {
+              folderTitle = df.nome;
+              let faixasData = await dbGet("catalog", "vsFolder_" + df.folderRef);
+              if (!faixasData && navigator.onLine && scriptUrl) {
+                const res = await fetch(`${scriptUrl}?action=listarFaixasVs&folderRef=${encodeURIComponent(df.folderRef)}`);
+                const d = await res.json();
+                if (d && d.status === "ok") { faixasData = d; await dbPut("catalog", "vsFolder_" + df.folderRef, d); }
+              }
+              const faixas = ((faixasData && faixasData.faixas) || []).filter(fx => !/\.(mid|midi)$/i.test(fx.nomeArquivo || ""));
+
+              if (downloadOffline && localVsRootHandle) {
+                const safeFolder = sanitizeFileSystemName(df.nome, `Medley_${i + 1}`, "");
+                folderTitle = safeFolder;
+                try { songDirHandle = await localVsRootHandle.getDirectoryHandle(safeFolder, { create: true }); } catch (eD) {}
+                let measured = 0;
+                const arr = new Array(faixas.length);
+                await runWithPool(faixas, 5, async (fx, fIdx) => {
+                  const realName = sanitizeFileSystemName(fx.nomeArquivo || fx.nomeFaixa, `Faixa_${fIdx + 1}`, fx.extensao || "m4a");
+                  let wrote = false, blob = null;
+                  if (songDirHandle) {
+                    try { const ef = await (await songDirHandle.getFileHandle(realName)).getFile(); if (ef && ef.size > 0) { wrote = true; blob = ef; } } catch (eN) {}
+                  }
+                  if (!wrote) {
+                    const raw = await fetchTrackCachedOrNetwork(fx.audioRef, false);
+                    blob = new Blob([base64ToUint8Array(raw.base64)], { type: raw.mimeType || "audio/mp4" });
+                    if (songDirHandle) {
+                      try { const fh = await songDirHandle.getFileHandle(realName, { create: true }); const w = await fh.createWritable(); await w.write(blob); await w.close(); wrote = true; } catch (eW) {}
+                    }
+                  }
+                  if (measured === 0 && blob) { const d = await measureBlobAudioDuration(blob); if (d > measured) measured = d; }
+                  arr[fIdx] = { displayName: realName, filePath: wrote ? `${safeFolder}\\${realName}` : (basePath ? `${basePath}${sep}${df.nome}${sep}${realName}` : `${df.nome}${sep}${realName}`), srcTag: getReaperSourceTagByFilename(realName), slotId: classifyTrackSlotForReaper(realName, df.nome) };
+                });
+                if (measured > 15) fullDurSec = measured;
+                arr.filter(Boolean).forEach(sf => songFiles.push(sf));
+              } else {
+                faixas.forEach((fx, fIdx) => {
+                  const realName = fx.nomeArquivo || `Faixa_${fIdx + 1}.m4a`;
+                  songFiles.push({ displayName: realName, filePath: basePath ? `${basePath}${sep}${df.nome}${sep}${realName}` : `${df.nome}${sep}${realName}`, srcTag: getReaperSourceTagByFilename(realName), slotId: classifyTrackSlotForReaper(realName, df.nome) });
+                });
+              }
+            }
+          }
+
+          const startSoffs = Math.max(0, Number(b.startSec) || 0);
+          const rawEndSec = (Number(b.endSec) && Number(b.endSec) > startSoffs) ? Number(b.endSec) : fullDurSec;
+          const clipOrigLen = Math.max(4, rawEndSec - startSoffs);
+          const clipTimelineLen = clipOrigLen / playRate;
+
+          const transType = b.transitionType || "PAD_4";
+          const isLast = i === blocks.length - 1;
+          const prevTrans = i > 0 ? (blocks[i - 1].transitionType || "PAD_4") : "DRY_CUT";
+
+          const fadeInSec = (prevTrans === "CROSSFADE_4") ? "4.00" : (prevTrans.startsWith("PAD_") ? "1.50" : "0.02");
+          const fadeOutSec = (!isLast && transType === "CROSSFADE_4") ? "4.00" : ((!isLast && transType.startsWith("PAD_")) ? "2.50" : "0.05");
+
+          // Região colorida para esta parte do medley
+          const rgnCol = rgbToReaperNative(201, 164, 73);
+          markersRpp += `  MARKER ${i + 1} ${cursorSec.toFixed(6)} "${i + 1}. ${b.musica.replace(/"/g, "'")} (${effectiveTom})" 1 ${rgnCol} 1 R\n`;
+          markersRpp += `  MARKER ${i + 1} ${(cursorSec + clipTimelineLen).toFixed(6)} "" 1\n`;
+
+          // Continuous Pad durante a música + ponte (se PAD_4 ou PAD_8)
+          const padNote = resolvePadRootKeyFromSongTom(effectiveTom);
+          const bridgeBars = (!isLast && transType === "PAD_8") ? 8 : ((!isLast && transType === "PAD_4") ? 4 : 0);
+          const bridgeSec = bridgeBars > 0 ? (bridgeBars * 4 * (60 / targetBpm)) : 0;
+
+          if (!songFiles.some(sf => sf.slotId === "CONTINUOUS_PAD")) {
+            let padExt = "wav", padBlob = null;
+            if (!padPack.isBuiltin && padPack.tons && padPack.tons[padNote]) {
+              padExt = padPack.tons[padNote].extensao || "mp3";
+              if (songDirHandle) {
+                try { const rp = await fetchTrackCachedOrNetwork(padPack.tons[padNote].audioRef, true); padBlob = new Blob([base64ToUint8Array(rp.base64)], { type: rp.mimeType || "audio/mpeg" }); } catch (eP) {}
+              }
+            } else if (songDirHandle) {
+              padBlob = buildSynthesizedPadLoopWavBytes(padNote, padPack);
+            }
+            const padFileName = `Continuous_Pad_${padNote.replace("#", "s")}.${padExt}`;
+            let padFilePath = basePath ? `${basePath}${sep}${folderTitle}${sep}${padFileName}` : `${folderTitle}${sep}${padFileName}`;
+            if (songDirHandle && padBlob) {
+              try { const ph = await songDirHandle.getFileHandle(padFileName, { create: true }); const w = await ph.createWritable(); await w.write(padBlob); await w.close(); padFilePath = `${folderTitle}\\${padFileName}`; } catch (ePW) {}
+            }
+            songFiles.push({
+              displayName: `Pad (${padNote}) - ${b.musica}`,
+              filePath: padFilePath,
+              srcTag: getReaperSourceTagByFilename(padFileName),
+              slotId: "CONTINUOUS_PAD",
+              isContinuousPadLoop: true,
+              extraBridgeSec: bridgeSec
+            });
+          }
+
+          const usedMap = {};
+          songFiles.forEach(sf => {
+            const lane = makeLane(sf.slotId, usedMap);
+            const isMelodic = MEDLEY_MELODIC_SLOTS.has(sf.slotId) && !sf.isContinuousPadLoop;
+            const pitchSt = isMelodic ? semitones : 0;
+            const itemLen = sf.isContinuousPadLoop ? (clipTimelineLen + (sf.extraBridgeSec || 0)) : clipTimelineLen;
+            const itemSoffs = sf.isContinuousPadLoop ? 0 : startSoffs;
+            const playRateLine = (!sf.isContinuousPadLoop && (Math.abs(playRate - 1) > 0.001 || pitchSt !== 0))
+              ? `      PLAYRATE ${playRate.toFixed(6)} 1 ${pitchSt.toFixed(6)} 589824 0 0.0025\n`
+              : "";
+
+            lane.itemsRpp.push(
+              `    <ITEM\n` +
+              `      POSITION ${cursorSec.toFixed(6)}\n` +
+              `      LENGTH ${itemLen.toFixed(6)}\n` +
+              `      LOOP ${sf.isContinuousPadLoop ? 1 : 0}\n` +
+              `      SOFFS ${itemSoffs.toFixed(6)}\n` +
+              playRateLine +
+              `      FADEIN 1 ${sf.isContinuousPadLoop ? "3.00" : fadeInSec} 0 1 0 0 0\n` +
+              `      FADEOUT 1 ${sf.isContinuousPadLoop ? "4.00" : fadeOutSec} 0 1 0 0 0\n` +
+              `      NAME "${sf.displayName.replace(/"/g, "'")}"\n` +
+              `      <SOURCE ${sf.srcTag}\n` +
+              `        FILE "${sf.filePath}"\n` +
+              `      >\n` +
+              `    >\n`
+            );
+          });
+
+          logHtml += `<div class="text-amber-300">✓ <strong>${i + 1}. ${b.musica}</strong> (${effectiveTom}, ${semitones >= 0 ? '+' + semitones : semitones} st, ${targetBpm} BPM) • Corte: ${formatSecToMmSs(startSoffs) || '00:00'} → ${formatSecToMmSs(rawEndSec)}</div>`;
+
+          // Avança cursor conforme transição escolhida
+          if (!isLast) {
+            if (transType === "CROSSFADE_4") cursorSec += Math.max(2, clipTimelineLen - 4.0);
+            else if (transType === "PAD_4" || transType === "PAD_8") cursorSec += clipTimelineLen + bridgeSec;
+            else cursorSec += clipTimelineLen; // DRY_CUT
+          }
+        }
+
+        const tracksXml = buildReaperTracksXmlFromSlots(slotsList, routing, muteFlags);
+        const tempoEnv = tempoPoints ? `  <TEMPOENVEX\n${tempoPoints}  >\n` : "";
+        const rppContent = `<REAPER_PROJECT 0.1 "7.0" 1730000000\n  TEMPO ${firstBpm} 4 4\n${tempoEnv}${markersRpp}${tracksXml}>\n`;
+        const safeRppName = sanitizeFileSystemName(`Medley_DOXA_${activeMedley.nome}.rpp`, "Medley_DOXA.rpp", "rpp");
+
+        let savedDirectly = false;
+        if (localVsRootHandle) {
+          try {
+            const fh = await localVsRootHandle.getFileHandle(safeRppName, { create: true });
+            const w = await fh.createWritable(); await w.write(rppContent); await w.close();
+            savedDirectly = true;
+            statusBox.innerHTML = `<p class="font-bold text-white mb-1">✅ Medley salvo em "${localVsRootHandle.name}\\${safeRppName}"!</p>${logHtml}`;
+          } catch (eS) {}
+        }
+        if (!savedDirectly) {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(new Blob([rppContent], { type: "application/octet-stream" }));
+          a.download = safeRppName; a.click();
+          statusBox.innerHTML = `<p class="font-bold text-white mb-1">✅ Arquivo "${safeRppName}" gerado com sucesso!</p>${logHtml}`;
+        }
+      } catch (err) {
+        statusBox.innerHTML = `<div class="text-rose-400">Erro ao exportar medley: ${err.message || err}</div>`;
+      }
+    }
+
+    // ============================================================================
+    // EMENDA RÁPIDA ("🔗 UNIR C/ PRÓXIMA") DIRETO NO MODAL EXPORTAR REAPER (.RPP)
+    // ============================================================================
+    const _prevRenderReaperSongMappingListV57 = renderReaperSongMappingList;
+    renderReaperSongMappingList = function() {
+      _prevRenderReaperSongMappingListV57();
+      const listEl = document.getElementById("reaper-song-mapping-list");
+      if (!listEl || !reaperTargetPayload || reaperTargetPayload.items.length < 2) return;
+
+      const rows = Array.from(listEl.children);
+      rows.forEach((row, idx) => {
+        if (idx >= reaperTargetPayload.items.length - 1) return;
+        const it = reaperTargetPayload.items[idx];
+        const linked = !!it.medleyLinkNext;
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.onclick = () => {
+          it.medleyLinkNext = !it.medleyLinkNext;
+          if (!it.medleyTransition) it.medleyTransition = "PAD_4";
+          renderReaperSongMappingList();
+        };
+        btn.className = linked
+          ? "px-2 py-1 rounded bg-amber-500 text-black text-[10px] font-black shrink-0"
+          : "px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-300 text-[10px] font-bold shrink-0";
+        btn.textContent = linked ? "🔗 Emendada" : "🔗 Unir próx.";
+        row.appendChild(btn);
+
+        if (linked) {
+          const bar = document.createElement("div");
+          bar.className = "bg-amber-500/10 border border-amber-500/30 rounded-lg px-2.5 py-1.5 flex flex-wrap items-center justify-between gap-2 text-[10px]";
+          bar.innerHTML = `
+            <span class="font-extrabold text-amber-300">↓ Transição p/ Música ${idx + 2}:</span>
+            <select onchange="reaperTargetPayload.items[${idx}].medleyTransition=this.value" class="px-2 py-0.5 bg-slate-900 border border-slate-700 rounded text-amber-200 font-bold">
+              <option value="DRY_CUT" ${it.medleyTransition === 'DRY_CUT' ? 'selected' : ''}>Corte Seco</option>
+              <option value="PAD_4" ${it.medleyTransition === 'PAD_4' ? 'selected' : ''}>Pad 4 comp.</option>
+              <option value="PAD_8" ${it.medleyTransition === 'PAD_8' ? 'selected' : ''}>Pad 8 comp.</option>
+              <option value="CROSSFADE_4" ${it.medleyTransition === 'CROSSFADE_4' ? 'selected' : ''}>Crossfade 4s</option>
+            </select>
+            <button type="button" onclick="openLinkedReaperItemsInMedleyBuilder()" class="px-2 py-0.5 rounded bg-amber-500 text-black font-extrabold">Abrir no Construtor / Salvar em _Medleys</button>`;
+          row.insertAdjacentElement("afterend", bar);
+        }
+      });
+    };
+
+    function openLinkedReaperItemsInMedleyBuilder() {
+      if (!reaperTargetPayload || !reaperTargetPayload.items.length) return;
+      const items = reaperTargetPayload.items;
+      const folderList = getAvailableReaperFolderList();
+      const blocks = [];
+
+      items.forEach((it, idx) => {
+        const prevLinked = idx > 0 && !!items[idx - 1].medleyLinkNext;
+        const currLinked = !!it.medleyLinkNext;
+        if (prevLinked || currLinked) {
+          const info = getResolvedSongDetails(it);
+          const fRef = it.selectedFolderRef || findBestFolderMatch(info.musica, info.autor, folderList);
+          blocks.push({
+            musica: info.musica,
+            autor: info.autor || "",
+            folderRef: fRef || "",
+            origKey: info.tom || "C",
+            semitones: 0,
+            origBpm: extractNumericBpm(info.tempo) || 120,
+            startSec: 0,
+            endSec: 0,
+            transitionType: it.medleyTransition || "PAD_4"
+          });
+        }
+      });
+
+      if (blocks.length < 2) return;
+      activeMedley = createEmptyMedleyDraft();
+      activeMedley.nome = `Medley — ${blocks.map(b => b.musica).slice(0, 2).join(" + ")}`;
+      activeMedley.blocks = blocks;
+      closeReaperModal();
+      switchTab("medleys");
+      syncMedleyEditorUi();
+    }
+
+    // Estende switchTab para abrir a aba 'medleys'
+    const _prevSwitchTabBeforeMedleys = switchTab;
+    switchTab = function(tab) {
+      ensureMedleysDomAndNav();
+      if (tab === "medleys") {
+        ["musicas", "repertorios", "midi", "vs", "pedidos", "relatorios", "gdrum", "pads", "partituras", "medleys"].forEach(t => {
+          document.getElementById(`view-${t}`)?.classList.toggle("hidden", t !== "medleys");
+        });
+        const pill = document.getElementById("active-tab-pill");
+        if (pill) pill.textContent = "Medleys";
+        document.getElementById("stage-pro-toolbar")?.classList.add("hidden");
+        if (!activeMedley) activeMedley = createEmptyMedleyDraft();
+        syncMedleyEditorUi();
+        loadMedleysFromDrive(false);
+        if (vsFolders.length === 0) loadVsFolders(false);
+        window.scrollTo({ top: 0 });
+        return;
+      }
+      document.getElementById("view-medleys")?.classList.add("hidden");
+      _prevSwitchTabBeforeMedleys(tab);
+    };
+
+    document.addEventListener("click", (e) => {
+      const inp = document.getElementById("medley-add-song-search");
+      const drop = document.getElementById("medley-song-picker-drop");
+      if (inp && drop && !inp.contains(e.target) && !drop.contains(e.target)) drop.classList.add("hidden");
+    });
+
+    ensureMedleysDomAndNav();
 
   </script>
 </body>
