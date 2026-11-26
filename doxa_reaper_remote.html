@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#000000" />
+  <title>DOXA — Controle Remoto REAPER</title>
+  <style>
+    :root {
+      --bg: #000000;
+      --card: #0a0a0d;
+      --elevated: #121217;
+      --gold-bright: #e8c872;
+      --gold: #c9a449;
+      --gold-deep: #8f6f24;
+      --gold-border: rgba(201, 164, 73, 0.30);
+      --gold-soft: rgba(201, 164, 73, 0.12);
+      --white: #ffffff;
+      --silver: #a1a1aa;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+    html, body {
+      margin: 0; padding: 0; background: var(--bg); color: var(--white);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      min-height: 100vh;
+    }
+    header {
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(0, 0, 0, 0.94); backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--gold-border);
+      padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-badge {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, #ebd189, #c9a449, #967320);
+      color: #000; font-weight: 900; font-size: 14px;
+      display: flex; align-items: center; justify-content: center; letter-spacing: 0.5px;
+    }
+    .brand-title { font-weight: 900; font-size: 16px; letter-spacing: 1.5px; }
+    .brand-sub { font-size: 10px; color: var(--gold-bright); text-transform: uppercase; letter-spacing: 1px; }
+    .status-pill {
+      font-size: 11px; font-weight: 800; padding: 6px 12px; border-radius: 999px;
+      background: var(--elevated); border: 1px solid var(--gold-border); color: var(--gold-bright);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold-bright); }
+    .dot.offline { background: #52525b; }
+    .dot.playing { box-shadow: 0 0 10px var(--gold-bright); }
+
+    main { max-width: 1100px; margin: 0 auto; padding: 14px; display: grid; gap: 14px; }
+    .card {
+      background: var(--card); border: 1px solid var(--gold-border);
+      border-radius: 16px; padding: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    }
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .card-title {
+      font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px;
+      color: var(--gold-bright);
+    }
+    .clock-display {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 26px; font-weight: 900; color: var(--white); letter-spacing: 1px;
+    }
+    .beat-display {
+      font-family: ui-monospace, monospace; font-size: 12px; color: var(--gold-bright);
+      background: var(--gold-soft); border: 1px solid var(--gold-border);
+      padding: 4px 10px; border-radius: 8px; font-weight: 700;
+    }
+
+    /* Buttons */
+    .btn {
+      border: 1px solid rgba(255,255,255,0.14); border-radius: 12px;
+      background: var(--elevated); color: var(--white);
+      font-weight: 800; font-size: 13px; padding: 14px 12px;
+      cursor: pointer; transition: transform 0.08s ease, filter 0.15s ease;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-gold {
+      background: linear-gradient(135deg, #ebd189 0%, #c9a449 52%, #967320 100%);
+      color: #000000; border: 1px solid rgba(255, 240, 190, 0.55);
+      box-shadow: 0 4px 18px rgba(201, 164, 73, 0.25);
+    }
+    .btn-active {
+      background: var(--gold-soft); border-color: var(--gold-bright); color: var(--gold-bright);
+    }
+    .transport-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    @media (max-width: 540px) { .transport-grid { grid-template-columns: repeat(2, 1fr); } }
+
+    /* Regions */
+    .region-hero {
+      display: grid; grid-template-columns: 1fr 1.6fr 1fr; gap: 10px; margin-bottom: 12px;
+    }
+    @media (max-width: 600px) { .region-hero { grid-template-columns: 1fr; } }
+    .region-box {
+      background: var(--elevated); border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 12px; padding: 12px; text-align: center; cursor: pointer;
+    }
+    .region-box.current {
+      background: var(--gold-soft); border: 2px solid var(--gold-bright);
+    }
+    .region-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--silver); display: block; }
+    .region-name { font-size: 16px; font-weight: 900; color: var(--white); margin-top: 4px; display: block; word-break: break-word; }
+    .region-box.current .region-name { color: var(--gold-bright); }
+    .progress-wrap {
+      width: 100%; height: 8px; background: var(--elevated); border-radius: 999px;
+      overflow: hidden; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 12px;
+    }
+    .progress-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, #c9a449, #ebd189); transition: width 0.15s linear;
+    }
+    .region-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+    .region-pill {
+      padding: 8px 12px; border-radius: 10px; font-size: 12px; font-weight: 700;
+      background: var(--elevated); border: 1px solid rgba(255,255,255,0.10); color: var(--white);
+      cursor: pointer;
+    }
+    .region-pill.active {
+      background: linear-gradient(135deg, #ebd189, #c9a449); color: #000; border-color: #fff; font-weight: 900;
+    }
+
+    /* Quick Band Mutes */
+    .quick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+    .quick-btn {
+      padding: 10px; border-radius: 10px; font-size: 11px; font-weight: 800; text-transform: uppercase;
+      background: var(--elevated); border: 1px solid var(--gold-border); color: var(--white); cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+    }
+    .quick-btn.muted { opacity: 0.45; border-color: rgba(255,255,255,0.12); color: var(--silver); text-decoration: line-through; }
+    .quick-sub { font-size: 9px; color: var(--gold-bright); }
+
+    /* Mixer */
+    .track-row {
+      background: var(--elevated); border: 1px solid rgba(255,255,255,0.08);
+      border-left: 4px solid var(--gold); border-radius: 12px; padding: 10px 12px;
+      margin-bottom: 8px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .track-row.folder {
+      background: rgba(201, 164, 73, 0.08); border-color: var(--gold-border); border-left-width: 5px;
+    }
+    .track-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .track-title { font-size: 13px; font-weight: 800; color: var(--white); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .track-num { font-size: 11px; color: var(--gold-bright); font-weight: 800; margin-right: 6px; }
+    .track-btns { display: flex; gap: 6px; shrink: 0; }
+    .mini-btn {
+      min-width: 44px; padding: 6px 10px; border-radius: 8px; font-size: 11px; font-weight: 900;
+      background: #050507; border: 1px solid rgba(255,255,255,0.15); color: var(--silver); cursor: pointer;
+    }
+    .mini-btn.solo-on { background: var(--gold-bright); color: #000; border-color: #fff; }
+    .mini-btn.mute-on { background: #27272a; color: var(--gold-bright); border-color: var(--gold-bright); }
+    .vol-row { display: flex; align-items: center; gap: 10px; }
+    .vol-slider { flex: 1; accent-color: var(--gold); height: 6px; cursor: pointer; }
+    .vol-db { width: 58px; text-align: right; font-family: monospace; font-size: 11px; color: var(--silver); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="brand-badge">DX</div>
+      <div>
+        <div class="brand-title">DOXA REMOTE</div>
+        <div class="brand-sub">REAPER Live Control • Black & Gold</div>
+      </div>
+    </div>
+    <div class="status-pill">
+      <span class="dot offline" id="conn-dot"></span>
+      <span id="conn-text">Conectando...</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- 1. TRANSPORTE PRINCIPAL -->
+    <section class="card">
+      <div class="card-header">
+        <span class="card-title">Transporte Ao Vivo</span>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="beat-display" id="beat-pos">Comp. 1.1</span>
+          <span class="clock-display" id="time-pos">00:00</span>
+        </div>
+      </div>
+      <div class="transport-grid">
+        <button class="btn btn-gold" id="btn-play" onclick="cmd(1007)">▶ PLAY</button>
+        <button class="btn" id="btn-stop" onclick="cmd(1016)">■ STOP</button>
+        <button class="btn" onclick="cmd(40042)">|◀ INÍCIO</button>
+        <button class="btn" id="btn-repeat" onclick="cmd(1068)">⟳ LOOP</button>
+      </div>
+    </section>
+
+    <!-- 2. REGIÕES / MÚSICAS DO CULTO -->
+    <section class="card">
+      <div class="card-header">
+        <span class="card-title">Músicas & Regiões (<span id="regions-count">0</span>)</span>
+        <button class="mini-btn" onclick="refreshAll()">↻ Atualizar</button>
+      </div>
+      <div class="region-hero">
+        <div class="region-box" id="rgn-prev" onclick="jumpRelativeRegion(-1)">
+          <span class="region-label">◀ Anterior</span>
+          <span class="region-name" id="rgn-prev-name">—</span>
+        </div>
+        <div class="region-box current" id="rgn-cur">
+          <span class="region-label">Em Execução / Atual</span>
+          <span class="region-name" id="rgn-cur-name">Nenhuma região</span>
+        </div>
+        <div class="region-box" id="rgn-next" onclick="jumpRelativeRegion(1)">
+          <span class="region-label">Próxima ▶</span>
+          <span class="region-name" id="rgn-next-name">—</span>
+        </div>
+      </div>
+      <div class="progress-wrap"><div class="progress-fill" id="rgn-progress"></div></div>
+      <div class="region-pills" id="rgn-pills"></div>
+    </section>
+
+    <!-- 3. MUTES RÁPIDOS DE BANDA & PAD -->
+    <section class="card">
+      <div class="card-header">
+        <span class="card-title">Atalhos Rápidos de Banda & Pad (1 Toque)</span>
+      </div>
+      <div class="quick-grid" id="quick-mutes"></div>
+    </section>
+
+    <!-- 4. MIXER COMPLETO (MASTER + PASTAS + TRACKS) -->
+    <section class="card">
+      <div class="card-header">
+        <span class="card-title">Mixer REAPER (Master & Tracks)</span>
+        <button class="mini-btn" id="btn-toggle-tracks" onclick="toggleTracksList()">▼ Mostrar Tracks</button>
+      </div>
+      <div id="master-container"></div>
+      <div id="tracks-container" style="display:none;margin-top:8px;"></div>
+    </section>
+  </main>
+
+  <script>
+    let playState = 0, playPos = 0, repeatState = 0;
+    let regions = [], tracks = [], tracksExpanded = false;
+
+    function cmd(commandStr) {
+      fetch('/_/' + commandStr, { cache: 'no-store' }).catch(() => {});
+    }
+
+    function fmtTime(sec) {
+      if (!sec || sec < 0) return '00:00';
+      const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+      return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
+
+    function volToDb(v) {
+      if (v <= 0.000001) return '-∞ dB';
+      return (20 * Math.log10(v)).toFixed(1) + ' dB';
+    }
+
+    function volToSlider(v) { return Math.min(1.41, Math.sqrt(Math.max(0, v))); }
+    function sliderToVol(s) { return s * s; }
+
+    function jumpToSec(sec) { cmd('SET/POS/' + Number(sec).toFixed(4)); }
+
+    function getCurrentRegionIndex() {
+      if (!regions.length) return -1;
+      for (let i = 0; i < regions.length; i++) {
+        if (playPos >= regions[i].start - 0.05 && playPos <= regions[i].end + 0.05) return i;
+      }
+      for (let i = regions.length - 1; i >= 0; i--) {
+        if (playPos >= regions[i].start) return i;
+      }
+      return 0;
+    }
+
+    function jumpRelativeRegion(delta) {
+      if (!regions.length) return;
+      const cur = getCurrentRegionIndex();
+      const target = Math.max(0, Math.min(regions.length - 1, cur + delta));
+      jumpToSec(regions[target].start);
+    }
+
+    function toggleTracksList() {
+      tracksExpanded = !tracksExpanded;
+      document.getElementById('tracks-container').style.display = tracksExpanded ? 'block' : 'none';
+      document.getElementById('btn-toggle-tracks').textContent = tracksExpanded ? '▲ Ocultar Tracks' : '▼ Mostrar Tracks';
+    }
+
+    function renderRegions() {
+      document.getElementById('regions-count').textContent = regions.length;
+      const curIdx = getCurrentRegionIndex();
+      const prev = curIdx > 0 ? regions[curIdx - 1] : null;
+      const cur = curIdx >= 0 ? regions[curIdx] : null;
+      const next = (curIdx >= 0 && curIdx < regions.length - 1) ? regions[curIdx + 1] : null;
+
+      document.getElementById('rgn-prev-name').textContent = prev ? prev.name : '—';
+      document.getElementById('rgn-cur-name').textContent = cur ? cur.name : 'Sem regiões no projeto';
+      document.getElementById('rgn-next-name').textContent = next ? next.name : '—';
+
+      let pct = 0;
+      if (cur && cur.end > cur.start) {
+        pct = Math.max(0, Math.min(100, ((playPos - cur.start) / (cur.end - cur.start)) * 100));
+      }
+      document.getElementById('rgn-progress').style.width = pct.toFixed(1) + '%';
+
+      const pillsEl = document.getElementById('rgn-pills');
+      pillsEl.innerHTML = regions.map((r, i) => `
+        <button class="region-pill ${i === curIdx ? 'active' : ''}" onclick="jumpToSec(${r.start})">${r.name}</button>
+      `).join('');
+    }
+
+    function renderQuickMutes() {
+      const quickEl = document.getElementById('quick-mutes');
+      const targets = tracks.filter(t =>
+        t.id > 0 && /^(BATERIA|INSTRUMENTOS COM TRASTES|TECLADOS|Metronome|Guia|Vocals|Background Vocals|Continuous Pad|Bass|Acoustic Guitars|Electric Guitars|Piano|Keys)$/i.test(t.name.trim())
+      );
+      if (!targets.length) {
+        quickEl.innerHTML = '<div style="font-size:11px;color:#71717a;">Abra um projeto DOXA no REAPER para ativar os atalhos de banda.</div>';
+        return;
+      }
+      quickEl.innerHTML = targets.map(t => {
+        const isMuted = (t.flags & 8) !== 0;
+        return `
+          <button class="quick-btn ${isMuted ? 'muted' : ''}" onclick="cmd('SET/TRACK/${t.id}/MUTE/-1')">
+            <span>${t.name}</span>
+            <span class="quick-sub">${isMuted ? 'MUTADO' : 'ATIVO'}</span>
+          </button>`;
+      }).join('');
+    }
+
+    function buildTrackHtml(t) {
+      const isMuted = (t.flags & 8) !== 0;
+      const isSolo = (t.flags & 16) !== 0;
+      const isFolder = (t.flags & 1) !== 0;
+      const sliderVal = volToSlider(t.vol).toFixed(3);
+      return `
+        <div class="track-row ${isFolder ? 'folder' : ''}" id="trk-row-${t.id}">
+          <div class="track-top">
+            <div class="track-title"><span class="track-num">${t.id === 0 ? 'M' : t.id}</span>${isFolder ? '📁 ' : ''}${t.name}</div>
+            <div class="track-btns">
+              ${t.id > 0 ? `<button class="mini-btn ${isSolo ? 'solo-on' : ''}" onclick="cmd('SET/TRACK/${t.id}/SOLO/-1')">SOLO</button>` : ''}
+              <button class="mini-btn ${isMuted ? 'mute-on' : ''}" onclick="cmd('SET/TRACK/${t.id}/MUTE/-1')">MUTE</button>
+            </div>
+          </div>
+          <div class="vol-row">
+            <input type="range" class="vol-slider" min="0" max="1.41" step="0.01" value="${sliderVal}"
+              oninput="onVolInput(${t.id}, this.value)" />
+            <span class="vol-db" id="trk-db-${t.id}">${volToDb(t.vol)}</span>
+          </div>
+        </div>`;
+    }
+
+    function onVolInput(trackId, sliderVal) {
+      const v = sliderToVol(parseFloat(sliderVal));
+      const lbl = document.getElementById('trk-db-' + trackId);
+      if (lbl) lbl.textContent = volToDb(v);
+      cmd('SET/TRACK/' + trackId + '/VOL/' + v.toFixed(5));
+    }
+
+    function renderMixer() {
+      const master = tracks.find(t => t.id === 0);
+      if (master && !document.activeElement?.closest('#master-container')) {
+        document.getElementById('master-container').innerHTML = buildTrackHtml(master);
+      }
+      if (!document.activeElement?.closest('#tracks-container')) {
+        const regulars = tracks.filter(t => t.id > 0);
+        document.getElementById('tracks-container').innerHTML = regulars.map(buildTrackHtml).join('');
+      }
+    }
+
+    function parseReaperResponse(text) {
+      const lines = text.split('\n');
+      const newTracks = [], newRegions = [];
+      let gotRegions = false, gotTracks = false;
+
+      lines.forEach(line => {
+        const p = line.split('\t');
+        if (p[0] === 'TRANSPORT') {
+          playState = parseInt(p[1], 10) || 0;
+          playPos = parseFloat(p[2]) || 0;
+          repeatState = parseInt(p[3], 10) || 0;
+          const beatStr = p[4] || '1.1';
+          document.getElementById('time-pos').textContent = fmtTime(playPos);
+          document.getElementById('beat-pos').textContent = 'Comp. ' + beatStr.split('.').slice(0, 2).join('.');
+          const dot = document.getElementById('conn-dot');
+          dot.className = 'dot ' + (playState & 1 ? 'playing' : '');
+          document.getElementById('conn-text').textContent = (playState & 1) ? 'TOCANDO' : 'CONECTADO';
+          document.getElementById('btn-repeat').className = 'btn ' + (repeatState ? 'btn-active' : '');
+        } else if (p[0] === 'TRACK') {
+          gotTracks = true;
+          newTracks.push({
+            id: parseInt(p[1], 10) || 0,
+            name: p[2] || ('Track ' + p[1]),
+            flags: parseInt(p[3], 10) || 0,
+            vol: parseFloat(p[4]) || 0
+          });
+        } else if (p[0] === 'REGION') {
+          gotRegions = true;
+          newRegions.push({
+            name: p[1] || ('Região ' + p[2]),
+            id: parseInt(p[2], 10) || 0,
+            start: parseFloat(p[3]) || 0,
+            end: parseFloat(p[4]) || 0
+          });
+        }
+      });
+
+      if (gotTracks) { tracks = newTracks; renderQuickMutes(); renderMixer(); }
+      if (gotRegions) { regions = newRegions.sort((a, b) => a.start - b.start); }
+      renderRegions();
+    }
+
+    let pollTick = 0;
+    function refreshAll() {
+      fetch('/_/TRANSPORT;TRACK;REGION', { cache: 'no-store' })
+        .then(r => r.text())
+        .then(parseReaperResponse)
+        .catch(() => {
+          document.getElementById('conn-dot').className = 'dot offline';
+          document.getElementById('conn-text').textContent = 'Desconectado';
+        });
+    }
+
+    function pollLoop() {
+      pollTick++;
+      const req = (pollTick % 6 === 1) ? '/_/TRANSPORT;TRACK;REGION' : '/_/TRANSPORT;TRACK';
+      fetch(req, { cache: 'no-store' })
+        .then(r => r.text())
+        .then(parseReaperResponse)
+        .catch(() => {
+          document.getElementById('conn-dot').className = 'dot offline';
+          document.getElementById('conn-text').textContent = 'Desconectado';
+        })
+        .finally(() => setTimeout(pollLoop, 300));
+    }
+
+    pollLoop();
+  </script>
+</body>
+</html>
