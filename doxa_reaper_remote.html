@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#000000" />
-  <title>DOXA — Controle Remoto REAPER</title>
+  <title>DOXA — Controle Remoto REAPER v2.0</title>
   <style>
     :root {
       --bg: #000000;
@@ -13,8 +13,8 @@
       --gold-bright: #e8c872;
       --gold: #c9a449;
       --gold-deep: #8f6f24;
-      --gold-border: rgba(201, 164, 73, 0.30);
-      --gold-soft: rgba(201, 164, 73, 0.12);
+      --gold-border: rgba(201, 164, 73, 0.32);
+      --gold-soft: rgba(201, 164, 73, 0.14);
       --white: #ffffff;
       --silver: #a1a1aa;
     }
@@ -48,13 +48,13 @@
     .dot.offline { background: #52525b; }
     .dot.playing { box-shadow: 0 0 10px var(--gold-bright); }
 
-    main { max-width: 1100px; margin: 0 auto; padding: 14px; display: grid; gap: 14px; }
+    main { max-width: 1100px; margin: 0 auto; padding: 14px; display: grid; gap: 14px; padding-bottom: 40px; }
     .card {
       background: var(--card); border: 1px solid var(--gold-border);
       border-radius: 16px; padding: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
     }
     .card-header {
-      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
       margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08);
     }
     .card-title {
@@ -63,7 +63,7 @@
     }
     .clock-display {
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 26px; font-weight: 900; color: var(--white); letter-spacing: 1px;
+      font-size: 24px; font-weight: 900; color: var(--white); letter-spacing: 1px;
     }
     .beat-display {
       font-family: ui-monospace, monospace; font-size: 12px; color: var(--gold-bright);
@@ -75,9 +75,9 @@
     .btn {
       border: 1px solid rgba(255,255,255,0.14); border-radius: 12px;
       background: var(--elevated); color: var(--white);
-      font-weight: 800; font-size: 13px; padding: 14px 12px;
-      cursor: pointer; transition: transform 0.08s ease, filter 0.15s ease;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
+      font-weight: 800; font-size: 12px; padding: 13px 10px;
+      cursor: pointer; transition: transform 0.08s ease, background 0.15s ease;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
     }
     .btn:active { transform: scale(0.97); }
     .btn-gold {
@@ -87,44 +87,66 @@
     }
     .btn-active {
       background: var(--gold-soft); border-color: var(--gold-bright); color: var(--gold-bright);
+      box-shadow: 0 0 12px rgba(201, 164, 73, 0.22);
     }
-    .transport-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-    @media (max-width: 540px) { .transport-grid { grid-template-columns: repeat(2, 1fr); } }
+    .transport-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+    @media (max-width: 640px) { .transport-grid { grid-template-columns: repeat(2, 1fr); } }
+
+    /* Playlist (Project Tabs) */
+    .playlist-nav { display: flex; gap: 8px; margin-bottom: 10px; }
+    .playlist-nav .btn { flex: 1; padding: 10px; }
+    .playlist-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+    .playlist-item {
+      padding: 11px 12px; border-radius: 12px; text-align: left; cursor: pointer;
+      background: var(--elevated); border: 1px solid rgba(255,255,255,0.10); color: var(--white);
+      display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 700;
+    }
+    .playlist-item.active {
+      background: linear-gradient(135deg, #ebd189 0%, #c9a449 60%, #967320 100%);
+      color: #000; border-color: #fff; font-weight: 900;
+    }
+    .playlist-idx {
+      width: 24px; height: 24px; border-radius: 7px; font-size: 11px; font-weight: 900;
+      background: rgba(255,255,255,0.08); color: var(--gold-bright);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .playlist-item.active .playlist-idx { background: rgba(0,0,0,0.22); color: #000; }
+    .playlist-hint { font-size: 10px; color: var(--silver); margin-top: 8px; }
 
     /* Regions */
-    .region-hero {
-      display: grid; grid-template-columns: 1fr 1.6fr 1fr; gap: 10px; margin-bottom: 12px;
-    }
+    .region-hero { display: grid; grid-template-columns: 1fr 1.6fr 1fr; gap: 10px; margin-bottom: 12px; }
     @media (max-width: 600px) { .region-hero { grid-template-columns: 1fr; } }
     .region-box {
       background: var(--elevated); border: 1px solid rgba(255,255,255,0.10);
       border-radius: 12px; padding: 12px; text-align: center; cursor: pointer;
     }
-    .region-box.current {
-      background: var(--gold-soft); border: 2px solid var(--gold-bright);
-    }
+    .region-box.current { background: var(--gold-soft); border: 2px solid var(--gold-bright); }
     .region-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--silver); display: block; }
-    .region-name { font-size: 16px; font-weight: 900; color: var(--white); margin-top: 4px; display: block; word-break: break-word; }
+    .region-name { font-size: 15px; font-weight: 900; color: var(--white); margin-top: 4px; display: block; word-break: break-word; }
     .region-box.current .region-name { color: var(--gold-bright); }
     .progress-wrap {
       width: 100%; height: 8px; background: var(--elevated); border-radius: 999px;
       overflow: hidden; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 12px;
     }
-    .progress-fill {
-      height: 100%; width: 0%;
-      background: linear-gradient(90deg, #c9a449, #ebd189); transition: width 0.15s linear;
-    }
+    .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #c9a449, #ebd189); transition: width 0.15s linear; }
     .region-pills { display: flex; flex-wrap: wrap; gap: 8px; }
     .region-pill {
       padding: 8px 12px; border-radius: 10px; font-size: 12px; font-weight: 700;
-      background: var(--elevated); border: 1px solid rgba(255,255,255,0.10); color: var(--white);
-      cursor: pointer;
+      background: var(--elevated); border: 1px solid rgba(255,255,255,0.10); color: var(--white); cursor: pointer;
     }
     .region-pill.active {
       background: linear-gradient(135deg, #ebd189, #c9a449); color: #000; border-color: #fff; font-weight: 900;
     }
 
-    /* Quick Band Mutes */
+    /* Quick Band Mutes & Voices Only */
+    .voice-only-bar {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+      background: var(--elevated); border: 1px solid var(--gold-border); border-radius: 12px;
+      padding: 10px 12px; margin-bottom: 10px;
+    }
+    .voice-only-check {
+      display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--silver); font-weight: 700; cursor: pointer;
+    }
     .quick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
     .quick-btn {
       padding: 10px; border-radius: 10px; font-size: 11px; font-weight: 800; text-transform: uppercase;
@@ -143,19 +165,28 @@
     .track-row.folder {
       background: rgba(201, 164, 73, 0.08); border-color: var(--gold-border); border-left-width: 5px;
     }
-    .track-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .track-title { font-size: 13px; font-weight: 800; color: var(--white); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .track-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+    .track-title { font-size: 13px; font-weight: 800; color: var(--white); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 120px; }
     .track-num { font-size: 11px; color: var(--gold-bright); font-weight: 800; margin-right: 6px; }
-    .track-btns { display: flex; gap: 6px; shrink: 0; }
+    .track-controls { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .pan-group {
+      display: inline-flex; background: #050507; border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 8px; padding: 2px; gap: 2px;
+    }
+    .pan-btn {
+      width: 28px; height: 26px; border: none; border-radius: 6px; font-size: 11px; font-weight: 900;
+      background: transparent; color: var(--silver); cursor: pointer;
+    }
+    .pan-btn.active { background: var(--gold-bright); color: #000; }
     .mini-btn {
-      min-width: 44px; padding: 6px 10px; border-radius: 8px; font-size: 11px; font-weight: 900;
+      min-width: 44px; height: 30px; padding: 0 10px; border-radius: 8px; font-size: 11px; font-weight: 900;
       background: #050507; border: 1px solid rgba(255,255,255,0.15); color: var(--silver); cursor: pointer;
     }
     .mini-btn.solo-on { background: var(--gold-bright); color: #000; border-color: #fff; }
     .mini-btn.mute-on { background: #27272a; color: var(--gold-bright); border-color: var(--gold-bright); }
     .vol-row { display: flex; align-items: center; gap: 10px; }
-    .vol-slider { flex: 1; accent-color: var(--gold); height: 6px; cursor: pointer; }
-    .vol-db { width: 58px; text-align: right; font-family: monospace; font-size: 11px; color: var(--silver); }
+    .vol-slider { flex: 1; accent-color: var(--gold); height: 22px; cursor: pointer; touch-action: none; }
+    .vol-db { width: 62px; text-align: right; font-family: monospace; font-size: 11px; color: var(--silver); }
   </style>
 </head>
 <body>
@@ -164,7 +195,7 @@
       <div class="brand-badge">DX</div>
       <div>
         <div class="brand-title">DOXA REMOTE</div>
-        <div class="brand-sub">REAPER Live Control • Black & Gold</div>
+        <div class="brand-sub">REAPER Live Control v2.0 • Black & Gold</div>
       </div>
     </div>
     <div class="status-pill">
@@ -174,7 +205,7 @@
   </header>
 
   <main>
-    <!-- 1. TRANSPORTE PRINCIPAL -->
+    <!-- 1. TRANSPORTE PRINCIPAL & LOOP -->
     <section class="card">
       <div class="card-header">
         <span class="card-title">Transporte Ao Vivo</span>
@@ -184,18 +215,32 @@
         </div>
       </div>
       <div class="transport-grid">
-        <button class="btn btn-gold" id="btn-play" onclick="cmd(1007)">▶ PLAY</button>
-        <button class="btn" id="btn-stop" onclick="cmd(1016)">■ STOP</button>
-        <button class="btn" onclick="cmd(40042)">|◀ INÍCIO</button>
-        <button class="btn" id="btn-repeat" onclick="cmd(1068)">⟳ LOOP</button>
+        <button class="btn btn-gold" id="btn-play" onclick="sendCmd('1007')">▶ PLAY</button>
+        <button class="btn" id="btn-stop" onclick="sendCmd('1016')">■ STOP</button>
+        <button class="btn" onclick="sendCmd('40042')">|◀ INÍCIO</button>
+        <button class="btn" id="btn-repeat" onclick="toggleLoop()">⟳ LOOP</button>
+        <button class="btn" id="btn-loop-rgn" onclick="loopCurrentRegion()">⟳ LOOP REGIÃO</button>
       </div>
     </section>
 
-    <!-- 2. REGIÕES / MÚSICAS DO CULTO -->
+    <!-- 2. PLAYLIST (PROJETOS ABERTOS EM ABAS NO REAPER) -->
     <section class="card">
       <div class="card-header">
-        <span class="card-title">Músicas & Regiões (<span id="regions-count">0</span>)</span>
+        <span class="card-title">Playlist — Projetos Abertos (<span id="tabs-count">0</span>)</span>
         <button class="mini-btn" onclick="refreshAll()">↻ Atualizar</button>
+      </div>
+      <div class="playlist-nav">
+        <button class="btn" onclick="switchProjectTabRelative(-1)">◀ Aba Anterior</button>
+        <button class="btn" onclick="switchProjectTabRelative(1)">Próxima Aba ▶</button>
+      </div>
+      <div class="playlist-list" id="playlist-tabs"></div>
+      <div class="playlist-hint" id="playlist-hint"></div>
+    </section>
+
+    <!-- 3. REGIÕES / SEÇÕES DO PROJETO ATUAL -->
+    <section class="card">
+      <div class="card-header">
+        <span class="card-title">Regiões & Seções (<span id="regions-count">0</span>)</span>
       </div>
       <div class="region-hero">
         <div class="region-box" id="rgn-prev" onclick="jumpRelativeRegion(-1)">
@@ -215,31 +260,48 @@
       <div class="region-pills" id="rgn-pills"></div>
     </section>
 
-    <!-- 3. MUTES RÁPIDOS DE BANDA & PAD -->
+    <!-- 4. SÓ VOZ (MUTAR TUDO) & MUTES RÁPIDOS -->
     <section class="card">
       <div class="card-header">
-        <span class="card-title">Atalhos Rápidos de Banda & Pad (1 Toque)</span>
+        <span class="card-title">Atalhos de Palco (Só Voz & Banda)</span>
+      </div>
+      <div class="voice-only-bar">
+        <button class="btn btn-gold" id="btn-voice-only" onclick="toggleVoiceOnlyMode()" style="flex:1;min-width:210px;">
+          🎤 SÓ VOZ (MUTAR BANDA)
+        </button>
+        <label class="voice-only-check">
+          <input type="checkbox" id="chk-keep-click" checked style="accent-color:#c9a449;width:16px;height:16px;" />
+          <span>Manter Click / Guia</span>
+        </label>
       </div>
       <div class="quick-grid" id="quick-mutes"></div>
     </section>
 
-    <!-- 4. MIXER COMPLETO (MASTER + PASTAS + TRACKS) -->
+    <!-- 5. MIXER COMPLETO (MASTER + TRACKS COM L/C/R, SOLO, MUTE E VOLUME) -->
     <section class="card">
       <div class="card-header">
-        <span class="card-title">Mixer REAPER (Master & Tracks)</span>
-        <button class="mini-btn" id="btn-toggle-tracks" onclick="toggleTracksList()">▼ Mostrar Tracks</button>
+        <span class="card-title">Mixer REAPER (Master & Tracks com L / C / R)</span>
+        <button class="mini-btn" id="btn-toggle-tracks" onclick="toggleTracksList()">▲ Ocultar Tracks</button>
       </div>
       <div id="master-container"></div>
-      <div id="tracks-container" style="display:none;margin-top:8px;"></div>
+      <div id="tracks-container" style="display:block;margin-top:8px;"></div>
     </section>
   </main>
 
   <script>
     let playState = 0, playPos = 0, repeatState = 0;
-    let regions = [], tracks = [], tracksExpanded = false;
+    let regions = [], tracks = [], projectTabs = [];
+    let tracksExpanded = true;
+    let lastTrackSignature = '';
+    let draggingTrackId = null;
+    let lastVolSentAt = 0;
+    let voiceOnlyActive = false;
+    let savedMuteState = null;
 
-    function cmd(commandStr) {
-      fetch('/_/' + commandStr, { cache: 'no-store' }).catch(() => {});
+    function sendCmd(commandStr, refreshAfter = true) {
+      fetch('/_/' + commandStr, { cache: 'no-store' })
+        .then(() => { if (refreshAfter) setTimeout(refreshAll, 90); })
+        .catch(() => {});
     }
 
     function fmtTime(sec) {
@@ -249,14 +311,88 @@
     }
 
     function volToDb(v) {
-      if (v <= 0.000001) return '-∞ dB';
+      if (v <= 0.00001) return '-∞ dB';
       return (20 * Math.log10(v)).toFixed(1) + ' dB';
     }
 
-    function volToSlider(v) { return Math.min(1.41, Math.sqrt(Math.max(0, v))); }
+    function volToSlider(v) { return Math.min(1.414, Math.sqrt(Math.max(0, v))); }
     function sliderToVol(s) { return s * s; }
 
-    function jumpToSec(sec) { cmd('SET/POS/' + Number(sec).toFixed(4)); }
+    function jumpToSec(sec) { sendCmd('SET/POS/' + Number(sec).toFixed(4)); }
+
+    function toggleLoop() {
+      sendCmd('SET/REPEAT/-1');
+    }
+
+    function loopCurrentRegion() {
+      const curIdx = getCurrentRegionIndex();
+      if (curIdx < 0 || !regions[curIdx]) {
+        sendCmd('SET/REPEAT/-1');
+        return;
+      }
+      const r = regions[curIdx];
+      // Define pontos de loop exatamente no início e fim da região atual e ativa Repeat
+      const chain = [
+        'SET/POS/' + r.start.toFixed(4),
+        '40222',
+        'SET/POS/' + r.end.toFixed(4),
+        '40223',
+        'SET/POS/' + r.start.toFixed(4),
+        'SET/REPEAT/1'
+      ].join(';');
+      sendCmd(chain);
+    }
+
+    function switchProjectTabRelative(dir) {
+      sendCmd(dir < 0 ? '40862' : '40861');
+    }
+
+    function switchProjectTabByIndex(idx) {
+      if (idx < 0 || idx > 19) return;
+      sendCmd(String(45000 + idx));
+    }
+
+    function isVocalTrackName(name) {
+      return /\b(vocals|vocal|lead\s*vocal|background\s*vocals|backing|bgv|voz|vozes|coro|choir)\b/i.test(String(name || ''));
+    }
+
+    function isClickGuideTrackName(name) {
+      return /\b(metronome|metronomo|click|guia|guide|cue)\b/i.test(String(name || ''));
+    }
+
+    function toggleVoiceOnlyMode() {
+      const btn = document.getElementById('btn-voice-only');
+      const keepClick = !!document.getElementById('chk-keep-click')?.checked;
+      const regulars = tracks.filter(t => t.id > 0);
+      if (!regulars.length) return;
+
+      if (!voiceOnlyActive) {
+        // Salva o estado atual de mutes antes de ativar o modo Só Voz
+        savedMuteState = {};
+        const cmds = [];
+        regulars.forEach(t => {
+          const isMuted = (t.flags & 8) !== 0;
+          savedMuteState[t.id] = isMuted ? 1 : 0;
+          const keepOpen = isVocalTrackName(t.name) || (keepClick && isClickGuideTrackName(t.name));
+          cmds.push(`SET/TRACK/${t.id}/MUTE/${keepOpen ? 0 : 1}`);
+        });
+        voiceOnlyActive = true;
+        btn.textContent = '🔊 RESTAURAR BANDA (SAIR DE SÓ VOZ)';
+        btn.className = 'btn btn-active';
+        sendCmd(cmds.join(';'));
+      } else {
+        const cmds = [];
+        regulars.forEach(t => {
+          const prev = (savedMuteState && savedMuteState[t.id] !== undefined) ? savedMuteState[t.id] : 0;
+          cmds.push(`SET/TRACK/${t.id}/MUTE/${prev}`);
+        });
+        voiceOnlyActive = false;
+        savedMuteState = null;
+        btn.textContent = '🎤 SÓ VOZ (MUTAR BANDA)';
+        btn.className = 'btn btn-gold';
+        sendCmd(cmds.join(';'));
+      }
+    }
 
     function getCurrentRegionIndex() {
       if (!regions.length) return -1;
@@ -280,6 +416,35 @@
       tracksExpanded = !tracksExpanded;
       document.getElementById('tracks-container').style.display = tracksExpanded ? 'block' : 'none';
       document.getElementById('btn-toggle-tracks').textContent = tracksExpanded ? '▲ Ocultar Tracks' : '▼ Mostrar Tracks';
+    }
+
+    function renderPlaylistTabs() {
+      const container = document.getElementById('playlist-tabs');
+      const countEl = document.getElementById('tabs-count');
+      const hintEl = document.getElementById('playlist-hint');
+
+      if (projectTabs.length > 0) {
+        countEl.textContent = projectTabs.length;
+        container.innerHTML = projectTabs.map(tab => `
+          <button class="playlist-item ${tab.active ? 'active' : ''}" onclick="switchProjectTabByIndex(${tab.idx})">
+            <span class="playlist-idx">${tab.idx + 1}</span>
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${tab.name}</span>
+          </button>
+        `).join('');
+        hintEl.textContent = '✓ Sincronizado com as abas abertas do REAPER.';
+      } else {
+        countEl.textContent = '1–8';
+        let html = '';
+        for (let i = 0; i < 8; i++) {
+          html += `
+            <button class="playlist-item" onclick="switchProjectTabByIndex(${i})">
+              <span class="playlist-idx">${i + 1}</span>
+              <span>Projeto / Aba ${i + 1}</span>
+            </button>`;
+        }
+        container.innerHTML = html;
+        hintEl.textContent = 'Dica: rode o script DOXA_Playlist_Sync.lua no REAPER para exibir o nome exato de cada música aberta.';
+      }
     }
 
     function renderRegions() {
@@ -317,57 +482,115 @@
       quickEl.innerHTML = targets.map(t => {
         const isMuted = (t.flags & 8) !== 0;
         return `
-          <button class="quick-btn ${isMuted ? 'muted' : ''}" onclick="cmd('SET/TRACK/${t.id}/MUTE/-1')">
+          <button class="quick-btn ${isMuted ? 'muted' : ''}" onclick="sendCmd('SET/TRACK/${t.id}/MUTE/-1')">
             <span>${t.name}</span>
             <span class="quick-sub">${isMuted ? 'MUTADO' : 'ATIVO'}</span>
           </button>`;
       }).join('');
     }
 
+    function setTrackPan(trackId, panVal) {
+      sendCmd(`SET/TRACK/${trackId}/PAN/${panVal}`);
+    }
+
+    function onVolStart(trackId) {
+      draggingTrackId = trackId;
+    }
+
+    function onVolInput(trackId, sliderVal) {
+      draggingTrackId = trackId;
+      const v = sliderToVol(parseFloat(sliderVal));
+      const lbl = document.getElementById('trk-db-' + trackId);
+      if (lbl) lbl.textContent = volToDb(v);
+      const now = Date.now();
+      if (now - lastVolSentAt >= 55) {
+        lastVolSentAt = now;
+        sendCmd('SET/TRACK/' + trackId + '/VOL/' + v.toFixed(5), false);
+      }
+    }
+
+    function onVolEnd(trackId, sliderVal) {
+      const v = sliderToVol(parseFloat(sliderVal));
+      sendCmd('SET/TRACK/' + trackId + '/VOL/' + v.toFixed(5), true);
+      setTimeout(() => { if (draggingTrackId === trackId) draggingTrackId = null; }, 220);
+    }
+
     function buildTrackHtml(t) {
-      const isMuted = (t.flags & 8) !== 0;
-      const isSolo = (t.flags & 16) !== 0;
       const isFolder = (t.flags & 1) !== 0;
       const sliderVal = volToSlider(t.vol).toFixed(3);
       return `
         <div class="track-row ${isFolder ? 'folder' : ''}" id="trk-row-${t.id}">
           <div class="track-top">
             <div class="track-title"><span class="track-num">${t.id === 0 ? 'M' : t.id}</span>${isFolder ? '📁 ' : ''}${t.name}</div>
-            <div class="track-btns">
-              ${t.id > 0 ? `<button class="mini-btn ${isSolo ? 'solo-on' : ''}" onclick="cmd('SET/TRACK/${t.id}/SOLO/-1')">SOLO</button>` : ''}
-              <button class="mini-btn ${isMuted ? 'mute-on' : ''}" onclick="cmd('SET/TRACK/${t.id}/MUTE/-1')">MUTE</button>
+            <div class="track-controls">
+              ${t.id > 0 ? `
+                <div class="pan-group">
+                  <button class="pan-btn" id="trk-panL-${t.id}" onclick="setTrackPan(${t.id}, -1)">L</button>
+                  <button class="pan-btn" id="trk-panC-${t.id}" onclick="setTrackPan(${t.id}, 0)">C</button>
+                  <button class="pan-btn" id="trk-panR-${t.id}" onclick="setTrackPan(${t.id}, 1)">R</button>
+                </div>
+                <button class="mini-btn" id="trk-solo-${t.id}" onclick="sendCmd('SET/TRACK/${t.id}/SOLO/-1')">SOLO</button>
+              ` : ''}
+              <button class="mini-btn" id="trk-mute-${t.id}" onclick="sendCmd('SET/TRACK/${t.id}/MUTE/-1')">MUTE</button>
             </div>
           </div>
           <div class="vol-row">
-            <input type="range" class="vol-slider" min="0" max="1.41" step="0.01" value="${sliderVal}"
-              oninput="onVolInput(${t.id}, this.value)" />
+            <input type="range" class="vol-slider" id="trk-vol-${t.id}" min="0" max="1.414" step="0.01" value="${sliderVal}"
+              onpointerdown="onVolStart(${t.id})"
+              ontouchstart="onVolStart(${t.id})"
+              oninput="onVolInput(${t.id}, this.value)"
+              onchange="onVolEnd(${t.id}, this.value)"
+              onpointerup="onVolEnd(${t.id}, this.value)" />
             <span class="vol-db" id="trk-db-${t.id}">${volToDb(t.vol)}</span>
           </div>
         </div>`;
     }
 
-    function onVolInput(trackId, sliderVal) {
-      const v = sliderToVol(parseFloat(sliderVal));
-      const lbl = document.getElementById('trk-db-' + trackId);
-      if (lbl) lbl.textContent = volToDb(v);
-      cmd('SET/TRACK/' + trackId + '/VOL/' + v.toFixed(5));
-    }
-
-    function renderMixer() {
-      const master = tracks.find(t => t.id === 0);
-      if (master && !document.activeElement?.closest('#master-container')) {
-        document.getElementById('master-container').innerHTML = buildTrackHtml(master);
-      }
-      if (!document.activeElement?.closest('#tracks-container')) {
+    // Atualiza o Mixer SEM destruir o DOM a cada 300ms (resolve 100% os cliques e faders no celular/PC!)
+    function renderMixerInPlace() {
+      const sig = tracks.map(t => `${t.id}:${t.name}:${t.flags & 1}`).join('|');
+      if (sig !== lastTrackSignature) {
+        lastTrackSignature = sig;
+        const master = tracks.find(t => t.id === 0);
+        document.getElementById('master-container').innerHTML = master ? buildTrackHtml(master) : '';
         const regulars = tracks.filter(t => t.id > 0);
         document.getElementById('tracks-container').innerHTML = regulars.map(buildTrackHtml).join('');
       }
+
+      tracks.forEach(t => {
+        const isMuted = (t.flags & 8) !== 0;
+        const isSolo = (t.flags & 16) !== 0;
+
+        const muteBtn = document.getElementById('trk-mute-' + t.id);
+        if (muteBtn) muteBtn.className = 'mini-btn ' + (isMuted ? 'mute-on' : '');
+
+        if (t.id > 0) {
+          const soloBtn = document.getElementById('trk-solo-' + t.id);
+          if (soloBtn) soloBtn.className = 'mini-btn ' + (isSolo ? 'solo-on' : '');
+
+          const pL = document.getElementById('trk-panL-' + t.id);
+          const pC = document.getElementById('trk-panC-' + t.id);
+          const pR = document.getElementById('trk-panR-' + t.id);
+          if (pL && pC && pR) {
+            pL.className = 'pan-btn ' + (t.pan <= -0.5 ? 'active' : '');
+            pC.className = 'pan-btn ' + (t.pan > -0.5 && t.pan < 0.5 ? 'active' : '');
+            pR.className = 'pan-btn ' + (t.pan >= 0.5 ? 'active' : '');
+          }
+        }
+
+        if (draggingTrackId !== t.id) {
+          const slider = document.getElementById('trk-vol-' + t.id);
+          const dbLbl = document.getElementById('trk-db-' + t.id);
+          if (slider) slider.value = volToSlider(t.vol).toFixed(3);
+          if (dbLbl) dbLbl.textContent = volToDb(t.vol);
+        }
+      });
     }
 
     function parseReaperResponse(text) {
       const lines = text.split('\n');
       const newTracks = [], newRegions = [];
-      let gotRegions = false, gotTracks = false;
+      let gotRegions = false, gotTracks = false, gotExtTabs = false;
 
       lines.forEach(line => {
         const p = line.split('\t');
@@ -381,14 +604,17 @@
           const dot = document.getElementById('conn-dot');
           dot.className = 'dot ' + (playState & 1 ? 'playing' : '');
           document.getElementById('conn-text').textContent = (playState & 1) ? 'TOCANDO' : 'CONECTADO';
-          document.getElementById('btn-repeat').className = 'btn ' + (repeatState ? 'btn-active' : '');
+          const btnRep = document.getElementById('btn-repeat');
+          btnRep.className = 'btn ' + (repeatState ? 'btn-active' : '');
+          btnRep.textContent = repeatState ? '⟳ LOOP: ON' : '⟳ LOOP';
         } else if (p[0] === 'TRACK') {
           gotTracks = true;
           newTracks.push({
             id: parseInt(p[1], 10) || 0,
             name: p[2] || ('Track ' + p[1]),
             flags: parseInt(p[3], 10) || 0,
-            vol: parseFloat(p[4]) || 0
+            vol: parseFloat(p[4]) || 0,
+            pan: parseFloat(p[5]) || 0
           });
         } else if (p[0] === 'REGION') {
           gotRegions = true;
@@ -398,17 +624,33 @@
             start: parseFloat(p[3]) || 0,
             end: parseFloat(p[4]) || 0
           });
+        } else if (p[0] === 'EXTSTATE' && p[1] === 'DOXA_PLAYLIST' && p[2] === 'TABS') {
+          gotExtTabs = true;
+          const raw = (p[3] || '').trim();
+          if (raw) {
+            projectTabs = raw.split('|').map(item => {
+              const parts = item.split(':');
+              return {
+                idx: parseInt(parts[0], 10) || 0,
+                active: parts[1] === '1',
+                name: parts.slice(2).join(':') || 'Projeto'
+              };
+            });
+          } else {
+            projectTabs = [];
+          }
         }
       });
 
-      if (gotTracks) { tracks = newTracks; renderQuickMutes(); renderMixer(); }
+      if (gotTracks) { tracks = newTracks; renderQuickMutes(); renderMixerInPlace(); }
       if (gotRegions) { regions = newRegions.sort((a, b) => a.start - b.start); }
+      if (gotExtTabs) { renderPlaylistTabs(); }
       renderRegions();
     }
 
     let pollTick = 0;
     function refreshAll() {
-      fetch('/_/TRANSPORT;TRACK;REGION', { cache: 'no-store' })
+      fetch('/_/TRANSPORT;TRACK;REGION;GET/EXTSTATE/DOXA_PLAYLIST/TABS', { cache: 'no-store' })
         .then(r => r.text())
         .then(parseReaperResponse)
         .catch(() => {
@@ -419,7 +661,9 @@
 
     function pollLoop() {
       pollTick++;
-      const req = (pollTick % 6 === 1) ? '/_/TRANSPORT;TRACK;REGION' : '/_/TRANSPORT;TRACK';
+      const req = (pollTick % 5 === 1)
+        ? '/_/TRANSPORT;TRACK;REGION;GET/EXTSTATE/DOXA_PLAYLIST/TABS'
+        : '/_/TRANSPORT;TRACK';
       fetch(req, { cache: 'no-store' })
         .then(r => r.text())
         .then(parseReaperResponse)
@@ -430,6 +674,7 @@
         .finally(() => setTimeout(pollLoop, 300));
     }
 
+    renderPlaylistTabs();
     pollLoop();
   </script>
 </body>
